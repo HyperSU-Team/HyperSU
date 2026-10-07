@@ -12,6 +12,9 @@ static struct apk_sign_key {
     // branch was derived from; they are kept so a kernel built here still recognises a
     // manager signed by one of them.
     { 0x378, "aaef52d74182a668b257065f27a53ecb3669047826c5090ed8102af6a7c3bcc4" }, // HyperSU
+    // The certificate this workspace signs its manager builds with, next to the released
+    // one so an APK built here is recognised as well.
+    { 0x360, "98d74b92982f6f6dc8cdfc1900e15a9ddba9d71c704c496a184120d8236adf0a" }, // HyperSU (local builds)
     { 0x35c, "947ae944f3de4ed4c21a7e4f7953ecf351bfa2b36239da37a34111ad29993eef" }, // SukiSU
     { 0x396, "f415f4ed9435427e1fdf7f1fccd4dbc07b3d6b8751e4dbcec6f19671f427870b" }, // RKSU
     { 0x033b, "c371061b19d8c7d7d6133c6a9bafe198fa944e50c1b31c9d8daa8d7f1fc2d2d6" }, // KSU
