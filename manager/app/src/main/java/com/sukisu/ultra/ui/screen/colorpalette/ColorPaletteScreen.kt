@@ -2,6 +2,7 @@ package com.sukisu.ultra.ui.screen.colorpalette
 
 import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -12,6 +13,7 @@ import com.materialkolor.dynamiccolor.ColorSpec
 import com.sukisu.ultra.KernelSUApplication
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
 import com.sukisu.ultra.ui.theme.ColorMode
+import com.sukisu.ultra.ui.theme.ThemeImportSignal
 import com.sukisu.ultra.ui.viewmodel.SettingsViewModel
 
 @Composable
@@ -21,6 +23,15 @@ fun ColorPaletteScreen() {
     val activity = LocalActivity.current
     val viewModel = viewModel<SettingsViewModel>()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // A theme import writes the preferences directly rather than through this ViewModel, so the
+    // rows would keep showing the values from before it. This page is where the import happens,
+    // so it is the one that has to notice - the settings hub refreshes on resume, but nothing
+    // brings this page back through a resume.
+    val importRevision = ThemeImportSignal.revision
+    LaunchedEffect(importRevision) {
+        if (importRevision > 0) viewModel.refresh()
+    }
     val currentPaletteStyle = try {
         PaletteStyle.valueOf(uiState.colorStyle)
     } catch (_: Exception) {

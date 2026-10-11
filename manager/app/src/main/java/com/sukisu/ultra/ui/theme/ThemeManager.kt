@@ -987,6 +987,9 @@ object ThemeManager {
                     .onFailure { Log.w(TAG, "failed to apply theme language $tag", it) }
             }
         }
+        // Raised on the main thread so the screens that watch it recompose on the same frame the
+        // import finished, rather than reading the preferences again mid-write.
+        withContext(Dispatchers.Main) { ThemeImportSignal.notifyImported() }
         return true
     }
 
@@ -1034,6 +1037,9 @@ object ThemeManager {
                 Log.e(TAG, "failed to reset theme", e)
                 false
             }
+        }.also { success ->
+            // Same reason as the import: the reset writes preferences behind the ViewModels' backs.
+            if (success) withContext(Dispatchers.Main) { ThemeImportSignal.notifyImported() }
         }
     }
 

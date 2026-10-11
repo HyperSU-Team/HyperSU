@@ -60,9 +60,16 @@ class MainActivityViewModel(
             "key_color",
             "color_style",
             "color_spec",
-            // Not part of MainActivityUiState, but a theme import writes it and the home screen
+            // Both are written by a theme import and both change how the palette is built - the
+            // contrast level is a direct input to the generator, and the generation mode decides
+            // whether it is generated at all. Without them a theme applied its colours but the
+            // screen kept the old ones until something else forced a rebuild.
+            "color_contrast",
+            "color_generation_mode",
+            // Not part of MainActivityUiState, but a theme import writes these and the home screen
             // has to rebuild for the new layout to appear without a restart.
             "home_layout_style",
+            "stats_top_layout",
             "page_scale",
             "module_description_max_lines",
             "enable_floating_bottom_bar",
