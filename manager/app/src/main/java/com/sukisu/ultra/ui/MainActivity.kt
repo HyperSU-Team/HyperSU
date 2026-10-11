@@ -387,24 +387,33 @@ fun MainScreen(
             return@LaunchedEffect
         }
 
-        moduleViewModel.initializePreferences()
-        val moduleState = moduleViewModel.uiState.value
-        if (!moduleState.hasLoaded) {
-            if (!moduleState.isRefreshing) moduleViewModel.fetchModuleList()
-            moduleViewModel.uiState.first { it.hasLoaded }
+        // The two preloads touch different data and neither needs the other, so they run
+        // together. Serially, the app-list wait could not start until the module list had come
+        // back and every module had been checked for an update.
+        val modulePreload = launch(Dispatchers.IO) {
+            moduleViewModel.initializePreferences()
+            val moduleState = moduleViewModel.uiState.value
+            if (!moduleState.hasLoaded) {
+                if (!moduleState.isRefreshing) moduleViewModel.fetchModuleList()
+                moduleViewModel.uiState.first { it.hasLoaded }
+            }
+            moduleViewModel.syncModuleUpdateInfo(moduleViewModel.uiState.value.modules)
         }
-        moduleViewModel.syncModuleUpdateInfo(moduleViewModel.uiState.value.modules)
 
-        val superUserState = superUserViewModel.uiState.value
-        if (!superUserState.hasLoaded) {
-            superUserViewModel.initializePreferences()
-            if (superUserState.isRefreshing) {
-                superUserViewModel.uiState.first { it.hasLoaded }
-            } else {
-                superUserViewModel.loadAppList().join()
+        val appListPreload = launch(Dispatchers.IO) {
+            val superUserState = superUserViewModel.uiState.value
+            if (!superUserState.hasLoaded) {
+                superUserViewModel.initializePreferences()
+                if (superUserState.isRefreshing) {
+                    superUserViewModel.uiState.first { it.hasLoaded }
+                } else {
+                    superUserViewModel.loadAppList().join()
+                }
             }
         }
 
+        modulePreload.join()
+        appListPreload.join()
         startupPreloadStarted = true
     }
 
