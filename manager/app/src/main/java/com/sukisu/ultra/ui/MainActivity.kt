@@ -27,9 +27,6 @@ import androidx.compose.foundation.pager.PagerDefaults.flingBehavior
 import androidx.compose.foundation.pager.PagerDefaults.pageNestedScrollConnection
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
-import com.sukisu.ultra.ui.theme.glass.GlassConfig
-import top.yukonga.miuix.kmp.blur.layerBackdrop
-import top.yukonga.miuix.kmp.blur.rememberLayerBackdrop
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -420,15 +417,6 @@ fun MainScreen(
 
     MainScreenBackHandler(mainPagerState, navController)
 
-    // ReSukiSU's bar refracts the page behind it: the handle is created here, the pager
-    // records itself into it below, and the bar samples it. The opaque base keeps the
-    // captured layer from coming back empty over a wallpaper.
-    val navBarSurface = MaterialTheme.colorScheme.surface
-    val navBarBackdrop = rememberLayerBackdrop {
-        drawRect(navBarSurface)
-        drawContent()
-    }
-
     val contentReady = rememberContentReady()
     val pagerContent: @Composable (Dp) -> Unit = { bottomInnerPadding ->
         HorizontalPager(
@@ -438,13 +426,6 @@ fun MainScreen(
                     pagerState = mainPagerState.pagerState,
                     mode = pagerMode,
                     enabled = userScrollEnabled,
-                )
-                .then(
-                    if (enableFloatingBottomBar && GlassConfig.blurEnabled) {
-                        Modifier.layerBackdrop(navBarBackdrop)
-                    } else {
-                        Modifier
-                    },
                 ),
             state = mainPagerState.pagerState,
             beyondViewportPageCount = if (contentReady) 3 else 0,
@@ -506,7 +487,6 @@ fun MainScreen(
                             onSelectedIndexChange = mainPagerState::animateToPage,
                             badge = navigationBadge,
                             isFloating = enableFloatingBottomBar,
-                            backdrop = navBarBackdrop,
                             modifier = Modifier.align(Alignment.BottomCenter),
                         )
                     }

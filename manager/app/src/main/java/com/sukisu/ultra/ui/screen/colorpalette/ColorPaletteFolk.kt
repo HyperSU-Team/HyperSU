@@ -43,7 +43,6 @@ import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.rounded.BlurOn
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Dock
 import androidx.compose.material.icons.rounded.Pin
@@ -95,7 +94,6 @@ import com.sukisu.ultra.ui.component.folk.FolkSettingsSectionGroup
 import com.sukisu.ultra.ui.component.folk.FolkSliderPreference
 import com.sukisu.ultra.ui.component.folk.FolkSwitchPreference
 import com.sukisu.ultra.ui.theme.ColorMode
-import com.sukisu.ultra.ui.theme.glass.GlassConfig
 import com.sukisu.ultra.ui.theme.keyColorOptions
 import com.sukisu.ultra.ui.theme.rememberKernelSUColorScheme
 
@@ -267,17 +265,6 @@ fun ColorPaletteScreenFolk(
                         checked = uiState.enableNavigationBadge,
                         onCheckedChange = actions.onSetEnableNavigationBadge,
                     )
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    item {
-                        FolkSwitchPreference(
-                            title = stringResource(R.string.settings_enable_blur),
-                            summary = stringResource(R.string.settings_enable_blur_summary),
-                            icon = Icons.Rounded.BlurOn,
-                            checked = GlassConfig.blurEnabled,
-                            onCheckedChange = { GlassConfig.setBlurEnabled(it) },
-                        )
-                    }
                 }
                 item {
                     FolkSwitchPreference(
