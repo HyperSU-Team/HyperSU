@@ -2,7 +2,6 @@ package com.sukisu.ultra.ui.util
 
 import android.content.Context
 import android.content.res.Configuration
-import com.sukisu.ultra.ksuApp
 
 /**
  * A user-chosen display density, in dpi.
@@ -13,6 +12,10 @@ import com.sukisu.ultra.ksuApp
  *
  * The value lives in its own preference file, under FolkPatch's name and key, so a theme carries
  * it and an install that set it there keeps it.
+ *
+ * There is deliberately no default `Context` parameter here. This is read from
+ * `attachBaseContext`, which runs before `Application.onCreate` has assigned the global
+ * application reference, so reaching for that would crash on startup.
  */
 object DpiUtils {
 
@@ -25,7 +28,7 @@ object DpiUtils {
     const val MIN_DPI = 160
     const val MAX_DPI = 600
 
-    fun currentDpi(context: Context = ksuApp): Int =
+    fun currentDpi(context: Context): Int =
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getInt(KEY_DPI, DEFAULT_DPI)
 
