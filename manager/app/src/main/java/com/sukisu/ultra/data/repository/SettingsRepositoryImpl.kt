@@ -127,8 +127,11 @@ class SettingsRepositoryImpl : SettingsRepository {
         set(value) = prefs.edit { putInt("pager_interception_mode", value.coerceIn(0, 2)) }
 
     
+    // Always on, and no longer offered as a setting. The floating pill is the only bottom bar
+    // this build draws, so a stored "off" from an older install is ignored rather than honoured -
+    // otherwise a user who once turned it off would be left with no bar at all.
     override var enableFloatingBottomBar: Boolean
-        get() = prefs.booleanPref("enable_floating_bottom_bar", false)
+        get() = true
         set(value) = prefs.edit { putBoolean("enable_floating_bottom_bar", value) }
 
     

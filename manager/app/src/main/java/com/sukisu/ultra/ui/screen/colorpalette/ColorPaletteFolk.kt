@@ -44,7 +44,6 @@ import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Dock
 import androidx.compose.material.icons.rounded.Pin
 import androidx.compose.material.icons.rounded.Swipe
 import androidx.compose.material3.Button
@@ -264,15 +263,6 @@ fun ColorPaletteScreenFolk(
                         icon = Icons.Rounded.Pin,
                         checked = uiState.enableNavigationBadge,
                         onCheckedChange = actions.onSetEnableNavigationBadge,
-                    )
-                }
-                item {
-                    FolkSwitchPreference(
-                        title = stringResource(R.string.settings_floating_bottom_bar),
-                        summary = stringResource(R.string.settings_floating_bottom_bar_summary),
-                        icon = Icons.Rounded.Dock,
-                        checked = uiState.enableFloatingBottomBar,
-                        onCheckedChange = actions.onSetEnableFloatingBottomBar,
                     )
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
