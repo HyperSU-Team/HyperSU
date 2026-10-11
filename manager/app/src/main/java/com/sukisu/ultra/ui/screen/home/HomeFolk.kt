@@ -60,6 +60,7 @@ import com.sukisu.ultra.data.repository.HOME_LAYOUT_FOCUS
 import com.sukisu.ultra.data.repository.HOME_LAYOUT_GRID
 import com.sukisu.ultra.data.repository.HOME_LAYOUT_LIST
 import com.sukisu.ultra.data.repository.HOME_LAYOUT_OPTIONS
+import com.sukisu.ultra.data.repository.HOME_LAYOUT_STATS
 import com.sukisu.ultra.data.repository.KEY_HOME_LAYOUT
 import com.sukisu.ultra.data.repository.KEY_STATS_TOP_LAYOUT
 import com.sukisu.ultra.data.repository.STATS_TOP_GRID
@@ -76,6 +77,9 @@ import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.LifecycleStartEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
@@ -91,7 +95,6 @@ import com.sukisu.ultra.ui.component.folk.folkSeverityColor
 import com.sukisu.ultra.ui.component.rebootlistpopup.RebootListPopup
 import com.sukisu.ultra.ui.component.statustag.StatusTag
 import com.sukisu.ultra.ui.theme.BackgroundConfig
-import com.sukisu.ultra.ui.theme.BackgroundManager
 import com.sukisu.ultra.ui.theme.isInDarkTheme
 import com.sukisu.ultra.ui.theme.tokens.FolkShape
 import com.sukisu.ultra.ui.theme.tokens.FolkType
@@ -246,6 +249,7 @@ internal fun HomePagerFolk(
                 HOME_LAYOUT_FOCUS -> HomeLayoutFocus(state, actions, contentPadding)
                 HOME_LAYOUT_DASHBOARD -> HomeLayoutDashboard(state, actions, contentPadding)
                 HOME_LAYOUT_GRID -> HomeLayoutGrid(state, actions, contentPadding)
+                HOME_LAYOUT_STATS -> HomeLayoutStats(state, actions, contentPadding)
                 else -> HomeLayoutCircle(state, actions, contentPadding)
             }
         }
@@ -372,6 +376,7 @@ private fun homeLayoutLabel(option: String): String = stringResource(
         HOME_LAYOUT_FOCUS -> R.string.home_layout_focus
         HOME_LAYOUT_DASHBOARD -> R.string.home_layout_dashboard
         HOME_LAYOUT_GRID -> R.string.home_layout_grid
+        HOME_LAYOUT_STATS -> R.string.home_layout_stats
         else -> R.string.home_layout_circle
     }
 )
@@ -944,6 +949,58 @@ private fun HomeLayoutGrid(
                     severity = if (state.isSELinuxPermissive) FolkSeverity.Caution else FolkSeverity.Positive,
                 )
             }
+        }
+
+        HomeWarnings(state, actions)
+        HomeFacts(state)
+        HomeSupportLinks(actions)
+        Spacer(Modifier.height(8.dp))
+    }
+}
+
+/**
+ * Stats: the Grid arrangement with the device's live hardware readings on it.
+ *
+ * The Grid layout is reused for the top cards rather than reimplemented, so the two stay in step -
+ * they differ only in what is added below, not in how the status cards are drawn.
+ */
+@Composable
+private fun HomeLayoutStats(
+    state: HomeUiState,
+    actions: HomeActions,
+    contentPadding: PaddingValues,
+) {
+    val context = LocalContext.current
+    val viewModel = viewModel<DashboardViewModel>()
+    val systemMonitor by viewModel.systemMonitor.collectAsStateWithLifecycle()
+    val timeSeries by viewModel.timeSeries.collectAsStateWithLifecycle()
+    val moduleStats by viewModel.moduleStats.collectAsStateWithLifecycle()
+
+    // Every reading costs a root shell command, so sampling runs only while this is on screen and
+    // only where there is a kernel to ask.
+    val canSample = state.isManager
+    LifecycleStartEffect(canSample) {
+        if (canSample) {
+            viewModel.startPolling(context)
+            viewModel.loadModuleStats()
+        }
+        onStopOrDispose { viewModel.stopPolling() }
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(contentPadding)
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        // The status cards, drawn exactly as the Grid layout draws them.
+        HomeLayoutGrid(state, actions, PaddingValues())
+
+        if (canSample) {
+            SystemMonitoringSection(systemMonitor, timeSeries)
+            ModuleStatisticsSection(moduleStats)
         }
 
         HomeWarnings(state, actions)

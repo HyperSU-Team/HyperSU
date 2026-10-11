@@ -735,6 +735,25 @@
     <string name="home_layout_focus">Focus</string>
     <string name="home_layout_dashboard">Dashboard</string>
     <string name="home_layout_grid">Grid</string>
+    <string name="home_layout_stats">Stats</string>
+
+    <!-- Hardware monitor on the stats layout -->
+    <string name="home_device_status_title">Device Status</string>
+    <string name="home_device_status_cpu_load">CPU Load</string>
+    <string name="home_device_status_gpu_load">GPU</string>
+    <string name="home_device_status_cpu_temp">CPU Temperature</string>
+    <string name="home_device_status_memory_trend">Memory Trend</string>
+    <string name="home_device_status_cpu_freq">CPU Frequency</string>
+    <string name="home_device_status_battery_level">Battery Level</string>
+    <string name="home_device_status_battery_charging">Charging</string>
+    <string name="home_storage_ram">RAM</string>
+    <string name="home_storage_zram">ZRAM</string>
+    <string name="home_storage_swap">Swap File</string>
+    <string name="home_network_rx">Download</string>
+    <string name="home_network_tx">Upload</string>
+    <string name="home_stats_kernel_modules">Kernel Modules</string>
+    <string name="home_stats_apm_modules">Modules</string>
+    <string name="home_stats_superusers">Superusers</string>
 
     <!-- Audit log -->
     <string name="sulog_log_empty">No log entries</string>

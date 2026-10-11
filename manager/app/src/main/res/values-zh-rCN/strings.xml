@@ -895,4 +895,23 @@
     <string name="home_layout_focus">焦点</string>
     <string name="home_layout_dashboard">仪表盘</string>
     <string name="home_layout_grid">网格</string>
+    <string name="home_layout_stats">统计</string>
+
+    <!-- 统计布局的硬件监控 -->
+    <string name="home_device_status_title">设备状态</string>
+    <string name="home_device_status_cpu_load">CPU 负载</string>
+    <string name="home_device_status_gpu_load">GPU</string>
+    <string name="home_device_status_cpu_temp">CPU 温度</string>
+    <string name="home_device_status_memory_trend">内存趋势</string>
+    <string name="home_device_status_cpu_freq">CPU 频率</string>
+    <string name="home_device_status_battery_level">电池电量</string>
+    <string name="home_device_status_battery_charging">充电中</string>
+    <string name="home_storage_ram">运行内存</string>
+    <string name="home_storage_zram">ZRAM</string>
+    <string name="home_storage_swap">交换文件</string>
+    <string name="home_network_rx">下载</string>
+    <string name="home_network_tx">上传</string>
+    <string name="home_stats_kernel_modules">内核模块</string>
+    <string name="home_stats_apm_modules">模块</string>
+    <string name="home_stats_superusers">超级用户</string>
 </resources>

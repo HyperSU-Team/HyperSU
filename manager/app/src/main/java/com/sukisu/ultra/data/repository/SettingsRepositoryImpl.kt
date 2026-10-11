@@ -40,6 +40,8 @@ const val HOME_LAYOUT_FOCUS = "focus"
 const val HOME_LAYOUT_DASHBOARD = "dashboard_ui"
 /** FolkPatch 的 GridUI：一张大状态卡 + 侧边小卡。 */
 const val HOME_LAYOUT_GRID = "grid"
+/** FolkPatch 的 StatsUI：Grid 的排列，另加硬件监控与模块统计。 */
+const val HOME_LAYOUT_STATS = "stats"
 
 /** The layouts offered in the picker, in display order. */
 val HOME_LAYOUT_OPTIONS = listOf(
@@ -48,24 +50,19 @@ val HOME_LAYOUT_OPTIONS = listOf(
     HOME_LAYOUT_FOCUS,
     HOME_LAYOUT_DASHBOARD,
     HOME_LAYOUT_GRID,
+    HOME_LAYOUT_STATS,
 )
 
 /**
  * FolkPatch's layout names that mean one of ours.
  *
- * The two apps name their layouts differently for the same compositions: what FolkPatch calls
- * `kernelsu` - a big status card with two small ones beside it - is this app's `grid`, and what it
- * calls `stats` is that same arrangement with the hardware-monitor sections on it. A theme built
- * there therefore carried a name this app did not recognise, and the layout it asked for was
- * silently dropped, leaving the user's previous one in place.
- *
- * `stats` maps to `grid` rather than being rejected: the arrangement is the same, and only the
- * monitoring sections differ, so the theme still arrives looking like the layout it asked for
- * instead of not changing at all.
+ * The two apps name one composition differently: what FolkPatch calls `kernelsu` - a big status
+ * card with two small ones beside it - is this app's `grid`. A theme built there therefore carried
+ * a name this app did not recognise, and the layout it asked for was silently dropped, leaving the
+ * user's previous one in place.
  */
 val HOME_LAYOUT_ALIASES = mapOf(
     "kernelsu" to HOME_LAYOUT_GRID,
-    "stats" to HOME_LAYOUT_GRID,
 )
 
 /** Resolves a stored or imported layout name to one this app renders. */
