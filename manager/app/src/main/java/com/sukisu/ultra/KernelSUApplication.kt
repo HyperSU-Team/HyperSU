@@ -82,6 +82,11 @@ class KernelSUApplication : Application(), ViewModelStoreOwner {
             com.sukisu.ultra.ui.theme.SoundEffectConfig.load(this)
         }.onFailure { android.util.Log.e(TAG, "SoundEffectConfig.load failed", it) }
 
+        runCatching {
+            // Read on demand by VibrationManager, the same way the sound settings are.
+            com.sukisu.ultra.ui.theme.VibrationConfig.load(this)
+        }.onFailure { android.util.Log.e(TAG, "VibrationConfig.load failed", it) }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             val enable = SettingsRepositoryImpl().enablePredictiveBack
             HiddenApiBypass.addHiddenApiExemptions("Landroid/content/pm/ApplicationInfo;->setEnableOnBackInvokedCallback")

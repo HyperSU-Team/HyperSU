@@ -43,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -101,9 +102,11 @@ import com.sukisu.ultra.ui.theme.BackgroundLayer
 import com.sukisu.ultra.ui.theme.LocalEnableFloatingBottomBar
 import com.sukisu.ultra.ui.theme.LocalEnableNavigationBadge
 import com.sukisu.ultra.ui.theme.LocalModuleDescriptionMaxLines
+import com.sukisu.ultra.ui.theme.VibrationConfig
 import com.sukisu.ultra.ui.theme.HyperSUTheme
 import com.sukisu.ultra.ui.component.folk.FolkLanguageSwitch
 import com.sukisu.ultra.ui.util.LanguageSwitchState
+import com.sukisu.ultra.ui.util.VibrationManager
 import com.sukisu.ultra.ui.util.getSuperuserCount
 import com.sukisu.ultra.ui.util.install
 import com.sukisu.ultra.ui.util.rememberContentReady
@@ -517,9 +520,17 @@ fun MainScreen(
             Scaffold(
                 bottomBar = {
                     Box(modifier = Modifier.fillMaxWidth()) {
+                        val barContext = LocalContext.current
                         FolkBottomBar(
                             selectedIndex = mainPagerState.selectedPage,
-                            onSelectedIndexChange = mainPagerState::animateToPage,
+                            onSelectedIndexChange = { index ->
+                                // The bar is the "bottom bar only" scope, so it fires its own tap
+                                // rather than leaving it to the global hook in the settings rows.
+                                if (VibrationConfig.scope == VibrationConfig.SCOPE_BOTTOM_BAR) {
+                                    VibrationManager.vibrate(barContext)
+                                }
+                                mainPagerState.animateToPage(index)
+                            },
                             badge = navigationBadge,
                             isFloating = enableFloatingBottomBar,
                             modifier = Modifier.align(Alignment.BottomCenter),

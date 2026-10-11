@@ -9,6 +9,7 @@ import androidx.compose.material.icons.outlined.Audiotrack
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.Vibration
 import androidx.compose.material.icons.outlined.VolumeUp
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -20,9 +21,11 @@ import com.sukisu.ultra.ui.component.dialog.LoadingDialogHandle
 import com.sukisu.ultra.ui.component.dialog.rememberConfirmDialog
 import com.sukisu.ultra.ui.component.folk.FolkChoicePreference
 import com.sukisu.ultra.ui.component.folk.FolkSettingsSectionGroup
+import com.sukisu.ultra.ui.component.folk.FolkSliderPreference
 import com.sukisu.ultra.ui.component.folk.FolkSwitchPreference
 import com.sukisu.ultra.ui.component.folk.FolkValuePreference
 import com.sukisu.ultra.ui.theme.SoundEffectConfig
+import com.sukisu.ultra.ui.theme.VibrationConfig
 import kotlinx.coroutines.launch
 
 /**
@@ -273,6 +276,55 @@ fun MultimediaSoundSection(
                         )
                     }
                 }
+            }
+        }
+    }
+
+    val vibrationScopeOptions = listOf(
+        stringResource(R.string.vibration_scope_global),
+        stringResource(R.string.vibration_scope_bottom_bar),
+    )
+
+    FolkSettingsSectionGroup(title = stringResource(R.string.vibration_section_title)) {
+        item(key = "vibration_enabled") {
+            FolkSwitchPreference(
+                title = stringResource(R.string.vibration_enabled),
+                summary = stringResource(R.string.vibration_enabled_summary),
+                icon = Icons.Outlined.Vibration,
+                checked = VibrationConfig.isVibrationEnabled,
+                onCheckedChange = { enabled ->
+                    VibrationConfig.setEnabledState(enabled)
+                    VibrationConfig.save(context)
+                },
+            )
+        }
+
+        if (VibrationConfig.isVibrationEnabled) {
+            item(key = "vibration_scope") {
+                FolkChoicePreference(
+                    title = stringResource(R.string.vibration_scope_title),
+                    icon = Icons.Outlined.Tune,
+                    options = vibrationScopeOptions,
+                    selectedIndex = if (VibrationConfig.scope == VibrationConfig.SCOPE_GLOBAL) 0 else 1,
+                    onSelect = { index ->
+                        VibrationConfig.setScopeValue(
+                            if (index == 0) VibrationConfig.SCOPE_GLOBAL
+                            else VibrationConfig.SCOPE_BOTTOM_BAR,
+                        )
+                        VibrationConfig.save(context)
+                    },
+                )
+            }
+
+            item(key = "vibration_intensity") {
+                FolkSliderPreference(
+                    title = stringResource(R.string.vibration_intensity),
+                    value = VibrationConfig.vibrationIntensity,
+                    // Written on release, not on every frame of the drag: the value is only read
+                    // when a tap happens, so persisting mid-drag is a write per pixel for nothing.
+                    onValueChange = { VibrationConfig.setIntensityValue(it) },
+                    onValueChangeFinished = { VibrationConfig.save(context) },
+                )
             }
         }
     }

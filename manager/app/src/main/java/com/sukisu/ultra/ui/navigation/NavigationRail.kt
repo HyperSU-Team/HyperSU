@@ -37,8 +37,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sukisu.ultra.ui.theme.SoundEffectConfig
+import com.sukisu.ultra.ui.theme.VibrationConfig
 import com.sukisu.ultra.ui.theme.tokens.FolkShape
 import com.sukisu.ultra.ui.util.SoundEffectManager
+import com.sukisu.ultra.ui.util.VibrationManager
 
 /** Width of the rail. */
 private val RailWidth = 84.dp
@@ -133,6 +135,9 @@ fun FolkNavigationRail(
                                     context,
                                     SoundEffectConfig.SCOPE_BOTTOM_BAR,
                                 )
+                                if (VibrationConfig.scope == VibrationConfig.SCOPE_BOTTOM_BAR) {
+                                    VibrationManager.vibrate(context)
+                                }
                             },
                         )
                         .padding(vertical = 8.dp)

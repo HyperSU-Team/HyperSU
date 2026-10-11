@@ -829,6 +829,13 @@
 
     <!-- Sound effects -->
     <string name="sound_section_title">Sound Effects</string>
+    <string name="vibration_section_title">Vibration</string>
+    <string name="vibration_enabled">Vibration feedback</string>
+    <string name="vibration_enabled_summary">Vibrate briefly when you tap a control</string>
+    <string name="vibration_scope_title">Vibration scope</string>
+    <string name="vibration_scope_global">Everywhere</string>
+    <string name="vibration_scope_bottom_bar">Bottom bar only</string>
+    <string name="vibration_intensity">Vibration strength</string>
     <string name="sound_enabled">Click sound</string>
     <string name="sound_enabled_summary">Play a sound when you tap controls</string>
     <string name="sound_scope_title">Play sound on</string>

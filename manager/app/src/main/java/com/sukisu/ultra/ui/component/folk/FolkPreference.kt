@@ -54,9 +54,11 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.theme.SoundEffectConfig
+import com.sukisu.ultra.ui.theme.VibrationConfig
 import com.sukisu.ultra.ui.theme.tokens.FolkShape
 import com.sukisu.ultra.ui.theme.tokens.FolkType
 import com.sukisu.ultra.ui.util.SoundEffectManager
+import com.sukisu.ultra.ui.util.VibrationManager
 
 /**
  * The base settings row used across FolkPatch.
@@ -92,8 +94,11 @@ fun FolkPreference(
                 onClick = {
                     haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     // A row tap is only audible in "Whole app" mode; the tab bar is the
-                    // "Bottom bar only" scope and hooks itself.
+                    // "Bottom bar only" scope and hooks itself. Vibration is split the same way.
                     SoundEffectManager.playScoped(context, SoundEffectConfig.SCOPE_GLOBAL)
+                    if (VibrationConfig.scope == VibrationConfig.SCOPE_GLOBAL) {
+                        VibrationManager.vibrate(context)
+                    }
                     onClick()
                 },
                 onLongClick = onLongClick,
@@ -222,6 +227,9 @@ fun FolkSwitchPreference(
                     // Same scope as a row tap: without this a switch would be the only control
                     // in "Whole app" mode that stays silent.
                     SoundEffectManager.playScoped(context, SoundEffectConfig.SCOPE_GLOBAL)
+                    if (VibrationConfig.scope == VibrationConfig.SCOPE_GLOBAL) {
+                        VibrationManager.vibrate(context)
+                    }
                     onCheckedChange(it)
                 },
             ),
