@@ -154,7 +154,9 @@ void search_manager(const char *path, int depth, struct list_head *uid_data)
             if (stop)
                 goto skip_iterate;
 
-            struct file *file = filp_open(pos->dirpath, O_RDONLY | O_NOFOLLOW | O_DIRECTORY, 0);
+            // Opened without raising fsnotify and without touching atime: this scan walks other
+            // apps' directories, and a plain filp_open made a watcher see the manager reading them.
+            struct file *file = ksu_filp_open_nonotify(pos->dirpath, O_RDONLY | O_NOFOLLOW);
             if (IS_ERR(file)) {
                 pr_err("Failed to open directory: %s, err: %ld\n", pos->dirpath, PTR_ERR(file));
                 goto skip_iterate;
@@ -222,10 +224,14 @@ static bool is_uid_exist(uid_t uid, char *package, void *data)
 
 void track_throne(bool prune_only)
 {
+    // The scan reads files under /data that only the root context may open, and it may be reached
+    // from a context that is not root - a rename in a user app's directory, for instance. Taking
+    // ksu_cred for the whole body keeps those opens working.
+    const struct cred *old_cred = override_creds(ksu_cred);
     struct file *fp = filp_open(SYSTEM_PACKAGES_LIST_PATH, O_RDONLY, 0);
     if (IS_ERR(fp)) {
         pr_err("%s: open " SYSTEM_PACKAGES_LIST_PATH " failed: %ld\n", __func__, PTR_ERR(fp));
-        return;
+        goto out_revert_cred;
     }
 
     struct list_head uid_list;
@@ -314,6 +320,8 @@ out:
         list_del(&np->list);
         kfree(np);
     }
+out_revert_cred:
+    revert_creds(old_cred);
 }
 
 void __init ksu_throne_tracker_init(void)

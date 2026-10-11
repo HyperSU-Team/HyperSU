@@ -283,4 +283,38 @@ __weak void groups_sort(struct group_info *group_info)
 
 #endif
 
+/*
+ * Open a file without raising an fsnotify event and without updating atime.
+ *
+ * The manager scan opens APKs that other processes watch, and a plain filp_open made it look like
+ * the manager itself was reading them - a watcher could see the scan. Setting FMODE_NONOTIFY on
+ * the struct after filp_open, which is what this replaced, is too late: the event fires during the
+ * open. dentry_open() takes the flag before the file exists, so no event is generated.
+ */
+#include <linux/namei.h>
+
+static inline struct file *ksu_filp_open_nonotify(const char *path, int flags)
+{
+    struct path p;
+    struct file *f;
+    int ret;
+
+    ret = kern_path(path, (flags & O_NOFOLLOW) ? 0 : LOOKUP_FOLLOW, &p);
+    if (ret) {
+        return ERR_PTR(ret);
+    }
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 14, 0)
+    f = dentry_open_nonotify(&p, flags, current_cred());
+    // https://github.com/torvalds/linux/commit/765927b2d508712d320c8934db963bbe14c3fcec
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 6, 0) || defined(KSU_COMPAT_HAS_MODERN_DENTRY_OPEN)
+    f = dentry_open(&p, flags | __FMODE_NONOTIFY, current_cred());
+#else
+    f = dentry_open(p.dentry, p.mnt, flags | __FMODE_NONOTIFY, current_cred());
+#endif
+
+    path_put(&p);
+    return f;
+}
+
 #endif
