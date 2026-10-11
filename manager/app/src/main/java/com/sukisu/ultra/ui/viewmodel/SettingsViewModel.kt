@@ -251,7 +251,7 @@ class SettingsViewModel(
 
     fun setDiscreteSlider(enabled: Boolean) {
         repo.discreteSlider = enabled
-        SliderStyleConfig.setDiscrete(enabled)
+        SliderStyleConfig.setDiscreteValue(enabled)
         _uiState.update { it.copy(discreteSlider = enabled) }
     }
 

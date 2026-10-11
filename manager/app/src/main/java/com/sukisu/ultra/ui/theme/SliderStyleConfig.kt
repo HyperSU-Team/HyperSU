@@ -23,7 +23,12 @@ object SliderStyleConfig {
     var isDiscrete: Boolean by mutableStateOf(true)
         private set
 
-    fun setDiscrete(value: Boolean) {
+    /**
+     * Named with the Value suffix the other config objects use. A plain `setDiscrete` would clash
+     * with the setter the property generates - both compile to `setDiscrete(Z)V` - and the two
+     * cannot coexist on one class.
+     */
+    fun setDiscreteValue(value: Boolean) {
         isDiscrete = value
     }
 
