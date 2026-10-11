@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -126,22 +127,32 @@ fun SettingPagerFolk(
             item {
                 FolkSettingsSectionGroup(title = stringResource(R.string.settings_theme)) {
                     item {
+                        val context = LocalContext.current
                         val languageIndex = languageTags.indexOf(uiState.appLanguage)
                             .coerceAtLeast(0)
-                        // The row opens a page rather than a dropdown, in the FolkPatch design:
-                        // the languages are a list the user reads, not a menu that covers the
-                        // screen it was opened from.
+                        // The system's own per-app language page is preferred wherever it exists:
+                        // the switch is then applied while our task sits in the background, so our
+                        // activity is never recreated in front of the user and neither a switch
+                        // page nor a starting window plays over the screen - which is the black
+                        // frame the in-app switch shows in the dark theme.
                         //
-                        // The switch itself is still masked by the FolkLanguageSwitch cover,
-                        // which is the pairing this depends on: handing the choice to the
-                        // system's per-app language page leaves that cover with nothing to
-                        // mask and recreates the activity in front of the user.
+                        // The app's own page is the fallback for the versions that have no such
+                        // page, and it is masked there by the FolkLanguageSwitch cover.
+                        val systemPicker = remember {
+                            LocaleHelper.canLaunchSystemLanguageSettings(context)
+                        }
                         FolkValuePreference(
                             title = stringResource(R.string.settings_language),
                             summary = stringResource(R.string.settings_language_summary),
                             icon = Icons.Rounded.Language,
                             value = languageNames[languageIndex],
-                            onClick = actions.onOpenLanguage,
+                            onClick = {
+                                if (systemPicker) {
+                                    LocaleHelper.launchSystemLanguageSettings(context)
+                                } else {
+                                    actions.onOpenLanguage()
+                                }
+                            },
                         )
                     }
                     item {
