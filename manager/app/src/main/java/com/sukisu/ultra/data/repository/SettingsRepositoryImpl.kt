@@ -247,6 +247,37 @@ class SettingsRepositoryImpl : SettingsRepository {
         )
         set(value) = prefs.edit { putBoolean("show_full_status", value) }
 
+    // The four rows below each default to true, so a fresh install shows the full list. FolkPatch
+    // spells these as "hide_*" keys that default to false; both forms are read, with the negative
+    // one inverted, so a theme or an existing install carries its choice across.
+    override var showHomeDeviceModel: Boolean
+        get() = prefs.booleanPref(
+            "show_home_device_model",
+            !prefs.booleanPref("hide_device_model", false),
+        )
+        set(value) = prefs.edit { putBoolean("show_home_device_model", value) }
+
+    override var showHomeFingerprint: Boolean
+        get() = prefs.booleanPref(
+            "show_home_fingerprint",
+            !prefs.booleanPref("hide_fingerprint", false),
+        )
+        set(value) = prefs.edit { putBoolean("show_home_fingerprint", value) }
+
+    override var showHomeSelinux: Boolean
+        get() = prefs.booleanPref(
+            "show_home_selinux",
+            !prefs.booleanPref("hide_selinux", false),
+        )
+        set(value) = prefs.edit { putBoolean("show_home_selinux", value) }
+
+    override var showHomeSeccomp: Boolean
+        get() = prefs.booleanPref(
+            "show_home_seccomp",
+            !prefs.booleanPref("hide_seccomp", false),
+        )
+        set(value) = prefs.edit { putBoolean("show_home_seccomp", value) }
+
     override var autoJailbreak: Boolean
         get() = prefs.booleanPref("auto_jailbreak", false)
         set(value) {

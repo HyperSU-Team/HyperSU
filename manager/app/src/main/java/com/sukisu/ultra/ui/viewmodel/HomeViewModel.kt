@@ -95,6 +95,10 @@ class HomeViewModel(
             // fingerprint" and defaults to false, so reading it here inverted the setting for
             // anyone who had ever touched it.
             showFullStatus = settingsRepo.showFullStatus,
+            showHomeDeviceModel = settingsRepo.showHomeDeviceModel,
+            showHomeFingerprint = settingsRepo.showHomeFingerprint,
+            showHomeSelinux = settingsRepo.showHomeSelinux,
+            showHomeSeccomp = settingsRepo.showHomeSeccomp,
             currentManagerVersionCode = managerVersion.versionCode,
             systemInfo = SystemInfo(
                 kernelVersion = Os.uname().release,

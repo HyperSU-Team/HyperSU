@@ -33,6 +33,11 @@ data class HomeUiState(
         seccompStatus = -1,
     ),
     val showFullStatus: Boolean = true,
+    /** Whether each of the home facts rows is shown. All default to on. */
+    val showHomeDeviceModel: Boolean = true,
+    val showHomeFingerprint: Boolean = true,
+    val showHomeSelinux: Boolean = true,
+    val showHomeSeccomp: Boolean = true,
     /** False until the first buildState() has come back. */
     val loaded: Boolean = false,
 ) {

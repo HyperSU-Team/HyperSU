@@ -48,6 +48,10 @@ class SettingsViewModel(
             val moduleDescriptionMaxLines = repo.moduleDescriptionMaxLines
             val enableWebDebugging = repo.enableWebDebugging
             val showFullStatus = repo.showFullStatus
+            val showHomeDeviceModel = repo.showHomeDeviceModel
+            val showHomeFingerprint = repo.showHomeFingerprint
+            val showHomeSelinux = repo.showHomeSelinux
+            val showHomeSeccomp = repo.showHomeSeccomp
             val colorStyle = repo.colorStyle
             val colorSpec = repo.colorSpec
             val isLkmMode = repo.isLkmMode()
@@ -89,6 +93,10 @@ class SettingsViewModel(
                     moduleDescriptionMaxLines = moduleDescriptionMaxLines,
                     enableWebDebugging = enableWebDebugging,
                     showFullStatus = showFullStatus,
+                    showHomeDeviceModel = showHomeDeviceModel,
+                    showHomeFingerprint = showHomeFingerprint,
+                    showHomeSelinux = showHomeSelinux,
+                    showHomeSeccomp = showHomeSeccomp,
                     colorStyle = colorStyle,
                     colorSpec = colorSpec,
                     suCompatStatus = suCompatStatus,
@@ -206,6 +214,26 @@ class SettingsViewModel(
     fun setShowFullStatus(enabled: Boolean) {
         repo.showFullStatus = enabled
         _uiState.update { it.copy(showFullStatus = enabled) }
+    }
+
+    fun setShowHomeDeviceModel(enabled: Boolean) {
+        repo.showHomeDeviceModel = enabled
+        _uiState.update { it.copy(showHomeDeviceModel = enabled) }
+    }
+
+    fun setShowHomeFingerprint(enabled: Boolean) {
+        repo.showHomeFingerprint = enabled
+        _uiState.update { it.copy(showHomeFingerprint = enabled) }
+    }
+
+    fun setShowHomeSelinux(enabled: Boolean) {
+        repo.showHomeSelinux = enabled
+        _uiState.update { it.copy(showHomeSelinux = enabled) }
+    }
+
+    fun setShowHomeSeccomp(enabled: Boolean) {
+        repo.showHomeSeccomp = enabled
+        _uiState.update { it.copy(showHomeSeccomp = enabled) }
     }
 
     fun setSuCompatMode(mode: Int) {

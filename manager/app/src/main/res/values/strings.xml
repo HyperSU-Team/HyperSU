@@ -198,6 +198,9 @@
     <string name="select_file_tip">%1$s partition image is recommended</string>
     <string name="select_kmi">Select KMI</string>
     <string name="settings_uninstall">Uninstall</string>
+    <string name="settings_home_display">Home screen rows</string>
+    <string name="settings_home_show_full_status">Show full status</string>
+    <string name="settings_home_show_full_status_summary">Show the kernel version, SuSFS and Zygisk rows as well as the basic ones</string>
     <string name="settings_uninstall_temporary">Uninstall temporarily</string>
     <string name="settings_uninstall_permanent">Uninstall permanently</string>
     <string name="settings_restore_stock_image">Restore stock image</string>

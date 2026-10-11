@@ -17,12 +17,15 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.DeveloperMode
 import androidx.compose.material.icons.filled.Fence
+import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LayersClear
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.SystemUpdateAlt
 import androidx.compose.material.icons.rounded.Android
 import androidx.compose.material.icons.rounded.Language
@@ -425,6 +428,54 @@ fun SettingPagerFolk(
                                 onCheckedChange = actions.onSetAutoJailbreak,
                             )
                         }
+                    }
+                }
+            }
+
+            // What the home screen's facts list shows. Each row is independent, so a user who only
+            // wants the kernel version can turn the rest off without losing the whole list.
+            item {
+                FolkSettingsSectionGroup(title = stringResource(R.string.settings_home_display)) {
+                    item {
+                        FolkSwitchPreference(
+                            title = stringResource(R.string.settings_home_show_full_status),
+                            summary = stringResource(R.string.settings_home_show_full_status_summary),
+                            icon = Icons.Filled.Info,
+                            checked = uiState.showFullStatus,
+                            onCheckedChange = actions.onSetShowFullStatus,
+                        )
+                    }
+                    item {
+                        FolkSwitchPreference(
+                            title = stringResource(R.string.home_device_model),
+                            icon = Icons.Filled.PhoneAndroid,
+                            checked = uiState.showHomeDeviceModel,
+                            onCheckedChange = actions.onSetShowHomeDeviceModel,
+                        )
+                    }
+                    item {
+                        FolkSwitchPreference(
+                            title = stringResource(R.string.home_fingerprint),
+                            icon = Icons.Filled.Fingerprint,
+                            checked = uiState.showHomeFingerprint,
+                            onCheckedChange = actions.onSetShowHomeFingerprint,
+                        )
+                    }
+                    item {
+                        FolkSwitchPreference(
+                            title = stringResource(R.string.home_selinux_status),
+                            icon = Icons.Filled.Security,
+                            checked = uiState.showHomeSelinux,
+                            onCheckedChange = actions.onSetShowHomeSelinux,
+                        )
+                    }
+                    item {
+                        FolkSwitchPreference(
+                            title = stringResource(R.string.home_seccomp_status),
+                            icon = Icons.Filled.Shield,
+                            checked = uiState.showHomeSeccomp,
+                            onCheckedChange = actions.onSetShowHomeSeccomp,
+                        )
                     }
                 }
             }

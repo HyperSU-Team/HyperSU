@@ -24,6 +24,10 @@ data class SettingsUiState(
     val moduleDescriptionMaxLines: Int = 4,
     val enableWebDebugging: Boolean = false,
     val showFullStatus: Boolean = true,
+    val showHomeDeviceModel: Boolean = true,
+    val showHomeFingerprint: Boolean = true,
+    val showHomeSelinux: Boolean = true,
+    val showHomeSeccomp: Boolean = true,
 
     // Su Compat
     val suCompatStatus: String = "",
@@ -74,6 +78,11 @@ data class SettingsScreenActions(
     val onSetAdbRootEnabled: (Boolean) -> Unit,
     val onSetDefaultUmountModules: (Boolean) -> Unit,
     val onSetEnableWebDebugging: (Boolean) -> Unit,
+    val onSetShowFullStatus: (Boolean) -> Unit,
+    val onSetShowHomeDeviceModel: (Boolean) -> Unit,
+    val onSetShowHomeFingerprint: (Boolean) -> Unit,
+    val onSetShowHomeSelinux: (Boolean) -> Unit,
+    val onSetShowHomeSeccomp: (Boolean) -> Unit,
     val onSetAutoJailbreak: (Boolean) -> Unit,
     val onSetUseSoftReboot: (Boolean) -> Unit,
     val onOpenAbout: () -> Unit,

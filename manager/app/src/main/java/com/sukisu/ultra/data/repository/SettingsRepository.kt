@@ -33,6 +33,14 @@ interface SettingsRepository {
     var superuserSortOption: Int
     var suLogFilters: Set<String>?
     var showFullStatus: Boolean
+    /** Whether the home facts list shows the device model row. */
+    var showHomeDeviceModel: Boolean
+    /** Whether the home facts list shows the fingerprint row. */
+    var showHomeFingerprint: Boolean
+    /** Whether the home facts list shows the SELinux row. */
+    var showHomeSelinux: Boolean
+    /** Whether the home facts list shows the seccomp row. */
+    var showHomeSeccomp: Boolean
     var autoJailbreak: Boolean
     var useSoftReboot: Boolean
     val intentToken: String

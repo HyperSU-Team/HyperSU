@@ -799,10 +799,18 @@ private fun HomeFacts(state: HomeUiState) {
             }
         }
 
-        fact(stringResource(R.string.home_device_model), systemInfo.deviceModel)
-        fact(stringResource(R.string.home_fingerprint), systemInfo.fingerprint)
-        fact(stringResource(R.string.home_selinux_status), selinuxDisplay)
-        fact(stringResource(R.string.home_seccomp_status), seccompDisplay)
+        if (state.showHomeDeviceModel) {
+            fact(stringResource(R.string.home_device_model), systemInfo.deviceModel)
+        }
+        if (state.showHomeFingerprint) {
+            fact(stringResource(R.string.home_fingerprint), systemInfo.fingerprint)
+        }
+        if (state.showHomeSelinux) {
+            fact(stringResource(R.string.home_selinux_status), selinuxDisplay)
+        }
+        if (state.showHomeSeccomp) {
+            fact(stringResource(R.string.home_seccomp_status), seccompDisplay)
+        }
     }
 }
 
