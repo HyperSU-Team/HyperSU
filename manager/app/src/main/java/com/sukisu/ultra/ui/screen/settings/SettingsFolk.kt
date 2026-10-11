@@ -95,29 +95,29 @@ fun SettingPagerFolk(
                 bottom = bottomInnerPadding + innerPadding.calculateBottomPadding() + 16.dp,
             ),
         ) {
-            // Update checks (KSU only). The manager compares itself against this fork's own
-            // releases, so the banner it raises offers this build rather than upstream's.
+            // Update checks. Deliberately outside KsuIsValid: comparing this build against its
+            // own releases and a module against its own update.json needs the network and these
+            // settings, not the driver - and gating them on the kernel recognising the manager
+            // hid both switches on a device whose kernel predates the manager certificate.
             item {
-                KsuIsValid {
-                    FolkSettingsSectionGroup(title = stringResource(R.string.settings_check_update)) {
-                        item {
-                            FolkSwitchPreference(
-                                title = stringResource(R.string.settings_manager_check_update),
-                                summary = stringResource(R.string.settings_check_update_summary),
-                                icon = Icons.Filled.SystemUpdateAlt,
-                                checked = uiState.checkUpdate,
-                                onCheckedChange = actions.onSetCheckUpdate,
-                            )
-                        }
-                        item {
-                            FolkSwitchPreference(
-                                title = stringResource(R.string.settings_module_check_update),
-                                summary = stringResource(R.string.settings_check_update_summary),
-                                icon = Icons.Filled.SystemUpdateAlt,
-                                checked = uiState.checkModuleUpdate,
-                                onCheckedChange = actions.onSetCheckModuleUpdate,
-                            )
-                        }
+                FolkSettingsSectionGroup(title = stringResource(R.string.settings_check_update)) {
+                    item {
+                        FolkSwitchPreference(
+                            title = stringResource(R.string.settings_manager_check_update),
+                            summary = stringResource(R.string.settings_check_update_summary),
+                            icon = Icons.Filled.SystemUpdateAlt,
+                            checked = uiState.checkUpdate,
+                            onCheckedChange = actions.onSetCheckUpdate,
+                        )
+                    }
+                    item {
+                        FolkSwitchPreference(
+                            title = stringResource(R.string.settings_module_check_update),
+                            summary = stringResource(R.string.settings_check_update_summary),
+                            icon = Icons.Filled.SystemUpdateAlt,
+                            checked = uiState.checkModuleUpdate,
+                            onCheckedChange = actions.onSetCheckModuleUpdate,
+                        )
                     }
                 }
             }
