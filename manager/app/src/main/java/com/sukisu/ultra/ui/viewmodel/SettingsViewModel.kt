@@ -49,6 +49,7 @@ class SettingsViewModel(
             val pageScale = repo.pageScale
             val moduleDescriptionMaxLines = repo.moduleDescriptionMaxLines
             val simpleListBottomBar = repo.simpleListBottomBar
+            val moduleInstallConfirm = repo.moduleInstallConfirm
             val showSwitchIcon = repo.showSwitchIcon
             val discreteSlider = repo.discreteSlider
             val enableWebDebugging = repo.enableWebDebugging
@@ -97,6 +98,7 @@ class SettingsViewModel(
                     pageScale = pageScale,
                     moduleDescriptionMaxLines = moduleDescriptionMaxLines,
                     simpleListBottomBar = simpleListBottomBar,
+                    moduleInstallConfirm = moduleInstallConfirm,
                     showSwitchIcon = showSwitchIcon,
                     discreteSlider = discreteSlider,
                     enableWebDebugging = enableWebDebugging,
@@ -217,6 +219,11 @@ class SettingsViewModel(
     fun setSimpleListBottomBar(enabled: Boolean) {
         repo.simpleListBottomBar = enabled
         _uiState.update { it.copy(simpleListBottomBar = enabled) }
+    }
+
+    fun setModuleInstallConfirm(enabled: Boolean) {
+        repo.moduleInstallConfirm = enabled
+        _uiState.update { it.copy(moduleInstallConfirm = enabled) }
     }
 
     fun setShowSwitchIcon(enabled: Boolean) {

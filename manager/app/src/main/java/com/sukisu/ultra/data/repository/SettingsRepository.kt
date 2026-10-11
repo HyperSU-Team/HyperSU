@@ -30,6 +30,13 @@ interface SettingsRepository {
     var moduleDescriptionMaxLines: Int
     /** Whether a module card's action row drops its labels to fit a narrow screen. */
     var simpleListBottomBar: Boolean
+    /**
+     * Whether installing a module shows its details for confirmation first.
+     *
+     * With this off the archive goes straight to the flash screen, so the user still sees what is
+     * about to happen - they just do not get a second dialog before it.
+     */
+    var moduleInstallConfirm: Boolean
     var enableWebDebugging: Boolean
     var moduleSortEnabledFirst: Boolean
     var moduleSortActionFirst: Boolean

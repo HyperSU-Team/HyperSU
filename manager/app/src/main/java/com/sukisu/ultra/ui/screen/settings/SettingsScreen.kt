@@ -62,6 +62,7 @@ fun SettingPager(
         onSetShowHomeFingerprint = viewModel::setShowHomeFingerprint,
         onSetShowHomeSelinux = viewModel::setShowHomeSelinux,
         onSetShowHomeSeccomp = viewModel::setShowHomeSeccomp,
+        onSetModuleInstallConfirm = viewModel::setModuleInstallConfirm,
         onSetAutoJailbreak = viewModel::setAutoJailbreak,
         onSetUseSoftReboot = viewModel::setUseSoftReboot,
         onOpenAbout = { navigator.push(Route.About) },

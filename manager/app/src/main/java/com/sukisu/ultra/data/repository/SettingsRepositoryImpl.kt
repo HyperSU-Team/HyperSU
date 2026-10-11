@@ -219,6 +219,10 @@ class SettingsRepositoryImpl : SettingsRepository {
         get() = prefs.booleanPref("simple_list_bottom_bar", false)
         set(value) = prefs.edit { putBoolean("simple_list_bottom_bar", value) }
 
+    override var moduleInstallConfirm: Boolean
+        get() = prefs.booleanPref("apm_install_confirm_enabled", true)
+        set(value) = prefs.edit { putBoolean("apm_install_confirm_enabled", value) }
+
     override var enableWebDebugging: Boolean
         get() = prefs.booleanPref("enable_web_debugging", false)
         set(value) = prefs.edit { putBoolean("enable_web_debugging", value) }

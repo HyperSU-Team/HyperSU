@@ -110,6 +110,7 @@ import androidx.compose.ui.unit.dp
 import com.sukisu.ultra.R
 import com.sukisu.ultra.data.model.Module
 import com.sukisu.ultra.data.model.ModuleUpdateInfo
+import com.sukisu.ultra.data.repository.SettingsRepositoryImpl
 import com.sukisu.ultra.data.repository.isSoftRebootPreferred
 import com.sukisu.ultra.ui.component.ObserveAsEvents
 import com.sukisu.ultra.ui.component.SearchAppBar
@@ -193,6 +194,10 @@ internal fun ModulePagerFolk(
     var pendingInstall by remember { mutableStateOf<List<Uri>?>(null) }
     var pendingInfo by remember { mutableStateOf<ModuleZipInfo?>(null) }
     var pendingInfoLoading by remember { mutableStateOf(false) }
+
+    // Read once: the setting only changes on the settings page, and the module screen is rebuilt
+    // when it comes back.
+    val installConfirmRequired = remember { SettingsRepositoryImpl().moduleInstallConfirm }
 
     val threshold = with(LocalDensity.current) { 100.dp.toPx() }
     val fabExpanded by remember {
@@ -347,6 +352,13 @@ internal fun ModulePagerFolk(
                             pendingInfo = info
                             pendingInfoLoading = false
                         }
+                    }
+                    // With the confirmation turned off the metadata is not needed, so the flash
+                    // starts now instead of waiting for a dialog that will not be shown.
+                    if (!installConfirmRequired) {
+                        pendingInstall = null
+                        pendingInfoLoading = false
+                        actions.onOpenFlash(uris)
                     }
                 }
 

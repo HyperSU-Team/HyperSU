@@ -420,6 +420,15 @@ fun SettingPagerFolk(
                         }
                         item {
                             FolkSwitchPreference(
+                                title = stringResource(R.string.settings_module_install_confirm),
+                                summary = stringResource(R.string.settings_module_install_confirm_summary),
+                                icon = Icons.Filled.Description,
+                                checked = uiState.moduleInstallConfirm,
+                                onCheckedChange = actions.onSetModuleInstallConfirm,
+                            )
+                        }
+                        item {
+                            FolkSwitchPreference(
                                 title = stringResource(R.string.settings_auto_jailbreak),
                                 summary = stringResource(R.string.settings_auto_jailbreak_summary),
                                 icon = Icons.Filled.FlashOn,

@@ -249,6 +249,8 @@
     <string name="settings_ui_mode_summary">Choose the interface style.</string>
     <string name="settings_page_scale">Page Scale</string>
     <string name="settings_module_display">Module list</string>
+    <string name="settings_module_install_confirm">Confirm before installing</string>
+    <string name="settings_module_install_confirm_summary">Show a module archive details for confirmation before flashing it</string>
     <string name="settings_show_switch_icon">Tick on switches</string>
     <string name="settings_show_switch_icon_summary">Draw a tick or cross on a switch thumb to show its state</string>
     <string name="settings_discrete_slider">Stepped sliders</string>
