@@ -142,6 +142,14 @@ class MainActivity : ComponentActivity() {
         splashStartedAt = SystemClock.uptimeMillis()
         super.onCreate(savedInstanceState)
         splashScreen.setKeepOnScreenCondition {
+            // A language switch recreates the activity, and the recreation draws the switch page
+            // in place of the app - so contentReady never turns true here, and the condition
+            // would pin the starting window for the whole switch. That window is themed to the
+            // app background, which in the dark theme is a full-screen near-black flash; the
+            // switch page is the app's own frame, so let it through.
+            if (LanguageSwitchState.targetTag != null) {
+                return@setKeepOnScreenCondition false
+            }
             !contentReady || SystemClock.uptimeMillis() - splashStartedAt < splashAnimationDurationMs
         }
 

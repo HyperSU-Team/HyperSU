@@ -49,9 +49,16 @@ fun FolkLanguageSwitch(tag: String) {
         LanguageSwitchState.finish()
     }
 
+    // This page replaces the app content, so nothing sits behind it: in wallpaper mode the
+    // background colour is deliberately transparent, which left the window colour showing - a
+    // near-black flash in the dark theme - instead of a page. The surface colour stays opaque
+    // in every mode, so the switch reads as the app rather than as a black frame.
+    val background = MaterialTheme.colorScheme.background
+    val pageColor = if (background.alpha < 1f) MaterialTheme.colorScheme.surface else background
+
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
+        color = pageColor,
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
