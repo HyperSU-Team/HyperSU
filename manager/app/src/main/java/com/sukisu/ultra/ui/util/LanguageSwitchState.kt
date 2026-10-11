@@ -13,6 +13,14 @@ import androidx.compose.runtime.setValue
  * of the app until the new locale is in place.
  */
 object LanguageSwitchState {
+    /**
+     * How long the switch is acknowledged before it is treated as done.
+     *
+     * Shared so the page below Android 13 and the scrim from 13 on stay in step; a language change
+     * that lands in one frame reads as a glitch rather than as a change.
+     */
+    const val SETTLE_MILLIS = 700L
+
     /** The tag being switched to, or null when no switch is in flight. */
     var targetTag: String? by mutableStateOf(null)
         private set

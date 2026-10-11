@@ -32,6 +32,7 @@ import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -487,8 +488,61 @@ private fun HomeHeroCard(
             titleRes = R.string.home_manager_unrecognized,
             reasonRes = R.string.home_manager_unrecognized_reason,
         )
+        // Before the first load the state is its initial value, where the kernel version is
+        // 0.0.0 and isGKI() is false - which used to fall through to the unsupported card and
+        // tell the user their kernel was wrong before anything had even been read. `loaded` tells
+        // the two apart, so nothing is claimed until there is something to claim it from.
+        !state.loaded -> HomeLoadingCard(wallpaperUri)
         state.kernelVersion.isGKI() -> HomeNotInstalledCard(state, actions, wallpaperUri)
         else -> HomeUnsupportedCard(actions, wallpaperUri)
+    }
+}
+
+/**
+ * The hero card's placeholder for the moment before the first reading arrives.
+ *
+ * Deliberately says nothing about the kernel: the state has not been read yet, and the previous
+ * behaviour - falling through to "unsupported" - reported a kernel problem on every cold start.
+ */
+@Composable
+private fun HomeLoadingCard(wallpaperUri: String? = null) {
+    val dark = isInDarkTheme()
+    val palette = cardPalette(
+        uri = wallpaperUri,
+        container = MaterialTheme.colorScheme.surfaceContainerHigh,
+        content = MaterialTheme.colorScheme.onSurface,
+        muted = MaterialTheme.colorScheme.onSurfaceVariant,
+        dim = BackgroundConfig.getEffectiveFocusCardBgDim(dark),
+    )
+
+    androidx.compose.material3.Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = FolkShape.Corner28,
+        color = palette.container,
+    ) {
+        Box {
+            CardWallpaperLayer(
+                uri = wallpaperUri,
+                dim = BackgroundConfig.getEffectiveFocusCardBgDim(dark),
+                opacity = BackgroundConfig.getEffectiveFocusCardBgOpacity(dark),
+            )
+            Row(
+                modifier = Modifier.padding(24.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp,
+                    color = palette.muted,
+                )
+                Spacer(Modifier.width(16.dp))
+                Text(
+                    text = stringResource(R.string.home_reading_status),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = palette.muted,
+                )
+            }
+        }
     }
 }
 

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.sukisu.ultra.BuildConfig
+import com.sukisu.ultra.KernelVersion
 import com.sukisu.ultra.Natives
 import com.sukisu.ultra.data.repository.SettingsRepository
 import com.sukisu.ultra.data.repository.SettingsRepositoryImpl
@@ -55,41 +56,64 @@ class HomeViewModel(
         }
     }
 
+    /**
+     * Gathers the home screen's state.
+     *
+     * Every field that can fail is read on its own and falls back to a safe value, because one
+     * failure used to take the whole state with it: the callers below reach a root shell, a native
+     * library and the package manager, and an exception from any of them meant `_uiState` was never
+     * updated at all. The screen then sat on its initial empty state, which is what made the kernel
+     * version, the manager version, the fingerprint and the SELinux row appear and disappear
+     * between launches - they were never wrong, the update simply never arrived.
+     *
+     * Nothing here is allowed to abort the rest: the facts that need no root at all - the kernel
+     * release, this app's own version, the fingerprint, the device name - are always available and
+     * are always reported, root or not.
+     */
     private fun buildState(): HomeUiState {
-        val kernelVersion = getKernelVersion()
-        val isManager = Natives.isManager
-        val ksuVersion = if (isManager) Natives.version else null
-        val kernelUAPIVersion = if (isManager) Natives.kernelUAPIVersion else null
-        val managerUAPIVersion = Natives.managerUAPIVersion
-        val lkmMode = ksuVersion?.let { if (kernelVersion.isGKI()) Natives.isLkmMode else null }
-        val isRootAvailable = rootAvailable()
+        val kernelVersion = runCatching { getKernelVersion() }
+            .getOrElse { KernelVersion(-1, -1, -1) }
+
+        // The native library is loaded in Natives' init, so every one of these can throw if it is
+        // missing or the driver is absent. They are read through one guard each rather than a
+        // single block so a device without a kernel still gets the rest of the state.
+        val isManager = runCatching { Natives.isManager }.getOrDefault(false)
+        val ksuVersion = if (isManager) runCatching { Natives.version }.getOrNull() else null
+        val kernelUAPIVersion = if (isManager) runCatching { Natives.kernelUAPIVersion }.getOrNull() else null
+        val managerUAPIVersion = runCatching { Natives.managerUAPIVersion }.getOrDefault(0)
+        val lkmMode = ksuVersion?.let {
+            runCatching { if (kernelVersion.isGKI()) Natives.isLkmMode else null }.getOrNull()
+        }
+        val isRootAvailable = runCatching { rootAvailable() }.getOrDefault(false)
         val managerVersion = getManagerVersion(ksuApp)
-        val kernelFullVersion = if (isManager) Natives.getFullVersion() else null
+        val kernelFullVersion = if (isManager) runCatching { Natives.getFullVersion() }.getOrNull() else null
 
         val zygiskImplementation = if (isManager && isRootAvailable) {
-            com.sukisu.ultra.ui.screen.home.getZygiskImplementation(
-                notInstalledText = ksuApp.getString(com.sukisu.ultra.R.string.home_zygisk_not_installed),
-                disabledText = ksuApp.getString(com.sukisu.ultra.R.string.home_zygisk_disabled),
-                rebootRequiredText = ksuApp.getString(com.sukisu.ultra.R.string.home_zygisk_reboot_required),
-            )
+            runCatching {
+                com.sukisu.ultra.ui.screen.home.getZygiskImplementation(
+                    notInstalledText = ksuApp.getString(com.sukisu.ultra.R.string.home_zygisk_not_installed),
+                    disabledText = ksuApp.getString(com.sukisu.ultra.R.string.home_zygisk_disabled),
+                    rebootRequiredText = ksuApp.getString(com.sukisu.ultra.R.string.home_zygisk_reboot_required),
+                )
+            }.getOrNull()
         } else null
 
         return HomeUiState(
             kernelVersion = kernelVersion,
             ksuVersion = ksuVersion,
             lkmMode = lkmMode,
-            isLkmBundled = lkmMode == true && Natives.isLkmBundled,
+            isLkmBundled = lkmMode == true && runCatching { Natives.isLkmBundled }.getOrDefault(false),
             isManager = isManager,
             isManagerPrBuild = BuildConfig.IS_PR_BUILD,
-            isKernelPrBuild = Natives.isPrBuild,
-            requiresNewKernel = isManager && Natives.managerUAPIVersion > Natives.kernelUAPIVersion,
-            requiresNewManager = isManager && Natives.managerUAPIVersion < Natives.kernelUAPIVersion,
+            isKernelPrBuild = runCatching { Natives.isPrBuild }.getOrDefault(false),
+            requiresNewKernel = isManager && managerUAPIVersion > (kernelUAPIVersion ?: 0),
+            requiresNewManager = isManager && managerUAPIVersion < (kernelUAPIVersion ?: 0),
             kernelUAPIVersion = kernelUAPIVersion,
             managerUAPIVersion = managerUAPIVersion,
             isRootAvailable = isRootAvailable,
-            isSafeMode = Natives.isSafeMode,
+            isSafeMode = runCatching { Natives.isSafeMode }.getOrDefault(false),
             loaded = true,
-            isLateLoadMode = Natives.isLateLoadMode,
+            isLateLoadMode = runCatching { Natives.isLateLoadMode }.getOrDefault(false),
             // Read through the repository rather than the preference directly. The key is
             // "show_full_status", not FolkPatch's "show_fingerprint": that one means "hide the
             // fingerprint" and defaults to false, so reading it here inverted the setting for
@@ -101,12 +125,14 @@ class HomeViewModel(
             showHomeSeccomp = settingsRepo.showHomeSeccomp,
             currentManagerVersionCode = managerVersion.versionCode,
             systemInfo = SystemInfo(
-                kernelVersion = Os.uname().release,
-                managerVersion = "${managerVersion.versionName} (${managerVersion.versionCode}-${managerUAPIVersion})",
-                deviceModel = resolveDeviceName(),
+                // `Os.uname()` needs no root, so this is the release string even on a device with
+                // no kernel driver at all.
+                kernelVersion = runCatching { Os.uname().release }.getOrDefault(""),
+                managerVersion = "${managerVersion.versionName} (${managerVersion.versionCode}-$managerUAPIVersion)",
+                deviceModel = runCatching { resolveDeviceName() }.getOrDefault(""),
                 kernelFullVersion = kernelFullVersion,
                 fingerprint = Build.FINGERPRINT,
-                selinuxStatus = getSELinuxStatusRaw(),
+                selinuxStatus = runCatching { getSELinuxStatusRaw() }.getOrDefault("Unknown"),
                 seccompStatus = runCatching {
                     Os.prctl(21 /* PR_GET_SECCOMP */, 0, 0, 0, 0)
                 }.getOrDefault(-1),

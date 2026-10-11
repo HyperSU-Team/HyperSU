@@ -9,7 +9,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -57,6 +61,7 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
@@ -106,6 +111,7 @@ import com.sukisu.ultra.ui.theme.LocalSimpleListBottomBar
 import com.sukisu.ultra.ui.theme.VibrationConfig
 import com.sukisu.ultra.ui.theme.HyperSUTheme
 import com.sukisu.ultra.ui.component.folk.FolkLanguageSwitch
+import com.sukisu.ultra.ui.component.folk.FolkLoadingIndicator
 import com.sukisu.ultra.ui.util.LanguageSwitchState
 import com.sukisu.ultra.ui.util.VibrationManager
 import com.sukisu.ultra.ui.util.getSuperuserCount
@@ -160,13 +166,21 @@ class MainActivity : ComponentActivity() {
         // here on the main thread before setContent - so the first frame waited for it. It is
         // moved to a background coroutine: nothing on screen depends on it, and the version check
         // that guards it is cheap.
-        val isManager = Natives.isManager
-        if (isManager && Natives.kernelUAPIVersion == Natives.managerUAPIVersion) {
-            lifecycleScope.launch(Dispatchers.IO) {
-                runCatching { install() }
-                    .onFailure { android.util.Log.w("MainActivity", "install failed", it) }
+        //
+        // Guarded as a whole. These are native reads, and an exception from one of them used to
+        // escape onCreate before setContent had run, which leaves the window with nothing in it -
+        // a black screen rather than a failure. That is the shape the language switch hit: it
+        // recreates the activity, so the same path ran a second time and any transient failure
+        // there showed as a black frame.
+        runCatching {
+            val isManager = Natives.isManager
+            if (isManager && Natives.kernelUAPIVersion == Natives.managerUAPIVersion) {
+                lifecycleScope.launch(Dispatchers.IO) {
+                    runCatching { install() }
+                        .onFailure { android.util.Log.w("MainActivity", "install failed", it) }
+                }
             }
-        }
+        }.onFailure { android.util.Log.w("MainActivity", "kernel check failed", it) }
 
         if (savedInstanceState == null) intent?.let { intentChannel.trySend(it) }
 
@@ -238,15 +252,41 @@ class MainActivity : ComponentActivity() {
                     if (switchingTo != null) {
                         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
                             // Below 13 the switch recreates this activity by hand, so this page
-                            // is what the new activity has to draw first.
+                            // is what the new activity has to draw first. It fades itself in and
+                            // out, so the recreation reads as a transition rather than a cut.
                             FolkLanguageSwitch(tag = switchingTo)
                             return@HyperSUTheme
                         }
                         // From 13 the locale is applied in place - MainActivity declares locale in
                         // configChanges, so nothing is recreated - and covering the app with a
                         // full-screen surface only produced a black frame over the page the user
-                        // was already looking at. Clear the flag instead.
-                        LaunchedEffect(Unit) { LanguageSwitchState.finish() }
+                        // was already looking at. The flag is cleared here instead, but not on the
+                        // first frame: clearing it immediately meant the new strings appeared in a
+                        // single frame, which is the animation that was lost. Waiting a beat and
+                        // fading lets the change read as a change.
+                        var settled by remember { mutableStateOf(false) }
+                        LaunchedEffect(Unit) {
+                            delay(LanguageSwitchState.SETTLE_MILLIS)
+                            settled = true
+                            LanguageSwitchState.finish()
+                        }
+                        AnimatedVisibility(
+                            visible = !settled,
+                            enter = fadeIn(),
+                            exit = fadeOut(),
+                        ) {
+                            // A thin scrim rather than a full-screen opaque surface: it is drawn
+                            // over content the user is still looking at, so it must not black it
+                            // out the way the old page did.
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.background.copy(alpha = 0.6f)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                FolkLoadingIndicator()
+                            }
+                        }
                     }
                     IntentDispatcher(intentChannel = intentChannel)
                     HandleZipFileIntent()

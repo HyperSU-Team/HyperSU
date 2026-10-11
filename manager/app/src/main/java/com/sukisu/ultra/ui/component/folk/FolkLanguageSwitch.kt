@@ -1,11 +1,18 @@
 package com.sukisu.ultra.ui.component.folk
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -15,7 +22,10 @@ import com.sukisu.ultra.ui.util.LanguageSwitchState
 import kotlinx.coroutines.delay
 
 /** How long the switch page stays up after the app has composed again. */
-private const val SettleMillis = 700L
+private const val SettleMillis = LanguageSwitchState.SETTLE_MILLIS
+
+/** How long the page takes to fade in or out. */
+private const val FadeMillis = 220L
 
 /**
  * The page shown while a language switch is applied: the app's own loader, with
@@ -32,6 +42,10 @@ private const val SettleMillis = 700L
  *   with the loader alone - showing the text now would show it in the language
  *   the user is leaving, which is exactly the wrong answer.
  *
+ * It fades in and out. The page appears on the frame the new activity draws and disappears when the
+ * switch settles, and without a fade both of those are single-frame cuts - the change reads as a
+ * flicker rather than as the app having switched language.
+ *
  * What this page cannot cover is the system's starting window: the recreation
  * replays the splash screen, and that window belongs to the system. Its colour
  * is themed to the app background (`windowSplashScreenBackground`) so it reads
@@ -44,22 +58,29 @@ fun FolkLanguageSwitch(tag: String) {
     val currentTag = configuration.locales[0]?.toLanguageTag().orEmpty()
     val switched = tag.isEmpty() || currentTag.equals(tag, ignoreCase = true)
 
+    var visible by remember { mutableStateOf(true) }
     LaunchedEffect(tag) {
         delay(SettleMillis)
+        visible = false
+        // Only clear the flag once the fade has run, so the page is not pulled out from under its
+        // own exit animation.
+        delay(FadeMillis)
         LanguageSwitchState.finish()
     }
 
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
-    ) {
-        Box(
+    AnimatedVisibility(visible = visible, enter = fadeIn(), exit = fadeOut()) {
+        Surface(
             modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center,
+            color = MaterialTheme.colorScheme.background,
         ) {
-            FolkLoadingIndicator(
-                text = if (switched) stringResource(R.string.switching_language) else null,
-            )
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                FolkLoadingIndicator(
+                    text = if (switched) stringResource(R.string.switching_language) else null,
+                )
+            }
         }
     }
 }

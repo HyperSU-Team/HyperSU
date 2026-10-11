@@ -60,6 +60,14 @@ import com.sukisu.ultra.ui.theme.tokens.FolkShape
 private val DockedBarHeight = 68.dp
 
 /**
+ * Height of the floating pill, excluding the 12dp gap below it and the system inset.
+ *
+ * Declared here so the bar and the Scaffold slot that reserves room for it agree: the pill itself
+ * is 56dp with 4dp of padding around it.
+ */
+private val FloatingBarHeight = 64.dp
+
+/**
  * The bottom navigation bar.
  *
  * The floating variant is ReSukiSU's FloatingBottomBar ported verbatim: a blurred pill with
@@ -92,6 +100,13 @@ fun FolkBottomBar(
         // A plain tinted pill. The backdrop and the AGSL lens were removed along with the blur
         // switch: the refraction is a per-frame shader over the whole page, which is the main
         // reason a tab change took a moment to settle on a mid-range device.
+        //
+        // The height is declared rather than left to the content. Scaffold measures this slot to
+        // decide the inner padding it hands the page, and a Box whose only child is centred
+        // reports the child's height - but the pill sits inside 12dp of bottom padding and the
+        // system navigation-bar inset, so the slot came out shorter than the space the pill
+        // actually covers. Pages then padded themselves by too little and their last row ended up
+        // underneath the pill.
         Box(
             modifier = modifier
                 .fillMaxWidth()
@@ -101,7 +116,8 @@ fun FolkBottomBar(
                 .padding(
                     bottom = 12.dp +
                         WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
-                ),
+                )
+                .height(FloatingBarHeight),
             contentAlignment = Alignment.Center,
         ) {
             FloatingBottomBar(
