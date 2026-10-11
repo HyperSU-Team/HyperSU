@@ -32,8 +32,7 @@ private const val KEY_USE_SOFT_REBOOT = "soft_reboot"
 
 /**
  * The Home layouts the user can pick from. "circle" is the flagship FolkPatch
- * composition; the others are the lighter variants. There is deliberately no
- * stats/hardware-monitor layout.
+ * composition; the others are the lighter variants.
  */
 const val HOME_LAYOUT_CIRCLE = "circle"
 const val HOME_LAYOUT_LIST = "default"
@@ -51,11 +50,58 @@ val HOME_LAYOUT_OPTIONS = listOf(
     HOME_LAYOUT_GRID,
 )
 
+/**
+ * FolkPatch's layout names that mean one of ours.
+ *
+ * The two apps name their layouts differently for the same compositions: what FolkPatch calls
+ * `kernelsu` - a big status card with two small ones beside it - is this app's `grid`, and what it
+ * calls `stats` is that same arrangement with the hardware-monitor sections on it. A theme built
+ * there therefore carried a name this app did not recognise, and the layout it asked for was
+ * silently dropped, leaving the user's previous one in place.
+ *
+ * `stats` maps to `grid` rather than being rejected: the arrangement is the same, and only the
+ * monitoring sections differ, so the theme still arrives looking like the layout it asked for
+ * instead of not changing at all.
+ */
+val HOME_LAYOUT_ALIASES = mapOf(
+    "kernelsu" to HOME_LAYOUT_GRID,
+    "stats" to HOME_LAYOUT_GRID,
+)
+
+/** Resolves a stored or imported layout name to one this app renders. */
+fun resolveHomeLayout(name: String?): String? {
+    if (name.isNullOrBlank()) return null
+    if (name in HOME_LAYOUT_OPTIONS) return name
+    return HOME_LAYOUT_ALIASES[name]
+}
+
+/**
+ * The name FolkPatch knows this app's layout by, for the export direction.
+ *
+ * `grid` is this app's name for what FolkPatch calls `kernelsu`, so writing it out under the
+ * local name would give a theme that app cannot read - the layout would be dropped there the same
+ * way it used to be dropped here.
+ */
+fun folkPatchLayoutNameFor(name: String?): String? = when (name) {
+    HOME_LAYOUT_GRID -> "kernelsu"
+    else -> name?.takeIf { it in HOME_LAYOUT_OPTIONS }
+}
+
 /** Value used when the stored layout is missing or unrecognised. */
 const val HOME_LAYOUT_FALLBACK = HOME_LAYOUT_CIRCLE
 
 /** SharedPreferences key backing [SettingsRepository.homeLayoutStyle]. */
 const val KEY_HOME_LAYOUT = "home_layout_style"
+
+/**
+ * The two colour generation modes, FolkPatch's names.
+ *
+ * `custom` derives a palette from a seed colour; `classic` picks one of the fixed palettes in
+ * [com.sukisu.ultra.ui.theme.tokens.FolkThemeCatalog]. A theme records which one it was built
+ * with, and the same stored values produce different colours under each.
+ */
+const val COLOR_GENERATION_CUSTOM = "custom"
+const val COLOR_GENERATION_CLASSIC = "classic"
 
 /** The Grid layout's status-card arrangement. */
 const val KEY_STATS_TOP_LAYOUT = "stats_top_layout"
@@ -109,6 +155,13 @@ class SettingsRepositoryImpl : SettingsRepository {
     override var colorContrast: String
         get() = prefs.stringPref("color_contrast", ColorContrast.STANDARD.name) ?: ColorContrast.STANDARD.name
         set(value) = prefs.edit { putString("color_contrast", value) }
+
+    // Defaults to "custom", which is how this app generated its palette before the mode existed:
+    // a theme that does not mention it keeps the behaviour it had.
+    override var colorGenerationMode: String
+        get() = prefs.stringPref("color_generation_mode", COLOR_GENERATION_CUSTOM)
+            ?: COLOR_GENERATION_CUSTOM
+        set(value) = prefs.edit { putString("color_generation_mode", value) }
 
     override var statsTopLayout: String
         get() = prefs.stringPref("stats_top_layout", STATS_TOP_LIST) ?: STATS_TOP_LIST

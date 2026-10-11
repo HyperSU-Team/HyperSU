@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.materialkolor.PaletteStyle
 import com.materialkolor.dynamiccolor.ColorSpec
 import com.materialkolor.rememberDynamicColorScheme
+import com.sukisu.ultra.ui.theme.tokens.FolkThemeCatalog
 
 /**
  * How strongly the generated palette separates its colours from one another, ported from
@@ -54,8 +55,17 @@ fun rememberKernelSUColorScheme(
     paletteStyle: PaletteStyle,
     colorSpec: ColorSpec.SpecVersion,
     contrast: ColorContrast = ColorContrast.STANDARD,
+    /** The named palette to use, or null to generate one from [seedColor]. */
+    classicKey: String? = null,
 ): ColorScheme {
     val context = LocalContext.current
+    // FolkPatch's "classic" colour generation mode picks one of a fixed set of palettes rather
+    // than deriving one from a seed. A theme built there records the mode, and without this the
+    // palette was generated instead, so the whole app came out in different colours from the one
+    // the theme asked for.
+    if (classicKey != null) {
+        return FolkThemeCatalog.scheme(classicKey, isDark).amoledBackground(isAmoled)
+    }
     // dynamicDarkColorScheme()/dynamicLightColorScheme() only exist from Android 12. Calling them
     // on 8-11 threw NoSuchMethodError before the first frame, so the app could not start there at
     // all; the fixed seed below stands in for the system palette on those releases.

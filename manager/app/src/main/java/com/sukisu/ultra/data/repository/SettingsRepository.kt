@@ -10,6 +10,8 @@ interface SettingsRepository {
     var colorSpec: String
     /** Colour contrast level, by name: STANDARD, MEDIUM or HIGH. */
     var colorContrast: String
+    /** Colour generation mode: "custom" generates from a seed, "classic" picks a fixed palette. */
+    var colorGenerationMode: String
     var enablePredictiveBack: Boolean
     var enableSwipeDismiss: Boolean
     var pagerInterceptionMode: Int

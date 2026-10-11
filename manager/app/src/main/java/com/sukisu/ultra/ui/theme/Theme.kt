@@ -65,13 +65,40 @@ data class AppSettings(
     val paletteStyle: PaletteStyle,
     val colorSpec: ColorSpec.SpecVersion,
     val colorContrast: ColorContrast,
-)
+    /**
+     * FolkPatch's colour generation mode: `custom` generates a palette from a seed, `classic`
+     * picks one of [com.sukisu.ultra.ui.theme.tokens.FolkThemeCatalog]'s fixed palettes.
+     *
+     * Kept because a theme carries it, and the two modes produce visibly different colours from
+     * the same stored values - importing a classic theme and generating from its seed instead
+     * gave a palette the theme never asked for.
+     */
+    val colorGenerationMode: String = "custom",
+) {
+    /** True when the fixed palette table should be used instead of a generated one. */
+    val usesClassicPalette: Boolean get() = colorGenerationMode == "classic"
+}
 
 val PaletteStyle.supportsSpec2025: Boolean
     get() = this == PaletteStyle.TonalSpot ||
             this == PaletteStyle.Neutral ||
             this == PaletteStyle.Vibrant ||
             this == PaletteStyle.Expressive
+
+/**
+ * The fixed palette to use, or null when the palette should be generated.
+ *
+ * FolkPatch's classic mode indexes [FolkThemeCatalog] by the colour's *name*, and stores that name
+ * in `custom_color`. This app stores the same choice as a packed ARGB int, so the name is looked
+ * back up from it. A colour with no name in the table - one the user picked with the system
+ * palette, or the unset 0 - yields null, which falls back to generating a palette; that is the
+ * right answer, because classic mode has nothing to offer for it.
+ */
+internal fun classicKeyOf(settings: AppSettings): String? {
+    if (!settings.usesClassicPalette) return null
+    if (settings.keyColor == 0) return null
+    return folkPatchNameFor(settings.keyColor)
+}
 
 fun ColorSpec.SpecVersion.effectiveFor(style: PaletteStyle): ColorSpec.SpecVersion =
     if (this == ColorSpec.SpecVersion.SPEC_2025 && !style.supportsSpec2025) {
@@ -95,8 +122,16 @@ object ThemeController {
             ColorSpec.SpecVersion.SPEC_2025
         }
         val colorContrast = ColorContrast.fromName(repo.colorContrast)
+        val colorGenerationMode = repo.colorGenerationMode
 
-        return AppSettings(colorMode, keyColor, paletteStyle, colorSpec, colorContrast)
+        return AppSettings(
+            colorMode,
+            keyColor,
+            paletteStyle,
+            colorSpec,
+            colorContrast,
+            colorGenerationMode,
+        )
     }
 }
 
@@ -163,6 +198,7 @@ fun HyperSUTheme(
         paletteStyle = appSettings.paletteStyle,
         colorSpec = appSettings.colorSpec,
         contrast = appSettings.colorContrast,
+        classicKey = classicKeyOf(appSettings),
     )
 
     val amoledColorScheme = remember(baseColorScheme, amoled) {
@@ -179,6 +215,7 @@ fun HyperSUTheme(
         paletteStyle = appSettings.paletteStyle,
         colorSpec = appSettings.colorSpec,
         contrast = appSettings.colorContrast,
+        classicKey = classicKeyOf(appSettings),
     )
 
     val useCustomBackground = BackgroundConfig.isCustomBackgroundEnabled

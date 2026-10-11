@@ -7,10 +7,13 @@ import android.util.Log
 import androidx.core.content.edit
 import com.materialkolor.PaletteStyle
 import com.materialkolor.dynamiccolor.ColorSpec
+import com.sukisu.ultra.data.repository.COLOR_GENERATION_CLASSIC
+import com.sukisu.ultra.data.repository.COLOR_GENERATION_CUSTOM
 import com.sukisu.ultra.data.repository.HOME_LAYOUT_FALLBACK
-import com.sukisu.ultra.data.repository.HOME_LAYOUT_OPTIONS
 import com.sukisu.ultra.data.repository.STATS_TOP_GRID
 import com.sukisu.ultra.data.repository.STATS_TOP_LIST
+import com.sukisu.ultra.data.repository.folkPatchLayoutNameFor
+import com.sukisu.ultra.data.repository.resolveHomeLayout
 import com.sukisu.ultra.ui.util.LocaleHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -122,22 +125,40 @@ object ThemeManager {
 
         settings.edit {
             putInt("color_mode", mode.value)
-            // FolkPatch's customColor is a theme key name; HyperSU stores a packed ARGB int.
-            // Only overwrite when it parses as a number, so a catalog name does not clear the
-            // user's key colour.
-            json.optString("customColor", "").toIntOrNull()?.let { putInt("key_color", it) }
+            // FolkPatch's colour generation mode. It matters: `classic` picks one of a fixed set
+            // of palettes and `custom` derives one from the seed, so the same stored colour gives
+            // visibly different results under each. Reading only the seed and always generating
+            // made a classic theme arrive in colours it never asked for.
+            json.optString("colorGenerationMode", "").takeIf { it.isNotBlank() }?.let {
+                if (it == COLOR_GENERATION_CLASSIC || it == COLOR_GENERATION_CUSTOM) {
+                    putString("color_generation_mode", it)
+                }
+            }
+            // FolkPatch stores a colour name (`indigo`); this app stores a packed ARGB int. The
+            // old code only accepted something that parsed as a number, so every FolkPatch theme
+            // failed here and the seed kept the user's previous colour - and because the seed
+            // decides the whole generated palette, the imported theme came out in the wrong
+            // colours entirely. The name is translated now, and a numeric value is still accepted
+            // for themes this app wrote.
+            json.optString("customColor", "").takeIf { it.isNotBlank() }?.let { raw ->
+                val resolved = raw.toIntOrNull() ?: folkPatchColorFor(raw)
+                resolved?.let { putInt("key_color", it) }
+            }
             json.optString("colorStyle", "").takeIf { it.isNotBlank() }?.let {
                 putString("color_style", it)
             }
-            // FolkPatch spells the standard MD3_2021 / MD3_2025; HyperSU uses the enum name.
+            // FolkPatch stores its ColorStandard enum name, which is MD3_2021 or M3E_2025 - not
+            // MD3_2025, which is what this used to test for, so an M3e theme silently kept the
+            // old standard. Both spellings are accepted, along with this app's own enum names.
             when (json.optString("colorStandard", "")) {
                 "MD3_2021" -> putString("color_spec", ColorSpec.SpecVersion.SPEC_2021.name)
-                "MD3_2025" -> putString("color_spec", ColorSpec.SpecVersion.SPEC_2025.name)
+                "M3E_2025", "MD3_2025" -> putString("color_spec", ColorSpec.SpecVersion.SPEC_2025.name)
             }
-            // FolkPatch's layout vocabulary is its own (grid_working, stats, ...). Only accept a
-            // name HyperSU actually knows, otherwise the home screen would be handed a layout it
-            // cannot render and fall back unpredictably.
-            json.optString("homeLayoutStyle", "").takeIf { it in HOME_LAYOUT_OPTIONS }?.let {
+            // FolkPatch names two of its layouts differently - `kernelsu` and `stats` - and this
+            // used to accept only names it already knew, so a theme asking for either was dropped
+            // and the user's previous layout stayed on screen. resolveHomeLayout maps them onto
+            // the composition this app has.
+            resolveHomeLayout(json.optString("homeLayoutStyle", ""))?.let {
                 putString("home_layout_style", it)
             }
             // The Grid layout's card arrangement. Only the two names this app renders.
@@ -675,13 +696,24 @@ object ThemeManager {
             put("nightModeFollowSys", colorMode.isSystem)
             put("useSystemDynamicColor", colorMode.isMonet)
             // FolkPatch has no AMOLED flag; a theme cannot express it, so it is not written.
-            put("customColor", settings.intPref("key_color", 0).toString())
+            // Written as a FolkPatch colour name, not this app's packed int, so a theme exported
+            // here imports there with its colour intact - and so a round trip through this app
+            // keeps working, since the importer understands both forms.
+            put("customColor", folkPatchNameFor(settings.intPref("key_color", 0)) ?: "indigo")
             // org.json's put(String, Any) throws on null, so every optional string needs a
             // fallback rather than a nullable value.
             put("colorStyle", settings.stringPref("color_style", PaletteStyle.TonalSpot.name) ?: PaletteStyle.TonalSpot.name)
             put("colorStandard", if (colorSpec == ColorSpec.SpecVersion.SPEC_2021.name) "MD3_2021" else "MD3_2025")
-            put("colorGenerationMode", if (colorMode.isMonet) "custom" else "classic")
-            put("homeLayoutStyle", settings.stringPref("home_layout_style", HOME_LAYOUT_FALLBACK) ?: HOME_LAYOUT_FALLBACK)
+            put("colorGenerationMode", settings.stringPref("color_generation_mode", COLOR_GENERATION_CUSTOM) ?: COLOR_GENERATION_CUSTOM)
+            // Written under FolkPatch's name for the same layout, so a theme exported here is
+            // understood there - it reads `kernelsu`, not `grid`.
+            put(
+                "homeLayoutStyle",
+                folkPatchLayoutNameFor(
+                    settings.stringPref("home_layout_style", HOME_LAYOUT_FALLBACK)
+                        ?: HOME_LAYOUT_FALLBACK,
+                ) ?: HOME_LAYOUT_FALLBACK,
+            )
             put("statsTopLayout", settings.stringPref("stats_top_layout", STATS_TOP_LIST) ?: STATS_TOP_LIST)
             put("colorContrast", settings.stringPref("color_contrast", ColorContrast.STANDARD.name) ?: ColorContrast.STANDARD.name)
             // The language, so a theme carries it both ways. Read through LocaleHelper for the
