@@ -1,5 +1,6 @@
 package com.sukisu.ultra.ui.theme
 
+import android.os.Build
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.material3.ColorScheme
@@ -55,10 +56,14 @@ fun rememberKernelSUColorScheme(
     contrast: ColorContrast = ColorContrast.STANDARD,
 ): ColorScheme {
     val context = LocalContext.current
-    val seed = if (seedColor == Color.Unspecified) {
-        (if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)).primary
-    } else {
-        seedColor
+    // dynamicDarkColorScheme()/dynamicLightColorScheme() only exist from Android 12. Calling them
+    // on 8-11 threw NoSuchMethodError before the first frame, so the app could not start there at
+    // all; the fixed seed below stands in for the system palette on those releases.
+    val seed = when {
+        seedColor != Color.Unspecified -> seedColor
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ->
+            (if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)).primary
+        else -> FallbackSeedColor
     }
     return rememberDynamicColorScheme(
         seedColor = seed,
