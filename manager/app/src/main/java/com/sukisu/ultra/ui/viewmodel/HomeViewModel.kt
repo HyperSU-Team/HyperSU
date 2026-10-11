@@ -53,7 +53,15 @@ class HomeViewModel(
     private fun reload() {
         if (loadJob?.isActive == true) return
         loadJob = viewModelScope.launch {
-            val baseState = withContext(Dispatchers.IO) { buildState() }
+            // buildState is written not to throw, but the state is still updated even if it does:
+            // leaving _uiState at its initial value is worse than showing a half-filled screen,
+            // because the initial value is indistinguishable from a device with no kernel.
+            val baseState = withContext(Dispatchers.IO) {
+                runCatching { buildState() }.getOrElse { failure ->
+                    android.util.Log.w("HomeViewModel", "could not read the home state", failure)
+                    HomeUiState(loaded = true)
+                }
+            }
             _uiState.update { baseState }
         }
     }

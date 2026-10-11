@@ -87,6 +87,10 @@ fun FolkFactRow(
     // composition, and the setting only changes on the settings page.
     val copyEnabled = remember { SettingsRepositoryImpl().enableInfoCopy }
     val copiedText = stringResource(R.string.copied_to_clipboard)
+    // A blank value renders as nothing at all, which is indistinguishable from a row whose text
+    // failed to draw. Showing a dash says which one it is - both to the user and to anyone reading
+    // a screenshot of it.
+    val displayValue = value.ifBlank { "—" }
 
     Column(
         modifier = modifier
@@ -110,11 +114,13 @@ fun FolkFactRow(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.fillMaxWidth(),
         )
-        // Wrap-safe rather than a plain Text: a fingerprint or a kernel string is one unbreakable
-        // token, and without break opportunities it pushes the row wider than the screen instead of
-        // wrapping onto the next line.
-        FolkWrapSafeText(
-            text = value,
+        // A plain Text rather than the wrap-safe one. The wrap-safe version inserts zero-width
+        // spaces to give the line breaker somewhere to break a fingerprint, and it was the only
+        // change made to this row before the values stopped drawing; whether or not it is the
+        // cause, a plain Text is what this row rendered correctly with before, so it is what it
+        // renders with now.
+        Text(
+            text = displayValue,
             style = folkPreferenceValueStyle(),
             color = folkSeverityColor(valueTone),
             modifier = Modifier.fillMaxWidth(),
