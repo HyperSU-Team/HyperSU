@@ -111,14 +111,34 @@ private data class CardPalette(
     val muted: Color,
 )
 
+/**
+ * Picks the text colours for a card that carries a wallpaper.
+ *
+ * White is right over a dark picture and invisible over a light one, and the dim the user can
+ * apply is allowed to be zero, so the choice is made from the wallpaper's own brightness with the
+ * dim taken into account. [BackgroundConfig.wallpaperLuminanceFor] is filled in when the wallpaper
+ * is saved; a picture that never went through that path has no record yet, and white is kept as
+ * the answer for it because that is what this used to always do.
+ */
 private fun cardPalette(
     uri: String?,
     container: Color,
     content: Color,
     muted: Color = content,
-): CardPalette =
-    if (uri.isNullOrEmpty()) CardPalette(container, content, muted)
-    else CardPalette(Color.Transparent, Color.White, Color.White.copy(alpha = 0.8f))
+    dim: Float = 0f,
+): CardPalette {
+    if (uri.isNullOrEmpty()) return CardPalette(container, content, muted)
+    val luminance = BackgroundConfig.wallpaperLuminanceFor(uri)?.let { it * (1f - dim) }
+    val onWallpaper = if (luminance != null && luminance >= WALLPAPER_LIGHT_THRESHOLD) {
+        Color.Black
+    } else {
+        Color.White
+    }
+    return CardPalette(Color.Transparent, onWallpaper, onWallpaper.copy(alpha = 0.8f))
+}
+
+/** Above this the picture counts as light, and the text over it turns dark. */
+private const val WALLPAPER_LIGHT_THRESHOLD = 0.5f
 
 /**
  * The wallpaper layer, sized to whatever the card measures to.
@@ -484,11 +504,6 @@ private fun HomeWorkingCard(
         else -> "Built-in"
     }
     val dark = isInDarkTheme()
-    val palette = cardPalette(
-        uri = wallpaperUri,
-        container = MaterialTheme.colorScheme.secondaryContainer,
-        content = MaterialTheme.colorScheme.onSecondaryContainer,
-    )
     // Grid 的明暗/不透明度独立成组，所以取值也分开：只有 Grid 布局读 grid 那组，其余布局继续读
     // focus card 那组，两边的滑杆互不干扰。
     val dim = if (gridStyle) {
@@ -496,6 +511,13 @@ private fun HomeWorkingCard(
     } else {
         BackgroundConfig.getEffectiveFocusCardBgDim(dark)
     }
+    // The dim is decided first because it is what the text colour is chosen against.
+    val palette = cardPalette(
+        uri = wallpaperUri,
+        container = MaterialTheme.colorScheme.secondaryContainer,
+        content = MaterialTheme.colorScheme.onSecondaryContainer,
+        dim = dim,
+    )
     val opacity = if (gridStyle) {
         BackgroundConfig.getEffectiveGridWorkingCardBgOpacity(dark)
     } else {
@@ -594,6 +616,9 @@ private fun HomeNotInstalledCard(
         container = MaterialTheme.colorScheme.surfaceContainerHigh,
         content = MaterialTheme.colorScheme.onSurface,
         muted = MaterialTheme.colorScheme.onSurfaceVariant,
+        // The same wallpaper and dim controls the focus card, which these cards stand in for
+        // while no kernel is installed or the kernel is unsupported.
+        dim = BackgroundConfig.getEffectiveFocusCardBgDim(dark),
     )
 
     androidx.compose.material3.Surface(
@@ -665,6 +690,9 @@ private fun HomeUnsupportedCard(
         container = MaterialTheme.colorScheme.surfaceContainerHigh,
         content = MaterialTheme.colorScheme.onSurface,
         muted = MaterialTheme.colorScheme.onSurfaceVariant,
+        // The same wallpaper and dim controls the focus card, which these cards stand in for
+        // while no kernel is installed or the kernel is unsupported.
+        dim = BackgroundConfig.getEffectiveFocusCardBgDim(dark),
     )
 
     androidx.compose.material3.Surface(
@@ -1113,11 +1141,13 @@ private fun HomeTile(
         null
     }
     val dark = isInDarkTheme()
+    val tileDim = BackgroundConfig.getEffectiveDashboardCardBgDim(dark)
     val palette = cardPalette(
         uri = uri,
         container = MaterialTheme.colorScheme.surfaceContainerHigh,
         content = MaterialTheme.colorScheme.onSurface,
         muted = MaterialTheme.colorScheme.onSurfaceVariant,
+        dim = tileDim,
     )
 
     androidx.compose.material3.Surface(
@@ -1128,7 +1158,7 @@ private fun HomeTile(
         Box {
             CardWallpaperLayer(
                 uri = uri,
-                dim = BackgroundConfig.getEffectiveDashboardCardBgDim(dark),
+                dim = tileDim,
                 opacity = BackgroundConfig.getEffectiveDashboardCardBgOpacity(dark),
             )
             Column(modifier = Modifier.padding(16.dp)) {
