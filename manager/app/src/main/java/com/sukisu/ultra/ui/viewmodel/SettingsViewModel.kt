@@ -47,6 +47,7 @@ class SettingsViewModel(
             val enableFloatingBottomBar = repo.enableFloatingBottomBar
             val enableNavigationBadge = repo.enableNavigationBadge
             val pageScale = repo.pageScale
+            val appDpi = repo.appDpi
             val moduleDescriptionMaxLines = repo.moduleDescriptionMaxLines
             val simpleListBottomBar = repo.simpleListBottomBar
             val moduleInstallConfirm = repo.moduleInstallConfirm
@@ -96,6 +97,7 @@ class SettingsViewModel(
                     enableFloatingBottomBar = enableFloatingBottomBar,
                     enableNavigationBadge = enableNavigationBadge,
                     pageScale = pageScale,
+                    appDpi = appDpi,
                     moduleDescriptionMaxLines = moduleDescriptionMaxLines,
                     simpleListBottomBar = simpleListBottomBar,
                     moduleInstallConfirm = moduleInstallConfirm,
@@ -209,6 +211,18 @@ class SettingsViewModel(
     fun setPageScale(scale: Float) {
         repo.pageScale = scale
         _uiState.update { it.copy(pageScale = scale) }
+    }
+
+    /**
+     * Stores the display density.
+     *
+     * The activity has to be recreated for it to take effect - it is read from the resources
+     * before `onCreate` - and that is the caller's job, not this method's, so a preview or a test
+     * can set the value without the app restarting underneath it.
+     */
+    fun setAppDpi(dpi: Int) {
+        repo.appDpi = dpi
+        _uiState.update { it.copy(appDpi = dpi) }
     }
 
     fun setModuleDescriptionMaxLines(lines: Int) {

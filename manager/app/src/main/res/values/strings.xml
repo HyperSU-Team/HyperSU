@@ -248,6 +248,10 @@
     <string name="settings_ui_mode">UI Style</string>
     <string name="settings_ui_mode_summary">Choose the interface style.</string>
     <string name="settings_page_scale">Page Scale</string>
+    <string name="settings_app_dpi">Display density</string>
+    <string name="settings_app_dpi_summary">Follow the system density</string>
+    <string name="settings_app_dpi_system">Follow system</string>
+    <string name="settings_app_dpi_value">Density</string>
     <string name="settings_module_display">Module list</string>
     <string name="settings_module_install_confirm">Confirm before installing</string>
     <string name="settings_module_install_confirm_summary">Show a module archive details for confirmation before flashing it</string>

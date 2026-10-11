@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Brightness3
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.outlined.AspectRatio
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Tune
@@ -55,8 +56,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -67,6 +70,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -75,6 +79,7 @@ import com.materialkolor.dynamiccolor.ColorSpec
 import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.navigation.useNavigationRail
 import com.sukisu.ultra.ui.component.folk.FolkButtonDefaults
+import com.sukisu.ultra.ui.component.folk.FolkAlertDialog
 import com.sukisu.ultra.ui.component.dialog.rememberLoadingDialog
 import com.sukisu.ultra.ui.screen.settings.AppearanceBackgroundSection
 import com.sukisu.ultra.ui.screen.settings.AppearanceBannerSection
@@ -98,6 +103,7 @@ import com.sukisu.ultra.ui.component.folk.FolkSwitchPreference
 import com.sukisu.ultra.ui.theme.ColorMode
 import com.sukisu.ultra.ui.theme.keyColorOptions
 import com.sukisu.ultra.ui.theme.rememberKernelSUColorScheme
+import com.sukisu.ultra.ui.util.DpiUtils
 
 /**
  * The theme picker in the FolkPatch design.
@@ -126,6 +132,22 @@ fun ColorPaletteScreenFolk(
 
     val snackbarHost = remember { SnackbarHostState() }
     val loadingDialog = rememberLoadingDialog()
+
+    val context = LocalContext.current
+    var showDpiDialog by remember { mutableStateOf(false) }
+    if (showDpiDialog) {
+        DpiDialog(
+            initial = uiState.appDpi,
+            onDismiss = { showDpiDialog = false },
+            onConfirm = { chosen ->
+                showDpiDialog = false
+                actions.onSetAppDpi(chosen)
+                // Density is read from the resources before onCreate, so the activity has to be
+                // rebuilt for the new value to apply at all.
+                (context as? android.app.Activity)?.recreate()
+            },
+        )
+    }
 
     FolkSettingsScaffold(
         title = stringResource(R.string.settings_theme),
@@ -367,6 +389,28 @@ fun ColorPaletteScreenFolk(
                     )
                 }
                 item {
+                    // Density is applied at attachBaseContext, so it cannot take effect while the
+                    // activity is running - the resources have already been read. The row states
+                    // the value and the restart is explicit rather than pretending otherwise.
+                    val dpi = uiState.appDpi
+                    val followingSystem = dpi == DpiUtils.DEFAULT_DPI
+                    FolkValuePreference(
+                        title = stringResource(R.string.settings_app_dpi),
+                        summary = if (followingSystem) {
+                            stringResource(R.string.settings_app_dpi_summary)
+                        } else {
+                            "${DpiUtils.friendlyName(dpi)} ($dpi DPI)"
+                        },
+                        icon = Icons.Outlined.AspectRatio,
+                        value = if (followingSystem) {
+                            stringResource(R.string.settings_app_dpi_system)
+                        } else {
+                            "$dpi"
+                        },
+                        onClick = { showDpiDialog = true },
+                    )
+                }
+                item {
                     FolkSwitchPreference(
                         title = stringResource(R.string.settings_show_switch_icon),
                         summary = stringResource(R.string.settings_show_switch_icon_summary),
@@ -479,6 +523,89 @@ private fun ColorMode.labelRes(): Int = when (this) {
     ColorMode.LIGHT, ColorMode.MONET_LIGHT -> R.string.settings_theme_mode_light
     ColorMode.DARK, ColorMode.MONET_DARK -> R.string.settings_theme_mode_dark
     ColorMode.DARK_AMOLED -> R.string.settings_theme_mode_amoled
+}
+
+/**
+ * The display-density picker: a follow-the-system switch and a slider.
+ *
+ * The choice is held locally and only reported on confirm, because applying it restarts the
+ * activity - dragging the slider should not restart the app on every frame.
+ */
+@Composable
+private fun DpiDialog(
+    initial: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (Int) -> Unit,
+) {
+    val followingSystem = initial == DpiUtils.DEFAULT_DPI
+    var useSystem by remember(initial) { mutableStateOf(followingSystem) }
+    var dpi by remember(initial) {
+        mutableFloatStateOf(
+            if (followingSystem) 360f else initial.toFloat(),
+        )
+    }
+
+    FolkAlertDialog(onDismissRequest = onDismiss, width = 360.dp) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.settings_app_dpi),
+                style = MaterialTheme.typography.titleLarge,
+            )
+
+            FolkSwitchPreference(
+                title = stringResource(R.string.settings_app_dpi_system),
+                checked = useSystem,
+                onCheckedChange = { useSystem = it },
+            )
+
+            if (!useSystem) {
+                FolkSliderPreference(
+                    title = stringResource(R.string.settings_app_dpi_value),
+                    value = dpi,
+                    valueRange = DpiUtils.MIN_DPI.toFloat()..DpiUtils.MAX_DPI.toFloat(),
+                    // 40dpi steps, which is what the presets below use too.
+                    steps = ((DpiUtils.MAX_DPI - DpiUtils.MIN_DPI) / 40) - 1,
+                    valueFormat = { "${it.toInt()} DPI" },
+                    onValueChange = { dpi = it },
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(240, 360, 480, 560).forEach { preset ->
+                        TextButton(
+                            onClick = { dpi = preset.toFloat() },
+                            colors = FolkButtonDefaults.textColors(),
+                        ) {
+                            Text("$preset")
+                        }
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                TextButton(
+                    onClick = onDismiss,
+                    colors = FolkButtonDefaults.textColors(),
+                ) {
+                    Text(stringResource(R.string.cancel))
+                }
+                TextButton(
+                    onClick = {
+                        onConfirm(if (useSystem) DpiUtils.DEFAULT_DPI else dpi.toInt())
+                    },
+                    colors = FolkButtonDefaults.textColors(),
+                ) {
+                    Text(stringResource(R.string.confirm))
+                }
+            }
+        }
+    }
 }
 
 /**

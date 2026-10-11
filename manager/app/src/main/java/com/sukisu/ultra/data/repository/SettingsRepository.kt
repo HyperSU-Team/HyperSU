@@ -23,6 +23,13 @@ interface SettingsRepository {
     /** How the Grid layout's status cards are arranged: "list" (stacked) or "grid" (big + two). */
     var statsTopLayout: String
     var pageScale: Float
+    /**
+     * Display density in dpi, or -1 to follow the system.
+     *
+     * Stored in its own preference file by [com.sukisu.ultra.ui.util.DpiUtils]; this is the typed
+     * view of it for the settings page.
+     */
+    var appDpi: Int
     /** Whether switches draw a tick or cross on the thumb. */
     var showSwitchIcon: Boolean
     /** Whether sliders snap to discrete steps instead of moving continuously. */

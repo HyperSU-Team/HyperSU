@@ -29,6 +29,7 @@ data class ColorPaletteScreenActions(
     val onSetEnableSwipeDismiss: (Boolean) -> Unit,
     val onSetPagerInterceptionMode: (Int) -> Unit,
     val onSetPageScale: (Float) -> Unit,
+    val onSetAppDpi: (Int) -> Unit,
     val onSetModuleDescriptionMaxLines: (Int) -> Unit,
     val onSetSimpleListBottomBar: (Boolean) -> Unit,
     val onSetShowSwitchIcon: (Boolean) -> Unit,

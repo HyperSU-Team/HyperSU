@@ -134,7 +134,11 @@ class MainActivity : ComponentActivity() {
 
 
     override fun attachBaseContext(newBase: android.content.Context) {
-        super.attachBaseContext(com.sukisu.ultra.ui.util.LocaleHelper.wrap(newBase))
+        super.attachBaseContext(
+            com.sukisu.ultra.ui.util.DpiUtils.wrap(
+                com.sukisu.ultra.ui.util.LocaleHelper.wrap(newBase),
+            ),
+        )
     }
 
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")

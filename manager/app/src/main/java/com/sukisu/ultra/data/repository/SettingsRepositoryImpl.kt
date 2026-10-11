@@ -205,6 +205,12 @@ class SettingsRepositoryImpl : SettingsRepository {
         get() = prefs.intPref("module_description_max_lines", 4)
         set(value) = prefs.edit { putInt("module_description_max_lines", value) }
 
+    // Delegated rather than read here: DpiUtils owns this key, and it is read from
+    // attachBaseContext before this repository exists.
+    override var appDpi: Int
+        get() = com.sukisu.ultra.ui.util.DpiUtils.currentDpi(ksuApp)
+        set(value) = com.sukisu.ultra.ui.util.DpiUtils.save(ksuApp, value)
+
     // Keys and defaults follow FolkPatch's, so a theme and an existing install carry across.
     override var showSwitchIcon: Boolean
         get() = prefs.booleanPref("show_switch_icon", true)

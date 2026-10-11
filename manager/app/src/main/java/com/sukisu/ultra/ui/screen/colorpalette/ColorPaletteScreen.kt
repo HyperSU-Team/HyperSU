@@ -66,6 +66,7 @@ fun ColorPaletteScreen() {
         onSetEnableSwipeDismiss = viewModel::setEnableSwipeDismiss,
         onSetPagerInterceptionMode = viewModel::setPagerInterceptionMode,
         onSetPageScale = viewModel::setPageScale,
+        onSetAppDpi = viewModel::setAppDpi,
         onSetModuleDescriptionMaxLines = viewModel::setModuleDescriptionMaxLines,
         onSetSimpleListBottomBar = viewModel::setSimpleListBottomBar,
         onSetShowSwitchIcon = viewModel::setShowSwitchIcon,

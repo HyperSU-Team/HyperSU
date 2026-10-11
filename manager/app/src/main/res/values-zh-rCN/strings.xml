@@ -230,6 +230,10 @@
     <string name="settings_ui_mode">界面风格</string>
     <string name="settings_ui_mode_summary">选择应用的界面风格</string>
     <string name="settings_page_scale">界面缩放</string>
+    <string name="settings_app_dpi">显示密度</string>
+    <string name="settings_app_dpi_summary">跟随系统密度</string>
+    <string name="settings_app_dpi_system">跟随系统</string>
+    <string name="settings_app_dpi_value">密度</string>
     <string name="settings_module_display">模块列表</string>
     <string name="settings_module_install_confirm">安装前确认</string>
     <string name="settings_module_install_confirm_summary">刷入前先显示模块压缩包的详细信息以便确认</string>

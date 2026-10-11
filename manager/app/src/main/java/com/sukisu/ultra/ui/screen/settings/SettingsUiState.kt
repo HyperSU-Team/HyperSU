@@ -21,6 +21,7 @@ data class SettingsUiState(
     val enableFloatingBottomBar: Boolean = false,
     val enableNavigationBadge: Boolean = true,
     val pageScale: Float = 1.0f,
+    val appDpi: Int = -1,
     val moduleDescriptionMaxLines: Int = 4,
     val simpleListBottomBar: Boolean = false,
     val moduleInstallConfirm: Boolean = true,
