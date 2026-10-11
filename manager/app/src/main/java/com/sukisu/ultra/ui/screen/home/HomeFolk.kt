@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Extension
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Layers
 import androidx.compose.material.icons.outlined.Security
@@ -617,8 +618,11 @@ private fun HomeWorkingCard(
             Column(modifier = Modifier.padding(24.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (showCheck) {
+                        // Outlined, as FolkPatch draws this card. The rounded one is a solid disc
+                        // with the tick knocked out of it, so tinted white over a wallpaper it
+                        // reads as a plain blob with a hole rather than as a check mark.
                         Icon(
-                            imageVector = Icons.Rounded.CheckCircle,
+                            imageVector = Icons.Outlined.CheckCircle,
                             contentDescription = null,
                             modifier = Modifier.size(28.dp),
                             tint = palette.content,

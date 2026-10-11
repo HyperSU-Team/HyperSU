@@ -1,12 +1,13 @@
 package com.sukisu.ultra.ui.viewmodel
 
-import android.content.Context
 import android.os.Build
 import android.system.Os
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,6 +29,21 @@ import com.sukisu.ultra.ui.util.getSELinuxStatusRaw
 import com.sukisu.ultra.ui.util.managerSignatureSha256
 import com.sukisu.ultra.ui.util.resolveDeviceName
 import com.sukisu.ultra.ui.util.rootAvailable
+
+/**
+ * The facts that need nothing from the kernel: no root, no driver, no shell.
+ *
+ * Read on their own, before anything that does need those, so a failure in the root-dependent
+ * half cannot take them down with it.
+ */
+private data class HomeBasics(
+    val kernelRelease: String,
+    val fingerprint: String,
+    val deviceModel: String,
+    val managerVersion: ManagerVersion,
+    val selinuxStatus: String,
+    val seccompStatus: Int,
+)
 
 class HomeViewModel(
     private val settingsRepo: SettingsRepository = SettingsRepositoryImpl()
@@ -53,40 +69,95 @@ class HomeViewModel(
     private fun reload() {
         if (loadJob?.isActive == true) return
         loadJob = viewModelScope.launch {
-            // buildState is written not to throw, but the state is still updated even if it does:
-            // leaving _uiState at its initial value is worse than showing a half-filled screen,
-            // because the initial value is indistinguishable from a device with no kernel.
-            val baseState = withContext(Dispatchers.IO) {
-                runCatching { buildState() }.getOrElse { failure ->
-                    android.util.Log.w("HomeViewModel", "could not read the home state", failure)
-                    HomeUiState(loaded = true)
+            // A cold start's first read can come back without the facts that need no root at all:
+            // the driver is still coming up, the package manager has not settled, or the process
+            // was started before the user unlocked. A single attempt then left the rows showing
+            // dashes until something else recreated the activity - which is why re-selecting the
+            // language, and nothing else, appeared to fix it. So it is retried, and only while the
+            // state is still missing something it should always have.
+            var attempt = 0
+            var state = readState()
+            while (!state.hasAlwaysAvailableFacts() && attempt < MaxLoadAttempts - 1) {
+                attempt++
+                delay(RetryDelayMillis * attempt)
+                state = readState()
+            }
+
+            // A later read that fails must not replace a good one with a blank screen, so the
+            // previously shown state is kept whenever the new one has less to say.
+            _uiState.update { previous ->
+                if (previous.loaded && !state.hasAlwaysAvailableFacts() && previous.hasAlwaysAvailableFacts()) {
+                    previous
+                } else {
+                    state
                 }
             }
-            _uiState.update { baseState }
+        }
+    }
+
+    private suspend fun readState(): HomeUiState = withContext(Dispatchers.IO) {
+        runCatching { buildState() }.getOrElse { failure ->
+            Log.w(TAG, "could not read the home state", failure)
+            // Even a failed read reports the facts that need nothing, rather than blanking them.
+            HomeUiState(loaded = true, systemInfo = basicsAsSystemInfo(readBasics(), kernelUAPIVersion = 0))
         }
     }
 
     /**
+     * Whether the state carries the facts that no permission, driver or root shell is needed for.
+     *
+     * These come from `Os.uname`, `Build` and the package manager, so they are available on every
+     * device - with or without a kernel, and before or after a root shell can be opened. An empty
+     * one therefore means the read failed rather than that the device has no value, and is worth
+     * retrying.
+     */
+    private fun HomeUiState.hasAlwaysAvailableFacts(): Boolean =
+        systemInfo.kernelVersion.isNotBlank() &&
+                systemInfo.managerVersion.isNotBlank() &&
+                systemInfo.fingerprint.isNotBlank()
+
+    private fun readBasics(): HomeBasics = HomeBasics(
+        kernelRelease = runCatching { Os.uname().release }.getOrNull().orEmpty(),
+        fingerprint = runCatching { Build.FINGERPRINT }.getOrNull().orEmpty(),
+        deviceModel = runCatching { resolveDeviceName() }.getOrNull().orEmpty(),
+        managerVersion = runCatching { getManagerVersion(ksuApp) }
+            .getOrElse { ManagerVersion(versionName = BuildConfig.VERSION_NAME, versionCode = 0L) },
+        selinuxStatus = runCatching { getSELinuxStatusRaw() }.getOrNull().orEmpty(),
+        // PR_GET_SECCOMP. Reports -1 rather than throwing when seccomp is not compiled in.
+        seccompStatus = runCatching { Os.prctl(21 /* PR_GET_SECCOMP */, 0, 0, 0, 0) }.getOrDefault(-1),
+    )
+
+    private fun basicsAsSystemInfo(
+        basics: HomeBasics,
+        kernelUAPIVersion: Int,
+    ): SystemInfo = SystemInfo(
+        kernelVersion = basics.kernelRelease,
+        managerVersion = "${basics.managerVersion.versionName} " +
+                "(${basics.managerVersion.versionCode}-$kernelUAPIVersion)",
+        deviceModel = basics.deviceModel,
+        kernelFullVersion = null,
+        fingerprint = basics.fingerprint,
+        selinuxStatus = basics.selinuxStatus,
+        seccompStatus = basics.seccompStatus,
+    )
+
+    /**
      * Gathers the home screen's state.
      *
-     * Every field that can fail is read on its own and falls back to a safe value, because one
-     * failure used to take the whole state with it: the callers below reach a root shell, a native
-     * library and the package manager, and an exception from any of them meant `_uiState` was never
-     * updated at all. The screen then sat on its initial empty state, which is what made the kernel
-     * version, the manager version, the fingerprint and the SELinux row appear and disappear
-     * between launches - they were never wrong, the update simply never arrived.
-     *
-     * Nothing here is allowed to abort the rest: the facts that need no root at all - the kernel
-     * release, this app's own version, the fingerprint, the device name - are always available and
-     * are always reported, root or not.
+     * The order matters. Everything that needs no root is read and assembled first, and the
+     * settings are read one guarded flag at a time, so a failure anywhere in the root-dependent
+     * half - or in a preference read - cannot take the kernel version, this app's own version, the
+     * fingerprint or the device name down with it. Those four used to come up blank while the rest
+     * of the card was fine, because they were built in the same call as everything else and a
+     * throw discarded the whole thing.
      */
     private fun buildState(): HomeUiState {
+        // ---- Facts that need nothing: no root, no driver, no shell. ----
+        val basics = readBasics()
+
+        // ---- Facts that need the driver. Each one guarded on its own. ----
         val kernelVersion = runCatching { getKernelVersion() }
             .getOrElse { KernelVersion(-1, -1, -1) }
-
-        // The native library is loaded in Natives' init, so every one of these can throw if it is
-        // missing or the driver is absent. They are read through one guard each rather than a
-        // single block so a device without a kernel still gets the rest of the state.
         val isManager = runCatching { Natives.isManager }.getOrDefault(false)
         val ksuVersion = if (isManager) runCatching { Natives.version }.getOrNull() else null
         val kernelUAPIVersion = if (isManager) runCatching { Natives.kernelUAPIVersion }.getOrNull() else null
@@ -95,13 +166,6 @@ class HomeViewModel(
             runCatching { if (kernelVersion.isGKI()) Natives.isLkmMode else null }.getOrNull()
         }
         val isRootAvailable = runCatching { rootAvailable() }.getOrDefault(false)
-        // Guarded, and it has to be: getManagerVersion dereferences the PackageManager's result and
-        // the version name with `!!`, and it is handed the global application reference, which is
-        // only assigned once the user is unlocked. A throw here used to take the manager version,
-        // the kernel version, the device name and the fingerprint down with it - which is exactly
-        // the four rows that came up blank while the rest of the card was fine.
-        val managerVersion = runCatching { getManagerVersion(ksuApp) }
-            .getOrElse { ManagerVersion(versionName = BuildConfig.VERSION_NAME, versionCode = 0L) }
         val kernelFullVersion = if (isManager) runCatching { Natives.getFullVersion() }.getOrNull() else null
 
         val zygiskImplementation = if (isManager && isRootAvailable) {
@@ -113,6 +177,19 @@ class HomeViewModel(
                 )
             }.getOrNull()
         } else null
+
+        // ---- Settings. Read through the repository, one guard each. ----
+        // "show_full_status", not FolkPatch's "show_fingerprint": that one means "hide the
+        // fingerprint" and defaults to false, so reading it here inverted the setting for anyone
+        // who had ever touched it.
+        val showFullStatus = runCatching { settingsRepo.showFullStatus }.getOrDefault(true)
+        val showHomeDeviceModel = runCatching { settingsRepo.showHomeDeviceModel }.getOrDefault(true)
+        val showHomeFingerprint = runCatching { settingsRepo.showHomeFingerprint }.getOrDefault(true)
+        val showHomeSelinux = runCatching { settingsRepo.showHomeSelinux }.getOrDefault(true)
+        val showHomeSeccomp = runCatching { settingsRepo.showHomeSeccomp }.getOrDefault(true)
+
+        val systemInfo = basicsAsSystemInfo(basics, managerUAPIVersion)
+            .copy(kernelFullVersion = kernelFullVersion, zygiskImplementation = zygiskImplementation)
 
         return HomeUiState(
             kernelVersion = kernelVersion,
@@ -130,31 +207,24 @@ class HomeViewModel(
             isSafeMode = runCatching { Natives.isSafeMode }.getOrDefault(false),
             loaded = true,
             isLateLoadMode = runCatching { Natives.isLateLoadMode }.getOrDefault(false),
-            // Read through the repository rather than the preference directly. The key is
-            // "show_full_status", not FolkPatch's "show_fingerprint": that one means "hide the
-            // fingerprint" and defaults to false, so reading it here inverted the setting for
-            // anyone who had ever touched it.
-            showFullStatus = settingsRepo.showFullStatus,
-            showHomeDeviceModel = settingsRepo.showHomeDeviceModel,
-            showHomeFingerprint = settingsRepo.showHomeFingerprint,
-            showHomeSelinux = settingsRepo.showHomeSelinux,
-            showHomeSeccomp = settingsRepo.showHomeSeccomp,
+            showFullStatus = showFullStatus,
+            showHomeDeviceModel = showHomeDeviceModel,
+            showHomeFingerprint = showHomeFingerprint,
+            showHomeSelinux = showHomeSelinux,
+            showHomeSeccomp = showHomeSeccomp,
             managerSignature = runCatching { managerSignatureSha256(ksuApp) }.getOrNull(),
-            currentManagerVersionCode = managerVersion.versionCode,
-            systemInfo = SystemInfo(
-                // `Os.uname()` needs no root, so this is the release string even on a device with
-                // no kernel driver at all.
-                kernelVersion = runCatching { Os.uname().release }.getOrDefault(""),
-                managerVersion = "${managerVersion.versionName} (${managerVersion.versionCode}-$managerUAPIVersion)",
-                deviceModel = runCatching { resolveDeviceName() }.getOrDefault(""),
-                kernelFullVersion = kernelFullVersion,
-                fingerprint = Build.FINGERPRINT,
-                selinuxStatus = runCatching { getSELinuxStatusRaw() }.getOrDefault("Unknown"),
-                seccompStatus = runCatching {
-                    Os.prctl(21 /* PR_GET_SECCOMP */, 0, 0, 0, 0)
-                }.getOrDefault(-1),
-                zygiskImplementation = zygiskImplementation,
-            ),
+            currentManagerVersionCode = basics.managerVersion.versionCode,
+            systemInfo = systemInfo,
         )
+    }
+
+    private companion object {
+        const val TAG = "HomeViewModel"
+
+        /** How many times a cold start's incomplete read is retried before it is shown as it is. */
+        const val MaxLoadAttempts = 3
+
+        /** Between attempts, multiplied by the attempt number so the wait grows. */
+        const val RetryDelayMillis = 400L
     }
 }

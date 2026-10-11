@@ -54,14 +54,23 @@ object HardwareMonitor {
         val usedBytes: Long,
     )
 
-    /** Runs a command in the shared root shell and returns its output lines, empty on failure. */
+    /**
+     * Runs a command in the shared root shell and returns its output lines, empty on failure.
+     *
+     * The output has to be collected through `to(...)`. A bare `exec()` returns a [Shell.Result]
+     * whose `out` list is empty - libsu only fills it when the job was given a list to fill - so
+     * reading `exec().out` directly yields nothing on every command. Every reading here was coming
+     * back empty for that reason, which is why the stats layout showed `--` for CPU and GPU,
+     * `0B / 0B` for memory, and no CPU-frequency or storage rows at all.
+     */
     private suspend fun runShell(command: String): List<String> =
         withContext(Dispatchers.IO) {
-            runCatching { getRootShell().newJob().add(command).exec().out }
-                .getOrElse { failure ->
-                    Log.w(TAG, "shell command failed: $command", failure)
-                    emptyList()
-                }
+            runCatching {
+                getRootShell().newJob().add(command).to(ArrayList(), null).exec().out
+            }.getOrElse { failure ->
+                Log.w(TAG, "shell command failed: $command", failure)
+                emptyList()
+            }
         }
 
     /**

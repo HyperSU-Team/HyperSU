@@ -184,7 +184,15 @@ fun FolkScaffold(
         contentColor = MaterialTheme.colorScheme.onBackground,
         snackbarHost = {
             if (snackbarHostState != null) {
-                SnackbarHost(snackbarHostState)
+                // Lifted clear of the bottom bar. The bar is drawn by the shell around this
+                // scaffold, so this scaffold does not know about it and its snackbar host would
+                // otherwise sit at the very bottom of the page - underneath the floating pill.
+                // That is what hid the "no update" and "check failed" messages the settings page
+                // raises from its manager-update row.
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier.padding(bottom = folkBottomClearance()),
+                )
             }
         },
         floatingActionButton = floatingActionButton,
