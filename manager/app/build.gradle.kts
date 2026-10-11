@@ -23,7 +23,12 @@ val managerVersionCode = rootProject.extra["managerVersionCode"] as Int
 val managerVersionName = rootProject.extra["managerVersionName"] as String
 
 val isPrBuild = project.findProperty("IS_PR_BUILD")?.toString()?.toBoolean() ?: false
-val defaultManagerPackageName = if (isPrBuild) "com.sukisu.ultra.pr" else "com.sukisu.ultra"
+// The application id, not the Kotlin package: `namespace` below stays com.sukisu.ultra, and it is
+// the namespace that the native side's function names are derived from
+// (Java_com_sukisu_ultra_Natives_*). Renaming that would break every JNI binding; renaming only
+// the application id changes what the launcher and PackageManager see, which is the point.
+val defaultManagerPackageName =
+    if (isPrBuild) "com.hypersu.manager.pr" else "com.hypersu.manager"
 // The only place the product name is set: it feeds resValues (launcher label, home
 // title, About, recents), and the release file name below.
 val defaultManagerName = if (isPrBuild) "HyperSU PR" else "HyperSU"

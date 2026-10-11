@@ -228,7 +228,10 @@ fn main() {
         }
     };
     if env::var("KSU_PACKAGE_NAME").is_err() {
-        println!("cargo:rustc-env=KSU_PACKAGE_NAME=com.sukisu.ultra");
+        // Must match the manager's applicationId: ksud derives the manager's device-protected data
+        // directory from this to stage a boot backup there, and the manager reads it back through
+        // its own Context. A mismatch sends the backup somewhere the manager never looks.
+        println!("cargo:rustc-env=KSU_PACKAGE_NAME=com.hypersu.manager");
     }
     println!("cargo:rustc-env=VERSION_CODE={code}");
     println!("cargo:rustc-env=VERSION_NAME={name}");
