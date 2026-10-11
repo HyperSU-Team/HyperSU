@@ -67,6 +67,8 @@ data class SettingsScreenActions(
     val onOpenTheme: () -> Unit,
     val onOpenProfileTemplate: () -> Unit,
     val onSetLanguage: (String) -> Unit,
+    /** Opens the language picker page; the choice is made there. */
+    val onOpenLanguage: () -> Unit,
     val onSetSuCompatMode: (Int) -> Unit,
     val onSetKernelUmountEnabled: (Boolean) -> Unit,
     val onSetSelinuxHideEnabled: (Boolean) -> Unit,

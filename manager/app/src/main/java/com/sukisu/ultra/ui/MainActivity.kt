@@ -89,6 +89,7 @@ import com.sukisu.ultra.ui.screen.install.InstallScreen
 import com.sukisu.ultra.ui.screen.module.ModulePager
 import com.sukisu.ultra.ui.screen.modulerepo.ModuleRepoDetailScreen
 import com.sukisu.ultra.ui.screen.modulerepo.ModuleRepoScreen
+import com.sukisu.ultra.ui.screen.settings.LanguagePickerScreen
 import com.sukisu.ultra.ui.screen.settings.SettingPager
 import com.sukisu.ultra.ui.screen.settings.tools.ToolsScreen
 import com.sukisu.ultra.ui.screen.sulog.SulogScreen
@@ -111,6 +112,7 @@ import com.sukisu.ultra.ui.util.rememberContentReady
 import com.sukisu.ultra.ui.util.shouldShowSplitPane
 import com.sukisu.ultra.ui.viewmodel.MainActivityViewModel
 import com.sukisu.ultra.ui.viewmodel.MainPagerConfig
+import com.sukisu.ultra.ui.viewmodel.SettingsViewModel
 import com.sukisu.ultra.ui.viewmodel.ModuleViewModel
 import com.sukisu.ultra.ui.viewmodel.SuperUserViewModel
 import top.yukonga.miuix.kmp.nav.core.NavDisplay
@@ -277,6 +279,20 @@ class MainActivity : ComponentActivity() {
                                 entry<Route.SuSFS>(swipeDismiss = swipeDismiss) { SuSFSScreen() }
                                 entry<Route.Tool>(swipeDismiss = swipeDismiss) { ToolsScreen() }
                                 entry<Route.UmountManager>(swipeDismiss = swipeDismiss) { UmountManagerScreen() }
+                                entry<Route.Language>(swipeDismiss = swipeDismiss) {
+                                    // The language lives in SettingsViewModel, which owns both the
+                                    // stored value and the switch that recreates the activity.
+                                    val settingsViewModel = viewModel<SettingsViewModel>()
+                                    val settingsState by settingsViewModel.uiState
+                                        .collectAsStateWithLifecycle()
+                                    LanguagePickerScreen(
+                                        currentTag = settingsState.appLanguage,
+                                        onBack = { navigator.pop() },
+                                        onSelected = { tag ->
+                                            settingsViewModel.setLanguage(this@MainActivity, tag)
+                                        },
+                                    )
+                                }
                             }
                         }
                     }

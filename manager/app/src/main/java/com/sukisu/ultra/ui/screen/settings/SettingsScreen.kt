@@ -50,6 +50,7 @@ fun SettingPager(
         onOpenTheme = { navigator.push(Route.ColorPalette) },
         onOpenProfileTemplate = { navigator.push(Route.AppProfileTemplate) },
         onSetLanguage = { tag -> viewModel.setLanguage(context, tag) },
+        onOpenLanguage = { navigator.push(Route.Language) },
         onSetSuCompatMode = viewModel::setSuCompatMode,
         onSetKernelUmountEnabled = viewModel::setKernelUmountEnabled,
         onSetSelinuxHideEnabled = viewModel::setSelinuxHideEnabled,

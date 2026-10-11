@@ -797,6 +797,7 @@ private fun HomeLayoutGrid(
 
         HomeWarnings(state, actions)
         HomeFacts(state)
+        HomeSupportLinks(actions)
         Spacer(Modifier.height(8.dp))
     }
 }
@@ -818,8 +819,10 @@ private fun HomeLayoutCircle(
     ) {
         HomeHeroCard(state = state, actions = actions, wallpaperUri = heroWallpaperUri())
         HomeWarnings(state, actions)
-        HomeSupportLinks(actions)
+        // The two quick links sit after the facts, not between the status card and the version
+        // list: in that position they split the two things the screen is actually about.
         HomeFacts(state)
+        HomeSupportLinks(actions)
         Spacer(Modifier.height(8.dp))
     }
 }
@@ -899,6 +902,8 @@ private fun HomeLayoutFocus(
             fact(stringResource(R.string.home_device_model), state.systemInfo.deviceModel)
         }
 
+        HomeSupportLinks(actions)
+
         Spacer(Modifier.height(8.dp))
     }
 }
@@ -964,6 +969,7 @@ private fun HomeLayoutDashboard(
 
         HomeWarnings(state, actions)
         HomeFacts(state)
+        HomeSupportLinks(actions)
         Spacer(Modifier.height(8.dp))
     }
 }

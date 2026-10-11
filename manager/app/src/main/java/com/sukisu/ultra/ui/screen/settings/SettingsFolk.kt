@@ -126,37 +126,23 @@ fun SettingPagerFolk(
             item {
                 FolkSettingsSectionGroup(title = stringResource(R.string.settings_theme)) {
                     item {
-                        val context = LocalContext.current
                         val languageIndex = languageTags.indexOf(uiState.appLanguage)
                             .coerceAtLeast(0)
-                        // Where the system has a per-app language page, the row hands
-                        // the choice to it: the switch then happens while our task is
-                        // in the background, so our activity is not recreated in front
-                        // of the user. Only where that page is missing does the row
-                        // open the app's own list.
-                        val systemPicker = remember {
-                            LocaleHelper.canLaunchSystemLanguageSettings(context)
-                        }
-                        if (systemPicker) {
-                            FolkValuePreference(
-                                title = stringResource(R.string.settings_language),
-                                summary = stringResource(R.string.settings_language_summary),
-                                icon = Icons.Rounded.Language,
-                                value = languageNames[languageIndex],
-                                onClick = {
-                                    LocaleHelper.launchSystemLanguageSettings(context)
-                                },
-                            )
-                        } else {
-                            FolkChoicePreference(
-                                title = stringResource(R.string.settings_language),
-                                summary = stringResource(R.string.settings_language_summary),
-                                icon = Icons.Rounded.Language,
-                                options = languageNames,
-                                selectedIndex = languageIndex,
-                                onSelect = { index -> actions.onSetLanguage(languageTags[index]) },
-                            )
-                        }
+                        // The row opens a page rather than a dropdown, in the FolkPatch design:
+                        // the languages are a list the user reads, not a menu that covers the
+                        // screen it was opened from.
+                        //
+                        // The switch itself is still masked by the FolkLanguageSwitch cover,
+                        // which is the pairing this depends on: handing the choice to the
+                        // system's per-app language page leaves that cover with nothing to
+                        // mask and recreates the activity in front of the user.
+                        FolkValuePreference(
+                            title = stringResource(R.string.settings_language),
+                            summary = stringResource(R.string.settings_language_summary),
+                            icon = Icons.Rounded.Language,
+                            value = languageNames[languageIndex],
+                            onClick = actions.onOpenLanguage,
+                        )
                     }
                     item {
                         FolkNavigationPreference(

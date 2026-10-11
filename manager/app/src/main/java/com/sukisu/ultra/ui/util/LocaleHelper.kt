@@ -20,6 +20,15 @@ object LocaleHelper {
     // follow system language.
     const val SYSTEM = ""
 
+    /**
+     * The languages the in-app list offers.
+     *
+     * These have to be the tags the platform recognises, which is not always the tag a
+     * resource folder is named after. `values-in` and `values-iw` are the historical folder
+     * names for Indonesian and Hebrew; the language tags are `id` and `he`, and asking for a
+     * tag the generated locale config does not list is what made a switch fail. `tl` is the
+     * other name for `fil`, so only one of the two is offered.
+     */
     val SUPPORTED_TAGS: List<String> = listOf(
         "en", "ar", "az", "bg", "bn", "bn-BD", "bs", "da", "de", "es", "et",
         "fa", "fil", "fr", "gl", "hi", "hr", "hu", "id", "it", "he", "ja",
@@ -37,7 +46,8 @@ object LocaleHelper {
             .edit { putString(KEY_LANGUAGE, tag) }
     }
 
-    private fun getSystemLocale(): Locale = Resources.getSystem().configuration.locales[0]
+    private fun getSystemLocale(): Locale =
+        Resources.getSystem().configuration.locales[0] ?: Locale.getDefault()
 
     private fun getAppLocaleManager(context: Context): android.app.LocaleManager? =
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -52,7 +62,7 @@ object LocaleHelper {
         }
 
         val locales = getAppLocaleManager(context)?.applicationLocales ?: LocaleList.getEmptyLocaleList()
-        val tag = if (locales.isEmpty) SYSTEM else locales[0].toLanguageTag()
+        val tag = if (locales.isEmpty) SYSTEM else locales[0]?.toLanguageTag() ?: SYSTEM
         persistLanguage(context, tag)
         return tag
     }
@@ -69,10 +79,20 @@ object LocaleHelper {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             // Android 13+ treats applicationLocales as the source of truth.
-            getAppLocaleManager(context)?.applicationLocales = if (tag.isEmpty()) {
-                LocaleList.getEmptyLocaleList()
-            } else {
-                LocaleList.forLanguageTags(tag)
+            //
+            // The assignment is guarded: the platform rejects a tag the app's locale config
+            // does not list, and that rejection arrives as an exception. The config is
+            // generated from the resource folders, whose names do not always match the modern
+            // language tag - `values-in` and `values-iw` are the historical spellings of `id`
+            // and `he` - so a tag offered by our own list can be refused. Letting that escape
+            // took the app down on a language pick; the persisted value is already written, so
+            // the switch still applies on the next launch.
+            runCatching {
+                getAppLocaleManager(context)?.applicationLocales = if (tag.isEmpty()) {
+                    LocaleList.getEmptyLocaleList()
+                } else {
+                    LocaleList.forLanguageTags(tag)
+                }
             }
             return
         }
@@ -123,9 +143,11 @@ object LocaleHelper {
         Intent(Settings.ACTION_APP_LOCALE_SETTINGS)
             .setData(Uri.fromParts("package", context.packageName, null))
 
-    fun wrap(base: Context): Context {        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    fun wrap(base: Context): Context {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             syncPersistedLanguageWithSystem(base)
-            Locale.setDefault(base.resources.configuration.locales[0])
+            // LocaleList.get returns null on an empty list, and Locale.setDefault rejects null.
+            base.resources.configuration.locales[0]?.let { Locale.setDefault(it) }
             return base
         }
 
