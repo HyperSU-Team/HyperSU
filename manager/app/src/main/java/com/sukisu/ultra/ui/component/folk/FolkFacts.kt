@@ -110,7 +110,10 @@ fun FolkFactRow(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.fillMaxWidth(),
         )
-        Text(
+        // Wrap-safe rather than a plain Text: a fingerprint or a kernel string is one unbreakable
+        // token, and without break opportunities it pushes the row wider than the screen instead of
+        // wrapping onto the next line.
+        FolkWrapSafeText(
             text = value,
             style = folkPreferenceValueStyle(),
             color = folkSeverityColor(valueTone),
