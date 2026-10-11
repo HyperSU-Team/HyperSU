@@ -888,59 +888,50 @@ private fun HomeLayoutGrid(
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // "grid" puts the two extra cards beside the hero instead of under it, which is what
-        // FolkPatch's stats top layout switch does. Both arrangements carry the same cards; only
-        // their placement differs, so the reading order is the only thing that changes.
-        val gridTop = LocalStatsTopLayout.current == STATS_TOP_GRID
+        HomeGridStatusCards(state, actions)
 
-        if (gridTop) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(IntrinsicSize.Min),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Box(modifier = Modifier.weight(1f)) {
-                    HomeHeroCard(
-                        state = state,
-                        actions = actions,
-                        wallpaperUri = gridHeroWallpaperUri(),
-                        gridStyle = true,
-                    )
-                }
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    HomeTile(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Outlined.Info,
-                        label = stringResource(R.string.home_kernel),
-                        value = state.systemInfo.kernelVersion,
-                        severity = if (state.isManager) FolkSeverity.Positive else FolkSeverity.Critical,
-                    )
-                    HomeTile(
-                        modifier = Modifier.weight(1f),
-                        icon = Icons.Outlined.Security,
-                        label = stringResource(R.string.home_selinux_status),
-                        value = state.systemInfo.selinuxStatus,
-                        severity = if (state.isSELinuxPermissive) FolkSeverity.Caution else FolkSeverity.Positive,
-                    )
-                }
+        HomeWarnings(state, actions)
+        HomeFacts(state)
+        HomeSupportLinks(actions)
+        Spacer(Modifier.height(8.dp))
+    }
+}
+
+/**
+ * The Grid layout's status cards: a hero card, and the kernel and SELinux tiles.
+ *
+ * Extracted so the Stats layout draws exactly these rather than a second copy that could drift.
+ * "grid" puts the two tiles beside the hero instead of under it, which is what FolkPatch's stats
+ * top layout switch does; both arrangements carry the same cards, so only the reading order
+ * changes.
+ */
+@Composable
+private fun HomeGridStatusCards(
+    state: HomeUiState,
+    actions: HomeActions,
+) {
+    val gridTop = LocalStatsTopLayout.current == STATS_TOP_GRID
+
+    if (gridTop) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                HomeHeroCard(
+                    state = state,
+                    actions = actions,
+                    wallpaperUri = gridHeroWallpaperUri(),
+                    gridStyle = true,
+                )
             }
-        } else {
-            HomeHeroCard(
-                state = state,
-                actions = actions,
-                wallpaperUri = gridHeroWallpaperUri(),
-                gridStyle = true,
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 HomeTile(
                     modifier = Modifier.weight(1f),
@@ -958,11 +949,33 @@ private fun HomeLayoutGrid(
                 )
             }
         }
+    } else {
+        HomeHeroCard(
+            state = state,
+            actions = actions,
+            wallpaperUri = gridHeroWallpaperUri(),
+            gridStyle = true,
+        )
 
-        HomeWarnings(state, actions)
-        HomeFacts(state)
-        HomeSupportLinks(actions)
-        Spacer(Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            HomeTile(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Outlined.Info,
+                label = stringResource(R.string.home_kernel),
+                value = state.systemInfo.kernelVersion,
+                severity = if (state.isManager) FolkSeverity.Positive else FolkSeverity.Critical,
+            )
+            HomeTile(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Outlined.Security,
+                label = stringResource(R.string.home_selinux_status),
+                value = state.systemInfo.selinuxStatus,
+                severity = if (state.isSELinuxPermissive) FolkSeverity.Caution else FolkSeverity.Positive,
+            )
+        }
     }
 }
 
@@ -1004,7 +1017,7 @@ private fun HomeLayoutStats(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         // The status cards, drawn exactly as the Grid layout draws them.
-        HomeLayoutGrid(state, actions, PaddingValues())
+        HomeGridStatusCards(state, actions)
 
         if (canSample) {
             SystemMonitoringSection(systemMonitor, timeSeries)
