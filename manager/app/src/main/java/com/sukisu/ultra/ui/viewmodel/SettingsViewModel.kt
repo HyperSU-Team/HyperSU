@@ -46,6 +46,7 @@ class SettingsViewModel(
             val enableNavigationBadge = repo.enableNavigationBadge
             val pageScale = repo.pageScale
             val moduleDescriptionMaxLines = repo.moduleDescriptionMaxLines
+            val simpleListBottomBar = repo.simpleListBottomBar
             val enableWebDebugging = repo.enableWebDebugging
             val showFullStatus = repo.showFullStatus
             val showHomeDeviceModel = repo.showHomeDeviceModel
@@ -91,6 +92,7 @@ class SettingsViewModel(
                     enableNavigationBadge = enableNavigationBadge,
                     pageScale = pageScale,
                     moduleDescriptionMaxLines = moduleDescriptionMaxLines,
+                    simpleListBottomBar = simpleListBottomBar,
                     enableWebDebugging = enableWebDebugging,
                     showFullStatus = showFullStatus,
                     showHomeDeviceModel = showHomeDeviceModel,
@@ -204,6 +206,11 @@ class SettingsViewModel(
     fun setModuleDescriptionMaxLines(lines: Int) {
         repo.moduleDescriptionMaxLines = lines
         _uiState.update { it.copy(moduleDescriptionMaxLines = lines) }
+    }
+
+    fun setSimpleListBottomBar(enabled: Boolean) {
+        repo.simpleListBottomBar = enabled
+        _uiState.update { it.copy(simpleListBottomBar = enabled) }
     }
 
     fun setEnableWebDebugging(enabled: Boolean) {

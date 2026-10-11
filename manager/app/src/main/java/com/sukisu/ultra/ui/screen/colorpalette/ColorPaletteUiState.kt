@@ -1,4 +1,4 @@
-﻿package com.sukisu.ultra.ui.screen.colorpalette
+package com.sukisu.ultra.ui.screen.colorpalette
 
 import androidx.compose.runtime.Immutable
 import com.materialkolor.PaletteStyle
@@ -30,5 +30,6 @@ data class ColorPaletteScreenActions(
     val onSetPagerInterceptionMode: (Int) -> Unit,
     val onSetPageScale: (Float) -> Unit,
     val onSetModuleDescriptionMaxLines: (Int) -> Unit,
+    val onSetSimpleListBottomBar: (Boolean) -> Unit,
     val onSetShowFullStatus: (Boolean) -> Unit,
 )

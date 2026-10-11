@@ -102,6 +102,7 @@ import com.sukisu.ultra.ui.theme.BackgroundLayer
 import com.sukisu.ultra.ui.theme.LocalEnableFloatingBottomBar
 import com.sukisu.ultra.ui.theme.LocalEnableNavigationBadge
 import com.sukisu.ultra.ui.theme.LocalModuleDescriptionMaxLines
+import com.sukisu.ultra.ui.theme.LocalSimpleListBottomBar
 import com.sukisu.ultra.ui.theme.VibrationConfig
 import com.sukisu.ultra.ui.theme.HyperSUTheme
 import com.sukisu.ultra.ui.component.folk.FolkLanguageSwitch
@@ -204,6 +205,7 @@ class MainActivity : ComponentActivity() {
                 LocalEnableFloatingBottomBar provides uiState.enableFloatingBottomBar,
                 LocalEnableNavigationBadge provides uiState.enableNavigationBadge,
                 LocalModuleDescriptionMaxLines provides uiState.moduleDescriptionMaxLines,
+                LocalSimpleListBottomBar provides uiState.simpleListBottomBar,
                 LocalBottomBarVisible provides remember { mutableStateOf(true) },
                 LocalIsFloatingNavMode provides uiState.enableFloatingBottomBar,
             ) {

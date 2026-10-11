@@ -248,6 +248,9 @@
     <string name="settings_ui_mode">UI Style</string>
     <string name="settings_ui_mode_summary">Choose the interface style.</string>
     <string name="settings_page_scale">Page Scale</string>
+    <string name="settings_module_display">Module list</string>
+    <string name="settings_simple_list_bottom_bar">Icon-only actions</string>
+    <string name="settings_simple_list_bottom_bar_summary">Show module actions as icons instead of labelled buttons when the row is too narrow</string>
     <string name="settings_page_scale_summary">Adjust the global display scale.</string>
     <string name="settings_module_description_max_lines">Module description max lines</string>
     <string name="settings_module_description_max_lines_summary">Descriptions exceeding this line count will be folded automatically.</string>

@@ -24,6 +24,8 @@ interface SettingsRepository {
     var statsTopLayout: String
     var pageScale: Float
     var moduleDescriptionMaxLines: Int
+    /** Whether a module card's action row drops its labels to fit a narrow screen. */
+    var simpleListBottomBar: Boolean
     var enableWebDebugging: Boolean
     var moduleSortEnabledFirst: Boolean
     var moduleSortActionFirst: Boolean

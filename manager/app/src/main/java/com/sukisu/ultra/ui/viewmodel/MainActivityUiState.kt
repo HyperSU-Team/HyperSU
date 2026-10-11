@@ -12,4 +12,5 @@ data class MainActivityUiState(
     val enableSwipeDismiss: Boolean,
     val pagerInterceptionMode: Int,
     val moduleDescriptionMaxLines: Int = 4,
+    val simpleListBottomBar: Boolean = false,
 )

@@ -50,6 +50,7 @@ class MainActivityViewModel(
             enableSwipeDismiss = settingRepo.enableSwipeDismiss,
             pagerInterceptionMode = settingRepo.pagerInterceptionMode,
             moduleDescriptionMaxLines = settingRepo.moduleDescriptionMaxLines,
+            simpleListBottomBar = settingRepo.simpleListBottomBar,
         )
     }
 

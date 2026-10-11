@@ -305,3 +305,11 @@ val LocalEnableFloatingBottomBar = staticCompositionLocalOf { false }
 val LocalEnableNavigationBadge = staticCompositionLocalOf { true }
 
 val LocalModuleDescriptionMaxLines = staticCompositionLocalOf { 4 }
+
+/**
+ * Whether module cards show their actions as icons only.
+ *
+ * A composition local rather than a parameter because only the module card reads it, and it is
+ * threaded down through several layers that do not care about it.
+ */
+val LocalSimpleListBottomBar = staticCompositionLocalOf { false }

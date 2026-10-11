@@ -1,4 +1,4 @@
-﻿package com.sukisu.ultra.ui.screen.colorpalette
+package com.sukisu.ultra.ui.screen.colorpalette
 
 import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
@@ -56,6 +56,7 @@ fun ColorPaletteScreen() {
         onSetPagerInterceptionMode = viewModel::setPagerInterceptionMode,
         onSetPageScale = viewModel::setPageScale,
         onSetModuleDescriptionMaxLines = viewModel::setModuleDescriptionMaxLines,
+        onSetSimpleListBottomBar = viewModel::setSimpleListBottomBar,
         onSetShowFullStatus = viewModel::setShowFullStatus,
     )
 

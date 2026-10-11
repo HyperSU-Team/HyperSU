@@ -205,6 +205,11 @@ class SettingsRepositoryImpl : SettingsRepository {
         get() = prefs.intPref("module_description_max_lines", 4)
         set(value) = prefs.edit { putInt("module_description_max_lines", value) }
 
+    // The key and default follow FolkPatch's, so a theme and an existing install carry across.
+    override var simpleListBottomBar: Boolean
+        get() = prefs.booleanPref("simple_list_bottom_bar", false)
+        set(value) = prefs.edit { putBoolean("simple_list_bottom_bar", value) }
+
     override var enableWebDebugging: Boolean
         get() = prefs.booleanPref("enable_web_debugging", false)
         set(value) = prefs.edit { putBoolean("enable_web_debugging", value) }

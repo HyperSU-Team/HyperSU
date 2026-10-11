@@ -124,6 +124,7 @@ import com.sukisu.ultra.ui.component.folk.FolkTitleStyle
 import com.sukisu.ultra.ui.component.statustag.StatusTag
 import com.sukisu.ultra.ui.theme.BackgroundConfig
 import com.sukisu.ultra.ui.theme.LocalModuleDescriptionMaxLines
+import com.sukisu.ultra.ui.theme.LocalSimpleListBottomBar
 import com.sukisu.ultra.ui.theme.bannerFadeColor
 import com.sukisu.ultra.ui.theme.tokens.FolkShape
 import com.sukisu.ultra.ui.theme.tokens.FolkType
@@ -616,6 +617,9 @@ private fun ModuleItem(
     val textDecoration = if (module.remove) TextDecoration.LineThrough else null
     val actionButtonsEnabled = !module.remove && module.enabled
     val hasUpdate = updateUrl.isNotEmpty()
+    // In icon-only mode every action drops its label, so the row fits on a narrow screen without
+    // the per-chip fallback deciding differently for each one.
+    val iconOnlyActions = LocalSimpleListBottomBar.current
 
     androidx.compose.material3.Surface(
         modifier = Modifier
@@ -726,7 +730,7 @@ private fun ModuleItem(
                                 onLongClick = { onAddShortcut(ShortcutType.Action) },
                                 icon = Icons.Outlined.PlayArrow,
                                 label = stringResource(R.string.action).takeIf {
-                                    !module.hasWebUi && !hasUpdate
+                                    !iconOnlyActions && !module.hasWebUi && !hasUpdate
                                 },
                             )
                         }
@@ -736,7 +740,7 @@ private fun ModuleItem(
                                 onLongClick = { onAddShortcut(ShortcutType.WebUI) },
                                 icon = Icons.Outlined.Code,
                                 label = stringResource(R.string.open).takeIf {
-                                    !module.hasActionScript && !hasUpdate
+                                    !iconOnlyActions && !module.hasActionScript && !hasUpdate
                                 },
                             )
                         }
@@ -756,7 +760,7 @@ private fun ModuleItem(
                             onLongClick = null,
                             icon = Icons.Outlined.Download,
                             label = stringResource(R.string.module_update).takeIf {
-                                !module.hasActionScript || !module.hasWebUi
+                                !iconOnlyActions && (!module.hasActionScript || !module.hasWebUi)
                             },
                             enabled = !module.remove,
                         )
@@ -771,7 +775,7 @@ private fun ModuleItem(
                     iconModifier = if (module.remove) Modifier.rotate(180f) else Modifier,
                     label = stringResource(
                         if (module.remove) R.string.undo else R.string.uninstall
-                    ).takeIf { !module.hasActionScript && !module.hasWebUi || !hasUpdate },
+                    ).takeIf { !iconOnlyActions && (!module.hasActionScript && !module.hasWebUi || !hasUpdate) },
                 )
             }
         }
