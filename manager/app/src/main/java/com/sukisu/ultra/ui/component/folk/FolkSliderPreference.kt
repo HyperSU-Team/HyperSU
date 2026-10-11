@@ -17,8 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
+import com.sukisu.ultra.ui.theme.SliderStyleConfig
 
 /**
  * A settings row with a slider, styled to match [FolkPreference].
@@ -89,7 +88,15 @@ fun FolkSliderPreference(
             onValueChange = onValueChange,
             onValueChangeFinished = onValueChangeFinished,
             valueRange = valueRange,
-            steps = steps,
+            // A slider with no steps of its own still snaps when discrete mode is on, which is
+            // what that setting means. One that declares its own steps keeps them.
+            steps = if (steps > 0) {
+                steps
+            } else if (SliderStyleConfig.isDiscrete) {
+                SliderStyleConfig.DISCRETE_STEPS
+            } else {
+                0
+            },
             enabled = enabled,
             colors = SliderDefaults.colors(
                 thumbColor = MaterialTheme.colorScheme.primary,

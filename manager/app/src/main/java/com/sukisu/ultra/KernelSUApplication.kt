@@ -87,6 +87,14 @@ class KernelSUApplication : Application(), ViewModelStoreOwner {
             com.sukisu.ultra.ui.theme.VibrationConfig.load(this)
         }.onFailure { android.util.Log.e(TAG, "VibrationConfig.load failed", it) }
 
+        runCatching {
+            // Both are read while composing every settings row, so they have to be in memory
+            // before the first frame rather than loaded on demand.
+            com.sukisu.ultra.ui.theme.SliderStyleConfig.load(this)
+            com.sukisu.ultra.ui.component.SwitchIconState.showIcon =
+                com.sukisu.ultra.data.repository.SettingsRepositoryImpl().showSwitchIcon
+        }.onFailure { android.util.Log.e(TAG, "slider / switch style load failed", it) }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             val enable = SettingsRepositoryImpl().enablePredictiveBack
             HiddenApiBypass.addHiddenApiExemptions("Landroid/content/pm/ApplicationInfo;->setEnableOnBackInvokedCallback")

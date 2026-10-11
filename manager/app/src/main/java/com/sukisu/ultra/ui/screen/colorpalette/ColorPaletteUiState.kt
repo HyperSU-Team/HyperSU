@@ -31,5 +31,7 @@ data class ColorPaletteScreenActions(
     val onSetPageScale: (Float) -> Unit,
     val onSetModuleDescriptionMaxLines: (Int) -> Unit,
     val onSetSimpleListBottomBar: (Boolean) -> Unit,
+    val onSetShowSwitchIcon: (Boolean) -> Unit,
+    val onSetDiscreteSlider: (Boolean) -> Unit,
     val onSetShowFullStatus: (Boolean) -> Unit,
 )

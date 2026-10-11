@@ -205,6 +205,15 @@ class SettingsRepositoryImpl : SettingsRepository {
         get() = prefs.intPref("module_description_max_lines", 4)
         set(value) = prefs.edit { putInt("module_description_max_lines", value) }
 
+    // Keys and defaults follow FolkPatch's, so a theme and an existing install carry across.
+    override var showSwitchIcon: Boolean
+        get() = prefs.booleanPref("show_switch_icon", true)
+        set(value) = prefs.edit { putBoolean("show_switch_icon", value) }
+
+    override var discreteSlider: Boolean
+        get() = prefs.booleanPref("discrete_slider", true)
+        set(value) = prefs.edit { putBoolean("discrete_slider", value) }
+
     // The key and default follow FolkPatch's, so a theme and an existing install carry across.
     override var simpleListBottomBar: Boolean
         get() = prefs.booleanPref("simple_list_bottom_bar", false)

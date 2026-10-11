@@ -23,6 +23,10 @@ interface SettingsRepository {
     /** How the Grid layout's status cards are arranged: "list" (stacked) or "grid" (big + two). */
     var statsTopLayout: String
     var pageScale: Float
+    /** Whether switches draw a tick or cross on the thumb. */
+    var showSwitchIcon: Boolean
+    /** Whether sliders snap to discrete steps instead of moving continuously. */
+    var discreteSlider: Boolean
     var moduleDescriptionMaxLines: Int
     /** Whether a module card's action row drops its labels to fit a narrow screen. */
     var simpleListBottomBar: Boolean

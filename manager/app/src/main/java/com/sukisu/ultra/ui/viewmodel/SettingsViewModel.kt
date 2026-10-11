@@ -19,6 +19,8 @@ import com.sukisu.ultra.data.repository.SettingsRepositoryImpl
 import com.sukisu.ultra.ksuApp
 import com.sukisu.ultra.ui.screen.settings.SettingsUiState
 import com.sukisu.ultra.ui.theme.ColorMode
+import com.sukisu.ultra.ui.theme.SliderStyleConfig
+import com.sukisu.ultra.ui.component.SwitchIconState
 import com.sukisu.ultra.ui.util.LanguageSwitchState
 import com.sukisu.ultra.ui.util.findActivity
 
@@ -47,6 +49,8 @@ class SettingsViewModel(
             val pageScale = repo.pageScale
             val moduleDescriptionMaxLines = repo.moduleDescriptionMaxLines
             val simpleListBottomBar = repo.simpleListBottomBar
+            val showSwitchIcon = repo.showSwitchIcon
+            val discreteSlider = repo.discreteSlider
             val enableWebDebugging = repo.enableWebDebugging
             val showFullStatus = repo.showFullStatus
             val showHomeDeviceModel = repo.showHomeDeviceModel
@@ -93,6 +97,8 @@ class SettingsViewModel(
                     pageScale = pageScale,
                     moduleDescriptionMaxLines = moduleDescriptionMaxLines,
                     simpleListBottomBar = simpleListBottomBar,
+                    showSwitchIcon = showSwitchIcon,
+                    discreteSlider = discreteSlider,
                     enableWebDebugging = enableWebDebugging,
                     showFullStatus = showFullStatus,
                     showHomeDeviceModel = showHomeDeviceModel,
@@ -211,6 +217,19 @@ class SettingsViewModel(
     fun setSimpleListBottomBar(enabled: Boolean) {
         repo.simpleListBottomBar = enabled
         _uiState.update { it.copy(simpleListBottomBar = enabled) }
+    }
+
+    fun setShowSwitchIcon(enabled: Boolean) {
+        repo.showSwitchIcon = enabled
+        // Pushed to the global the switch reads, so it takes effect without a restart.
+        SwitchIconState.showIcon = enabled
+        _uiState.update { it.copy(showSwitchIcon = enabled) }
+    }
+
+    fun setDiscreteSlider(enabled: Boolean) {
+        repo.discreteSlider = enabled
+        SliderStyleConfig.setDiscrete(enabled)
+        _uiState.update { it.copy(discreteSlider = enabled) }
     }
 
     fun setEnableWebDebugging(enabled: Boolean) {

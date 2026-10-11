@@ -42,7 +42,9 @@ import androidx.compose.material.icons.filled.Brightness3
 import androidx.compose.material.icons.filled.Brightness4
 import androidx.compose.material.icons.filled.Brightness7
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.ViewAgenda
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Pin
@@ -362,6 +364,24 @@ fun ColorPaletteScreenFolk(
                         icon = Icons.Outlined.ViewAgenda,
                         checked = uiState.simpleListBottomBar,
                         onCheckedChange = actions.onSetSimpleListBottomBar,
+                    )
+                }
+                item {
+                    FolkSwitchPreference(
+                        title = stringResource(R.string.settings_show_switch_icon),
+                        summary = stringResource(R.string.settings_show_switch_icon_summary),
+                        icon = Icons.Outlined.CheckCircle,
+                        checked = uiState.showSwitchIcon,
+                        onCheckedChange = actions.onSetShowSwitchIcon,
+                    )
+                }
+                item {
+                    FolkSwitchPreference(
+                        title = stringResource(R.string.settings_discrete_slider),
+                        summary = stringResource(R.string.settings_discrete_slider_summary),
+                        icon = Icons.Outlined.Tune,
+                        checked = uiState.discreteSlider,
+                        onCheckedChange = actions.onSetDiscreteSlider,
                     )
                 }
             }

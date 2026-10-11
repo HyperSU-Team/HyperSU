@@ -231,6 +231,10 @@
     <string name="settings_ui_mode_summary">选择应用的界面风格</string>
     <string name="settings_page_scale">界面缩放</string>
     <string name="settings_module_display">模块列表</string>
+    <string name="settings_show_switch_icon">开关显示图标</string>
+    <string name="settings_show_switch_icon_summary">在开关圆点上绘制勾或叉以表示状态</string>
+    <string name="settings_discrete_slider">滑块分段</string>
+    <string name="settings_discrete_slider_summary">滑块吸附到固定档位，而不是连续移动</string>
     <string name="settings_simple_list_bottom_bar">仅图标操作</string>
     <string name="settings_simple_list_bottom_bar_summary">行宽不足时，模块操作显示为图标而不是带文字的按钮</string>
     <string name="settings_page_scale_summary">调整全局显示比例</string>

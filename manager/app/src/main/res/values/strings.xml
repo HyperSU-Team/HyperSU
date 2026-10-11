@@ -249,6 +249,10 @@
     <string name="settings_ui_mode_summary">Choose the interface style.</string>
     <string name="settings_page_scale">Page Scale</string>
     <string name="settings_module_display">Module list</string>
+    <string name="settings_show_switch_icon">Tick on switches</string>
+    <string name="settings_show_switch_icon_summary">Draw a tick or cross on a switch thumb to show its state</string>
+    <string name="settings_discrete_slider">Stepped sliders</string>
+    <string name="settings_discrete_slider_summary">Snap sliders to fixed steps instead of moving continuously</string>
     <string name="settings_simple_list_bottom_bar">Icon-only actions</string>
     <string name="settings_simple_list_bottom_bar_summary">Show module actions as icons instead of labelled buttons when the row is too narrow</string>
     <string name="settings_page_scale_summary">Adjust the global display scale.</string>

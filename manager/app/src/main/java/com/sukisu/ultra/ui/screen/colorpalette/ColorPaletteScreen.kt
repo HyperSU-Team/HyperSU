@@ -57,6 +57,8 @@ fun ColorPaletteScreen() {
         onSetPageScale = viewModel::setPageScale,
         onSetModuleDescriptionMaxLines = viewModel::setModuleDescriptionMaxLines,
         onSetSimpleListBottomBar = viewModel::setSimpleListBottomBar,
+        onSetShowSwitchIcon = viewModel::setShowSwitchIcon,
+        onSetDiscreteSlider = viewModel::setDiscreteSlider,
         onSetShowFullStatus = viewModel::setShowFullStatus,
     )
 
