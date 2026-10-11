@@ -128,10 +128,10 @@ fun FolkBottomBar(
                     ) {
                         val navBadge = badgeFor(index, badge)
                         val icon: @Composable () -> Unit = {
-                            Icon(
-                                imageVector = destination.iconSelected,
-                                contentDescription = stringResource(destination.label),
-                                tint = LocalContentColor.current,
+                            // The destination's own glyph, or the user's image when one is set.
+                            NavBarIcon(
+                                destination = destination,
+                                selected = true,
                             )
                         }
                         if (navBadge != null) {
@@ -316,15 +316,10 @@ fun FolkBottomBar(
                                 ),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(
-                                imageVector = if (selected) {
-                                    destination.iconSelected
-                                } else {
-                                    destination.iconNotSelected
-                                },
-                                contentDescription = stringResource(destination.label),
+                            NavBarIcon(
+                                destination = destination,
+                                selected = selected,
                                 tint = iconColor,
-                                modifier = Modifier.size(22.dp),
                             )
                         }
                     }

@@ -91,23 +91,20 @@ fun InstallScreen(
     val downloadFileMsg = stringResource(id = R.string.download_dialog_msg)
 
     val horizonKernelSummary = stringResource(R.string.horizon_kernel_summary)
-    val anyKernel3Summary = stringResource(R.string.anykernel3_summary)
     val installMethodOptions = remember(rootAvailable, isAbDevice, isGkiDevice, selectFileTip, selectFileTipNoGki, downloadFileMsg, horizonKernelSummary) {
         buildList {
             add(InstallMethod.SelectFile(summary = if (isGkiDevice) selectFileTip else selectFileTipNoGki))
             add(InstallMethod.DownloadFile(summary = downloadFileMsg))
-            // The AnyKernel3 row needs root only: it flashes a kernel archive the user holds,
-            // which does not require the device to be GKI.
-            if (rootAvailable) {
-                add(InstallMethod.AnyKernel3(summary = anyKernel3Summary))
-            }
             if (rootAvailable && isGkiDevice) {
                 add(InstallMethod.DirectInstall)
                 if (isAbDevice) add(InstallMethod.DirectInstallToInactiveSlot)
             }
-            // AnyKernel3 flashing runs anykernel.sh against the boot image and never
-            // looks at the kernel version, so root is the only real gate. Sharing the
-            // GKI branch hid this entry on every non-GKI device.
+            // The AnyKernel3 row needs root only: it flashes a kernel archive the user holds,
+            // which does not require the device to be GKI.
+            //
+            // There is one such row, not two. A second one was added under the name
+            // AnyKernel3 while this one is already labelled "AnyKernel3 Kernel" and runs the
+            // same flow, so the list showed the same entry twice.
             if (rootAvailable) {
                 add(InstallMethod.HorizonKernel(summary = horizonKernelSummary))
             }
@@ -187,9 +184,8 @@ fun InstallScreen(
     val onInstall = {
         installMethod?.let { method ->
             when (method) {
-                // Either archive row goes through the kernel-flash route; matching only
-                // HorizonKernel sent a picked AnyKernel3 down the boot-image path instead.
-                is InstallMethod.HorizonKernel, is InstallMethod.AnyKernel3 -> {
+                // The archive row goes through the kernel-flash route.
+                is InstallMethod.HorizonKernel -> {
                     method.archiveUri?.let { uri ->
                         navigator.push(
                             Route.KernelFlash(
@@ -317,18 +313,14 @@ fun InstallScreen(
     ) {
         if (it.resultCode == Activity.RESULT_OK) {
             it.data?.data?.let { uri ->
-                // The chosen row keeps its own type: rebuilding an AnyKernel3 pick as a
-                // HorizonKernel left the install list unable to match it, so the row the user
-                // had just filled in showed no selection mark.
                 val option: InstallMethod? = when (installMethod) {
                     is InstallMethod.SelectFile -> InstallMethod.SelectFile(uri, summary = selectFileTip)
                     is InstallMethod.HorizonKernel -> InstallMethod.HorizonKernel(uri, summary = horizonKernelSummary)
-                    is InstallMethod.AnyKernel3 -> InstallMethod.AnyKernel3(uri, summary = anyKernel3Summary)
                     else -> null
                 }
                 option?.let { opt ->
                     installMethod = opt
-                    // Both archive rows enter the same slot-selection and confirmation flow.
+                    // The archive row enters the slot-selection and confirmation flow.
                     if (opt.isKernelArchive) {
                         anyKernel3State.onHorizonKernelSelected(opt)
                     }
@@ -364,14 +356,9 @@ fun InstallScreen(
         onBack = dropUnlessResumed { navigator.pop() },
         onSelectMethod = { method ->
             when {
-                // An archive that already carries a uri (a download) enters the flow directly.
-                method.isKernelArchive && method.archiveUri != null ->
-                    anyKernel3State.onHorizonKernelSelected(method)
-
-                // The AnyKernel3 row carries no uri until the user picks one, so selecting it
-                // opens the picker; the result keeps its own type and then enters the same
-                // slot and confirmation steps.
-                method is InstallMethod.AnyKernel3 -> {
+                // The archive row carries no uri until the user picks one, so selecting it
+                // opens the picker; the result then enters the slot and confirmation steps.
+                method.isKernelArchive -> {
                     installMethod = method
                     selectImageLauncher.launch(Intent(Intent.ACTION_GET_CONTENT).apply {
                         type = "application/*"

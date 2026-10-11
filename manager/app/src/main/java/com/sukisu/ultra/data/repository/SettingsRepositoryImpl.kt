@@ -12,6 +12,7 @@ import com.sukisu.ultra.Natives
 import com.sukisu.ultra.ksuApp
 import com.sukisu.ultra.magica.BootCompletedReceiver
 import com.sukisu.ultra.ui.screen.modulerepo.RepoSort
+import com.sukisu.ultra.ui.theme.ColorContrast
 import com.sukisu.ultra.ui.theme.booleanPref
 import com.sukisu.ultra.ui.theme.floatPref
 import com.sukisu.ultra.ui.theme.intPref
@@ -21,6 +22,10 @@ import com.sukisu.ultra.ui.util.getFeaturePersistValue
 import com.sukisu.ultra.ui.util.getFeatureStatus
 import com.sukisu.ultra.ui.util.LocaleHelper
 import java.security.SecureRandom
+
+/** The two arrangements the Grid layout's status cards can take. */
+const val STATS_TOP_LIST = "list"
+const val STATS_TOP_GRID = "grid"
 
 private const val SETTINGS_PREFS = "settings"
 private const val KEY_USE_SOFT_REBOOT = "soft_reboot"
@@ -51,6 +56,9 @@ const val HOME_LAYOUT_FALLBACK = HOME_LAYOUT_CIRCLE
 
 /** SharedPreferences key backing [SettingsRepository.homeLayoutStyle]. */
 const val KEY_HOME_LAYOUT = "home_layout_style"
+
+/** The Grid layout's status-card arrangement. */
+const val KEY_STATS_TOP_LAYOUT = "stats_top_layout"
 
 /** Prefer soft reboot: always in jailbreak mode, or when the setting is enabled. */
 fun isSoftRebootPreferred(): Boolean =
@@ -101,6 +109,14 @@ class SettingsRepositoryImpl : SettingsRepository {
     override var colorSpec: String
         get() = prefs.stringPref("color_spec", ColorSpec.SpecVersion.SPEC_2025.name) ?: ColorSpec.SpecVersion.SPEC_2025.name
         set(value) = prefs.edit { putString("color_spec", value) }
+
+    override var colorContrast: String
+        get() = prefs.stringPref("color_contrast", ColorContrast.STANDARD.name) ?: ColorContrast.STANDARD.name
+        set(value) = prefs.edit { putString("color_contrast", value) }
+
+    override var statsTopLayout: String
+        get() = prefs.stringPref("stats_top_layout", STATS_TOP_LIST) ?: STATS_TOP_LIST
+        set(value) = prefs.edit { putString("stats_top_layout", value) }
 
     override var enablePredictiveBack: Boolean
         get() = prefs.booleanPref("enable_predictive_back", false)

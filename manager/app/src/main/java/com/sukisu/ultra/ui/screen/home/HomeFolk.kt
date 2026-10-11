@@ -39,7 +39,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,12 +61,24 @@ import com.sukisu.ultra.data.repository.HOME_LAYOUT_GRID
 import com.sukisu.ultra.data.repository.HOME_LAYOUT_LIST
 import com.sukisu.ultra.data.repository.HOME_LAYOUT_OPTIONS
 import com.sukisu.ultra.data.repository.KEY_HOME_LAYOUT
+import com.sukisu.ultra.data.repository.KEY_STATS_TOP_LAYOUT
+import com.sukisu.ultra.data.repository.STATS_TOP_GRID
+import com.sukisu.ultra.data.repository.STATS_TOP_LIST
 import com.sukisu.ultra.data.repository.SettingsRepositoryImpl
 import com.sukisu.ultra.ksuApp
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.sukisu.ultra.ui.component.dialog.rememberConfirmDialog
 import com.sukisu.ultra.ui.component.folk.FolkFactsGroup
 import com.sukisu.ultra.ui.component.folk.FolkNavigationPreference
@@ -166,10 +180,16 @@ internal fun HomePagerFolk(
     // app restarted.
     val prefs = remember { ksuApp.getSharedPreferences("settings", Context.MODE_PRIVATE) }
     var layout by remember { mutableStateOf(settingsRepo.homeLayoutStyle) }
+    // Same reason as the layout above: a theme import rewrites this key while the screen is
+    // alive, and a plain remember would keep the old arrangement until a restart.
+    var statsTopLayout by remember { mutableStateOf(settingsRepo.statsTopLayout) }
     DisposableEffect(prefs) {
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == null || key == KEY_HOME_LAYOUT) {
                 layout = settingsRepo.homeLayoutStyle
+            }
+            if (key == null || key == KEY_STATS_TOP_LAYOUT) {
+                statsTopLayout = settingsRepo.statsTopLayout
             }
         }
         prefs.registerOnSharedPreferenceChangeListener(listener)
@@ -202,15 +222,25 @@ internal fun HomePagerFolk(
                 },
         )
 
-        when (layout) {
-            HOME_LAYOUT_LIST -> HomeLayoutList(state, actions, contentPadding)
-            HOME_LAYOUT_FOCUS -> HomeLayoutFocus(state, actions, contentPadding)
-            HOME_LAYOUT_DASHBOARD -> HomeLayoutDashboard(state, actions, contentPadding)
-            HOME_LAYOUT_GRID -> HomeLayoutGrid(state, actions, contentPadding)
-            else -> HomeLayoutCircle(state, actions, contentPadding)
+        CompositionLocalProvider(LocalStatsTopLayout provides statsTopLayout) {
+            when (layout) {
+                HOME_LAYOUT_LIST -> HomeLayoutList(state, actions, contentPadding)
+                HOME_LAYOUT_FOCUS -> HomeLayoutFocus(state, actions, contentPadding)
+                HOME_LAYOUT_DASHBOARD -> HomeLayoutDashboard(state, actions, contentPadding)
+                HOME_LAYOUT_GRID -> HomeLayoutGrid(state, actions, contentPadding)
+                else -> HomeLayoutCircle(state, actions, contentPadding)
+            }
         }
     }
 }
+
+/**
+ * Which arrangement the Grid layout's status cards take.
+ *
+ * A composition local rather than a parameter because only the Grid layout reads it: threading it
+ * through the other four layouts, which ignore it, would be noise at four call sites to serve one.
+ */
+private val LocalStatsTopLayout = compositionLocalOf { STATS_TOP_LIST }
 
 // ---------------------------------------------------------------------------
 // Top bar
@@ -225,13 +255,54 @@ private fun HomeTopBar(
 ) {
     var layoutMenu by remember { mutableStateOf(false) }
 
+    // 高级标题样式：用图片替换顶栏的文字标题。图为空或开关关闭时保持原来的文字。
+    val context = LocalContext.current
+    val dark = isInDarkTheme()
+    val useTitleImage = BackgroundConfig.isTitleImageActive()
+    val titleOpacity = if (useTitleImage) {
+        BackgroundConfig.getEffectiveTitleImageOpacity(dark)
+    } else {
+        1f
+    }
+    val titleOffsetX = if (useTitleImage) BackgroundConfig.titleImageOffsetX * 100f else 0f
+    val titleDim = if (useTitleImage) BackgroundConfig.titleImageDim else 0f
+
     androidx.compose.material3.TopAppBar(
         title = {
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-            )
+            if (useTitleImage) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(BackgroundConfig.titleImageUri)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = stringResource(R.string.app_name),
+                    modifier = Modifier
+                        .height(40.dp)
+                        .offset(x = titleOffsetX.dp)
+                        .alpha(titleOpacity)
+                        .graphicsLayer {
+                            if (titleDim > 0f) {
+                                colorFilter = ColorFilter.colorMatrix(
+                                    ColorMatrix().apply {
+                                        setToScale(
+                                            1f - titleDim,
+                                            1f - titleDim,
+                                            1f - titleDim,
+                                            1f,
+                                        )
+                                    }
+                                )
+                            }
+                        },
+                    contentScale = ContentScale.Fit,
+                )
+            } else {
+                Text(
+                    text = stringResource(R.string.app_name),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                )
+            }
         },
         actions = {
             IconButton(onClick = actions.onInstallClick) {
@@ -412,9 +483,13 @@ private fun HomeHeroCard(
     state: HomeUiState,
     actions: HomeActions,
     wallpaperUri: String? = null,
+    /**
+     * Grid 布局的主卡片有自己的壁纸与隐藏开关，且用的是另一组明暗/不透明度。为真时这些一并生效。
+     */
+    gridStyle: Boolean = false,
 ) {
     when {
-        state.ksuVersion != null -> HomeWorkingCard(state, actions, wallpaperUri)
+        state.ksuVersion != null -> HomeWorkingCard(state, actions, wallpaperUri, gridStyle)
         // Root works, so a driver is loaded; the kernel just does not recognise this manager.
         // Saying "no driver detected" here contradicted the superuser and module pages.
         state.isRootAvailable -> HomeUnsupportedCard(
@@ -433,6 +508,7 @@ private fun HomeWorkingCard(
     state: HomeUiState,
     actions: HomeActions,
     wallpaperUri: String? = null,
+    gridStyle: Boolean = false,
 ) {
     val markers = buildString {
         if (state.isSafeMode) append(" [${stringResource(R.string.safe_mode)}]")
@@ -449,6 +525,21 @@ private fun HomeWorkingCard(
         container = MaterialTheme.colorScheme.secondaryContainer,
         content = MaterialTheme.colorScheme.onSecondaryContainer,
     )
+    // Grid 的明暗/不透明度独立成组，所以取值也分开：只有 Grid 布局读 grid 那组，其余布局继续读
+    // focus card 那组，两边的滑杆互不干扰。
+    val dim = if (gridStyle) {
+        BackgroundConfig.gridWorkingCardBgDim
+    } else {
+        BackgroundConfig.getEffectiveFocusCardBgDim(dark)
+    }
+    val opacity = if (gridStyle) {
+        BackgroundConfig.getEffectiveGridWorkingCardBgOpacity(dark)
+    } else {
+        BackgroundConfig.getEffectiveFocusCardBgOpacity(dark)
+    }
+    val showCheck = !(gridStyle && BackgroundConfig.isGridWorkingCardCheckHidden)
+    val showText = !(gridStyle && BackgroundConfig.isGridWorkingCardTextHidden)
+    val showMode = !(gridStyle && BackgroundConfig.isGridWorkingCardModeHidden)
 
     androidx.compose.material3.Surface(
         modifier = Modifier
@@ -466,49 +557,55 @@ private fun HomeWorkingCard(
         Box {
             CardWallpaperLayer(
                 uri = wallpaperUri,
-                dim = BackgroundConfig.getEffectiveFocusCardBgDim(dark),
-                opacity = BackgroundConfig.getEffectiveFocusCardBgOpacity(dark),
+                dim = dim,
+                opacity = opacity,
             )
             Column(modifier = Modifier.padding(24.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Rounded.CheckCircle,
-                        contentDescription = null,
-                        modifier = Modifier.size(28.dp),
-                        tint = palette.content,
-                    )
-                    Spacer(Modifier.size(12.dp))
-                    Text(
-                        text = "${stringResource(R.string.home_working)}$markers",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = palette.content,
-                    )
-                }
-
-                Spacer(Modifier.height(8.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = stringResource(
-                            R.string.home_working_version,
-                            "${state.ksuVersion}-${state.kernelUAPIVersion}",
-                        ),
-                        style = FolkType.Summary,
-                        color = palette.content,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                    if (state.showCustomLkmBadge) {
-                        Spacer(Modifier.size(8.dp))
-                        StatusTag(
-                            label = stringResource(R.string.home_lkm_custom),
-                            backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                    if (showCheck) {
+                        Icon(
+                            imageVector = Icons.Rounded.CheckCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(28.dp),
+                            tint = palette.content,
+                        )
+                        Spacer(Modifier.size(12.dp))
+                    }
+                    if (showText) {
+                        Text(
+                            text = "${stringResource(R.string.home_working)}$markers",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = palette.content,
                         )
                     }
                 }
 
-                if (mode != null) {
+                if (showText) {
+                    Spacer(Modifier.height(8.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = stringResource(
+                                R.string.home_working_version,
+                                "${state.ksuVersion}-${state.kernelUAPIVersion}",
+                            ),
+                            style = FolkType.Summary,
+                            color = palette.content,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
+                        if (state.showCustomLkmBadge) {
+                            Spacer(Modifier.size(8.dp))
+                            StatusTag(
+                                label = stringResource(R.string.home_lkm_custom),
+                                backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                            )
+                        }
+                    }
+                }
+
+                if (mode != null && showMode) {
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = mode,
@@ -752,6 +849,19 @@ private fun heroWallpaperUri(): String? =
     if (BackgroundConfig.isFocusCardBackgroundEnabled) BackgroundConfig.focusCardBgUri else null
 
 /**
+ * Grid 布局主卡片的壁纸。
+ *
+ * Grid 有自己的一张图，这是 FolkPatch 原本的行为：它的 Grid 主卡片单独设壁纸，与 Focus 布局的
+ * 主卡片互不影响。Grid 没设图时回退到主卡片那张，这样只配过一张图的用户在每个布局里都能看到它。
+ */
+private fun gridHeroWallpaperUri(): String? =
+    if (BackgroundConfig.isGridWorkingCardBackgroundEnabled) {
+        BackgroundConfig.gridWorkingCardBgUri ?: heroWallpaperUri()
+    } else {
+        heroWallpaperUri()
+    }
+
+/**
  * Grid: the hero card, then a pair of small cards side by side, then warnings and facts.
  *
  * FolkPatch's GridUI is built around KernelPatch / AndroidPatch patch states that this
@@ -773,26 +883,75 @@ private fun HomeLayoutGrid(
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        HomeHeroCard(state = state, actions = actions, wallpaperUri = heroWallpaperUri())
+        // "grid" puts the two extra cards beside the hero instead of under it, which is what
+        // FolkPatch's stats top layout switch does. Both arrangements carry the same cards; only
+        // their placement differs, so the reading order is the only thing that changes.
+        val gridTop = LocalStatsTopLayout.current == STATS_TOP_GRID
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            HomeTile(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Outlined.Info,
-                label = stringResource(R.string.home_kernel),
-                value = state.systemInfo.kernelVersion,
-                severity = if (state.isManager) FolkSeverity.Positive else FolkSeverity.Critical,
+        if (gridTop) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(IntrinsicSize.Min),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    HomeHeroCard(
+                        state = state,
+                        actions = actions,
+                        wallpaperUri = gridHeroWallpaperUri(),
+                        gridStyle = true,
+                    )
+                }
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    HomeTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Outlined.Info,
+                        label = stringResource(R.string.home_kernel),
+                        value = state.systemInfo.kernelVersion,
+                        severity = if (state.isManager) FolkSeverity.Positive else FolkSeverity.Critical,
+                    )
+                    HomeTile(
+                        modifier = Modifier.weight(1f),
+                        icon = Icons.Outlined.Security,
+                        label = stringResource(R.string.home_selinux_status),
+                        value = state.systemInfo.selinuxStatus,
+                        severity = if (state.isSELinuxPermissive) FolkSeverity.Caution else FolkSeverity.Positive,
+                    )
+                }
+            }
+        } else {
+            HomeHeroCard(
+                state = state,
+                actions = actions,
+                wallpaperUri = gridHeroWallpaperUri(),
+                gridStyle = true,
             )
-            HomeTile(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Outlined.Security,
-                label = stringResource(R.string.home_selinux_status),
-                value = state.systemInfo.selinuxStatus,
-                severity = if (state.isSELinuxPermissive) FolkSeverity.Caution else FolkSeverity.Positive,
-            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                HomeTile(
+                    modifier = Modifier.weight(1f),
+                    icon = Icons.Outlined.Info,
+                    label = stringResource(R.string.home_kernel),
+                    value = state.systemInfo.kernelVersion,
+                    severity = if (state.isManager) FolkSeverity.Positive else FolkSeverity.Critical,
+                )
+                HomeTile(
+                    modifier = Modifier.weight(1f),
+                    icon = Icons.Outlined.Security,
+                    label = stringResource(R.string.home_selinux_status),
+                    value = state.systemInfo.selinuxStatus,
+                    severity = if (state.isSELinuxPermissive) FolkSeverity.Caution else FolkSeverity.Positive,
+                )
+            }
         }
 
         HomeWarnings(state, actions)

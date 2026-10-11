@@ -44,17 +44,26 @@ internal fun adaptColorScheme(
     val neutral = if (useLightContent == darkTheme) base else opposite
 
     val opacity = BackgroundConfig.customBackgroundOpacity
+    // Only `surface` and `surfaceContainer` take the user's opacity.
+    //
+    // Every other role stays opaque, which is what FolkPatch does and what makes the wallpaper
+    // mode readable: `surfaceContainer` is the grouped card, so it has to let the picture
+    // through, but the roles *inside* a card - `surfaceContainerHigh` for an icon tile or a
+    // facts block, `surfaceContainerLow`, `surfaceVariant` - must not, or their text ends up
+    // sitting directly on the photograph. `surfaceDim` and `surfaceBright` are the same case.
+    //
+    // The page background is transparent so the wallpaper layer shows through it.
     val adapted = base.copy(
         background = Color.Transparent,
         surface = neutral.surface.copy(alpha = opacity),
-        surfaceDim = neutral.surfaceDim.copy(alpha = opacity),
-        surfaceBright = neutral.surfaceBright.copy(alpha = opacity),
-        surfaceContainerLowest = neutral.surfaceContainerLowest.copy(alpha = opacity),
-        surfaceContainerLow = neutral.surfaceContainerLow.copy(alpha = opacity),
+        surfaceDim = neutral.surfaceDim,
+        surfaceBright = neutral.surfaceBright,
+        surfaceContainerLowest = neutral.surfaceContainerLowest,
+        surfaceContainerLow = neutral.surfaceContainerLow,
         surfaceContainer = neutral.surfaceContainer.copy(alpha = opacity),
-        surfaceContainerHigh = neutral.surfaceContainerHigh.copy(alpha = opacity),
-        surfaceContainerHighest = neutral.surfaceContainerHighest.copy(alpha = opacity),
-        surfaceVariant = neutral.surfaceVariant.copy(alpha = opacity),
+        surfaceContainerHigh = neutral.surfaceContainerHigh,
+        surfaceContainerHighest = neutral.surfaceContainerHighest,
+        surfaceVariant = neutral.surfaceVariant,
         onBackground = neutral.onBackground,
         onSurface = neutral.onSurface,
         onSurfaceVariant = neutral.onSurfaceVariant,

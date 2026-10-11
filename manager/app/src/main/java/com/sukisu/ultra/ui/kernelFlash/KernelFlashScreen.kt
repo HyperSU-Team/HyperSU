@@ -1,4 +1,4 @@
-﻿package com.sukisu.ultra.ui.kernelFlash
+package com.sukisu.ultra.ui.kernelFlash
 
 import android.content.Intent
 import android.net.Uri
@@ -146,7 +146,7 @@ fun KernelFlashScreen(
                 val date = format.format(Date())
                 val file = File(
                     Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                    "KernelSU_kernel_flash_log_${date}.log"
+                    "HyperSU_kernel_flash_log_${date}.log"
                 )
                 file.writeText(logContentValue)
             }

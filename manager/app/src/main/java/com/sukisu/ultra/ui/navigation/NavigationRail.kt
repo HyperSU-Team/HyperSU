@@ -171,15 +171,10 @@ fun FolkNavigationRail(
                                 ),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(
-                                imageVector = if (selected) {
-                                    destination.iconSelected
-                                } else {
-                                    destination.iconNotSelected
-                                },
-                                contentDescription = stringResource(destination.label),
+                            NavBarIcon(
+                                destination = destination,
+                                selected = selected,
                                 tint = iconColor,
-                                modifier = Modifier.size(22.dp),
                             )
                         }
                     }

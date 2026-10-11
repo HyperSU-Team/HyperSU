@@ -80,7 +80,11 @@ import com.sukisu.ultra.ui.screen.settings.AppearanceBannerSection
 import com.sukisu.ultra.ui.screen.settings.AppearanceDashboardCardSection
 import com.sukisu.ultra.ui.screen.settings.AppearanceFocusCardSection
 import com.sukisu.ultra.ui.screen.settings.AppearanceFontSection
+import com.sukisu.ultra.ui.screen.settings.AppearanceGridCardSection
+import com.sukisu.ultra.ui.screen.settings.AppearanceLayoutOptionsSection
+import com.sukisu.ultra.ui.screen.settings.AppearanceNavIconSection
 import com.sukisu.ultra.ui.screen.settings.AppearanceThemeSection
+import com.sukisu.ultra.ui.screen.settings.AppearanceTitleImageSection
 import com.sukisu.ultra.ui.screen.settings.MultimediaMusicSection
 import com.sukisu.ultra.ui.screen.settings.MultimediaSoundSection
 import com.sukisu.ultra.ui.component.folk.FolkSettingsDimens
@@ -385,6 +389,31 @@ fun ColorPaletteScreenFolk(
                 snackBarHost = snackbarHost,
                 loadingDialog = loadingDialog,
             )
+        }
+
+        item {
+            AppearanceGridCardSection(
+                snackBarHost = snackbarHost,
+                loadingDialog = loadingDialog,
+            )
+        }
+
+        item {
+            AppearanceTitleImageSection(
+                snackBarHost = snackbarHost,
+                loadingDialog = loadingDialog,
+            )
+        }
+
+        item {
+            AppearanceNavIconSection(
+                snackBarHost = snackbarHost,
+                loadingDialog = loadingDialog,
+            )
+        }
+
+        item {
+            AppearanceLayoutOptionsSection(snackBarHost = snackbarHost)
         }
 
         item {

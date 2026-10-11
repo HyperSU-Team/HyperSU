@@ -1,6 +1,5 @@
 package com.sukisu.ultra.ui.screen.settings
 
-import android.content.ActivityNotFoundException
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,6 +18,7 @@ import com.sukisu.ultra.ui.component.dialog.rememberConfirmDialog
 import com.sukisu.ultra.ui.component.folk.FolkSettingsSectionGroup
 import com.sukisu.ultra.ui.component.folk.FolkSwitchPreference
 import com.sukisu.ultra.ui.component.folk.FolkValuePreference
+import com.sukisu.ultra.ui.screen.themeSettings.crop.CropBackgroundContract
 import com.sukisu.ultra.ui.theme.BackgroundConfig
 import com.sukisu.ultra.ui.theme.BackgroundManager
 import kotlinx.coroutines.launch
@@ -44,19 +44,33 @@ fun AppearanceFocusCardSection(
         scope.launch { snackBarHost.showSnackbar(message) }
     }
 
+    // Cropped before saving, so the user frames the card image rather than the app
+    // centre-cropping it.
+    val cropLauncher = rememberLauncherForActivityResult(
+        CropBackgroundContract(),
+    ) { cropped: Uri? ->
+        if (cropped == null) {
+            CropBackgroundContract.clearCache(context)
+            return@rememberLauncherForActivityResult
+        }
+        scope.launch {
+            loadingDialog.show()
+            val success = BackgroundManager.saveAndApplyFocusCardBackground(context, cropped)
+            loadingDialog.hide()
+            showMessage(
+                if (success) R.string.settings_custom_background_saved
+                else R.string.settings_custom_background_error,
+            )
+            CropBackgroundContract.clearCache(context)
+        }
+    }
+
     val pickLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent(),
     ) { uri: Uri? ->
         if (uri != null) {
-            scope.launch {
-                loadingDialog.show()
-                val success = BackgroundManager.saveAndApplyFocusCardBackground(context, uri)
-                loadingDialog.hide()
-                showMessage(
-                    if (success) R.string.settings_custom_background_saved
-                    else R.string.settings_custom_background_error,
-                )
-            }
+            runCatching { cropLauncher.launch(CropBackgroundContract.Input(source = uri)) }
+                .onFailure { showMessage(R.string.file_picker_unavailable) }
         }
     }
 

@@ -9,6 +9,8 @@ interface SettingsRepository {
     var keyColor: Int
     var colorStyle: String
     var colorSpec: String
+    /** Colour contrast level, by name: STANDARD, MEDIUM or HIGH. */
+    var colorContrast: String
     var enablePredictiveBack: Boolean
     var enableSwipeDismiss: Boolean
     var pagerInterceptionMode: Int
@@ -17,6 +19,8 @@ interface SettingsRepository {
     var navigationRailExpanded: Boolean
     /** Landing layout of the Home tab: "circle", "default", "focus" or "dashboard_ui". */
     var homeLayoutStyle: String
+    /** How the Grid layout's status cards are arranged: "list" (stacked) or "grid" (big + two). */
+    var statsTopLayout: String
     var pageScale: Float
     var moduleDescriptionMaxLines: Int
     var enableWebDebugging: Boolean

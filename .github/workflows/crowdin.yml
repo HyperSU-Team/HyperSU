@@ -1,14 +1,24 @@
 name: Crowdin Action
 
+# Disabled by default in this fork.
+#
+# The action needs a Crowdin project and its API token. A fork does not have them, so every
+# run failed with "Required option 'api_token' is missing" / "Required option 'project_id' is
+# missing" - the variables resolve to empty when the secrets are absent. The workflow is kept
+# rather than deleted so it can be re-enabled by setting the secrets, but it no longer runs on
+# its own: a schedule or a push to main would fail on every translation change.
+#
+# To use it, set CROWDIN_PROJECT_ID, CROWDIN_API_TOKEN and GH_TOKEN in the repository secrets
+# and uncomment the triggers below.
 on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'manager/app/src/main/res/values/strings.xml'
-      - 'manager/app/src/main/res/values-*/strings.xml'
-  schedule:
-    - cron: '0 0 * * *'
   workflow_dispatch:
+  # push:
+  #   branches: [ main ]
+  #   paths:
+  #     - 'manager/app/src/main/res/values/strings.xml'
+  #     - 'manager/app/src/main/res/values-*/strings.xml'
+  # schedule:
+  #   - cron: '0 0 * * *'
 
 jobs:
   synchronize-with-crowdin:

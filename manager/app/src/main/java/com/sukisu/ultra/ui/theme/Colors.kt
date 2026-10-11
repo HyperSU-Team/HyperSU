@@ -3,6 +3,13 @@ package com.sukisu.ultra.ui.theme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 
+/**
+ * Stands in for the system's dynamic colour on releases before Android 12, where the platform
+ * palette does not exist. It matches the last entry of [keyColorOptions], so a device without
+ * dynamic colour still starts on a colour the picker already offers.
+ */
+val FallbackSeedColor = Color(0xFFFF9CA8)
+
 val keyColorOptions = listOf(
     Color(0xFFF44336).toArgb(),
     Color(0xFFE91E63).toArgb(),

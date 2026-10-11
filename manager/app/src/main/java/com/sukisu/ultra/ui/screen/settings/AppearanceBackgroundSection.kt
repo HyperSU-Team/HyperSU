@@ -29,6 +29,7 @@ import com.sukisu.ultra.ui.component.folk.FolkSettingsSectionGroup
 import com.sukisu.ultra.ui.component.folk.FolkSliderPreference
 import com.sukisu.ultra.ui.component.folk.FolkSwitchPreference
 import com.sukisu.ultra.ui.component.folk.FolkValuePreference
+import com.sukisu.ultra.ui.screen.themeSettings.crop.CropBackgroundContract
 import com.sukisu.ultra.ui.theme.BackgroundConfig
 import com.sukisu.ultra.ui.theme.BackgroundManager
 import kotlinx.coroutines.launch
@@ -57,13 +58,15 @@ fun AppearanceBackgroundSection(
         scope.launch { snackBarHost.showSnackbar(message) }
     }
 
-    val pickImageLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.GetContent(),
-    ) { uri: Uri? ->
-        val target = pendingTarget
-        pendingTarget = null
-        if (uri == null || target == null) return@rememberLauncherForActivityResult
+    // The wallpaper rows that take a still image, which is all of them except video: the
+    // cropper edits a single frame, which says nothing about how a clip should be framed.
+    // "default" is the main background; the others are the per-page ones.
+    val croppableTargets = remember {
+        setOf("default", "home", "superuser", "module", "settings")
+    }
 
+    /** Saves the chosen image for [target], once it is final. */
+    fun applyBackground(target: String, uri: Uri) {
         scope.launch {
             loadingDialog.show()
             val success = when (target) {
@@ -84,6 +87,49 @@ fun AppearanceBackgroundSection(
                 if (success) R.string.settings_custom_background_saved
                 else R.string.settings_custom_background_error,
             )
+            // The crop is a scratch copy and the image has been taken into internal storage by
+            // now, so it is safe to drop. Doing it here rather than at the launcher callback
+            // avoids having to tell the cropped file apart from the others: a FileProvider uri
+            // reports a path relative to its root, which does not compare to an absolute one.
+            CropBackgroundContract.clearCache(context)
+        }
+    }
+
+    // Cropping happens between the picker and the save, so the user frames the image rather
+    // than the app centre-cropping it. A cancelled crop leaves the current wallpaper alone.
+    val cropLauncher = rememberLauncherForActivityResult(
+        CropBackgroundContract(),
+    ) { cropped: Uri? ->
+        val target = pendingTarget
+        pendingTarget = null
+        if (cropped == null || target == null) {
+            // Cancelled: nothing was saved, so the scratch copy can go.
+            CropBackgroundContract.clearCache(context)
+            return@rememberLauncherForActivityResult
+        }
+        applyBackground(target, cropped)
+    }
+
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent(),
+    ) { uri: Uri? ->
+        val target = pendingTarget
+        if (uri == null || target == null) {
+            pendingTarget = null
+            return@rememberLauncherForActivityResult
+        }
+
+        if (target in croppableTargets) {
+            // pendingTarget stays set: the crop result is what completes the pick.
+            try {
+                cropLauncher.launch(CropBackgroundContract.Input(source = uri))
+            } catch (e: ActivityNotFoundException) {
+                pendingTarget = null
+                showMessage(R.string.file_picker_unavailable)
+            }
+        } else {
+            pendingTarget = null
+            applyBackground(target, uri)
         }
     }
 

@@ -9,7 +9,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -112,8 +111,8 @@ import com.sukisu.ultra.ui.util.rememberContentReady
 import com.sukisu.ultra.ui.util.shouldShowSplitPane
 import com.sukisu.ultra.ui.viewmodel.MainActivityViewModel
 import com.sukisu.ultra.ui.viewmodel.MainPagerConfig
-import com.sukisu.ultra.ui.viewmodel.SettingsViewModel
 import com.sukisu.ultra.ui.viewmodel.ModuleViewModel
+import com.sukisu.ultra.ui.viewmodel.SettingsViewModel
 import com.sukisu.ultra.ui.viewmodel.SuperUserViewModel
 import top.yukonga.miuix.kmp.nav.core.NavDisplay
 import top.yukonga.miuix.kmp.nav.core.NavDisplayEffects
@@ -135,7 +134,6 @@ class MainActivity : ComponentActivity() {
         super.attachBaseContext(com.sukisu.ultra.ui.util.LocaleHelper.wrap(newBase))
     }
 
-    @RequiresApi(Build.VERSION_CODES.Q)
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
@@ -143,10 +141,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         splashScreen.setKeepOnScreenCondition {
             // A language switch recreates the activity, and the recreation draws the switch page
-            // in place of the app - so contentReady never turns true here, and the condition
-            // would pin the starting window for the whole switch. That window is themed to the
-            // app background, which in the dark theme is a full-screen near-black flash; the
-            // switch page is the app's own frame, so let it through.
+            // in place of the app - so contentReady only turns true once that page composes, and
+            // the condition would pin the starting window until then. That window is themed to
+            // the app background, a full-screen near-black flash in the dark theme, so a switch
+            // in flight lets it go immediately.
             if (LanguageSwitchState.targetTag != null) {
                 return@setKeepOnScreenCondition false
             }
@@ -177,7 +175,10 @@ class MainActivity : ComponentActivity() {
                         android.graphics.Color.TRANSPARENT
                     ) { darkMode },
                 )
-                window.isNavigationBarContrastEnforced = false
+                // isNavigationBarContrastEnforced is API 29+; on 8-11 the assignment threw.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    window.isNavigationBarContrastEnforced = false
+                }
                 onDispose { }
             }
 
@@ -220,9 +221,9 @@ class MainActivity : ComponentActivity() {
                     // here - it switches while our task is in the background.
                     val switchingTo = LanguageSwitchState.targetTag
                     if (switchingTo != null) {
-                        // The wallpaper is composed for the switch page too. The page replaces the
-                        // app content, so with nothing behind it the window colour - near-black in
-                        // the dark theme - is all the user sees while the switch is applied.
+                        // The wallpaper is composed for the switch page too: the page replaces the
+                        // app content, and with nothing behind it the window colour - near-black
+                        // in the dark theme - is all the user sees while the switch is applied.
                         Box(modifier = Modifier.fillMaxSize()) {
                             BackgroundLayer(
                                 currentRoute = navigator.current(),
@@ -312,8 +313,9 @@ class MainActivity : ComponentActivity() {
                                 entry<Route.Tool>(swipeDismiss = swipeDismiss) { ToolsScreen() }
                                 entry<Route.UmountManager>(swipeDismiss = swipeDismiss) { UmountManagerScreen() }
                                 entry<Route.Language>(swipeDismiss = swipeDismiss) {
-                                    // The language lives in SettingsViewModel, which owns both the
-                                    // stored value and the switch that recreates the activity.
+                                    // The language lives in SettingsViewModel, which owns both
+                                    // the stored value and the switch that recreates the
+                                    // activity; MainActivityViewModel does not carry it.
                                     val settingsViewModel = viewModel<SettingsViewModel>()
                                     val settingsState by settingsViewModel.uiState
                                         .collectAsStateWithLifecycle()
@@ -328,7 +330,6 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
-
                 }
             }
         }

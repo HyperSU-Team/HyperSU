@@ -83,6 +83,47 @@ In particular, we thank [SukiSU Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ul
 
 Thanks also go to all other upstream projects and contributors mentioned in the Credit section for their open-source work and continuous contributions.
 
+## Upstream maintainers and contributors
+
+HyperSU would not exist without the people who build and maintain [SukiSU Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra), the project it is forked from. Our thanks go to all of them.
+
+Maintainer, as named by the upstream project:
+
+- [ShirkNeko](https://github.com/ShirkNeko)
+
+Contributors, by the work they have landed upstream:
+
+- [rsuntk](https://github.com/rsuntk) — non-GKI support, RKSU lineage
+- [5ec1cff](https://github.com/5ec1cff) — Magic Mount (MKSU)
+- Wang Han
+- [u9521](https://github.com/u9521)
+- AlexLiuDev233
+- [backslashxx](https://github.com/backslashxx)
+- [fluffball3](https://github.com/fluffball3)
+- [JackAltman](https://github.com/JackA1ltman)
+- [xixiaobei](https://github.com/xixiaobei-bei)
+- Ylarod
+- [cctv18](https://github.com/cctv18)
+- [libingxuan](https://github.com/aaaaaaaa-815)
+- [XiaoTong6666](https://github.com/XiaoTong6666)
+- [Xiaomichael](https://github.com/Xiaomichael)
+- [Small-cart](https://github.com/Small-cart)
+- [s-b-repo](https://github.com/s-b-repo)
+- [Kendox07](https://github.com/Kendox07)
+- [Coconutat](https://github.com/Coconutat)
+- [bXZb](https://github.com/bXZb)
+- [awkoo](https://github.com/awkoo)
+- [FunLay123](https://github.com/FunLay123)
+- [hmtheboy154](https://github.com/hmtheboy154)
+- [JiuGeFaCai](https://github.com/JiuGeFaCai)
+- [mgiganto](https://github.com/mgiganto)
+- [mihoy3rd](https://github.com/mihoy3rd)
+- [xiaozhou26](https://github.com/xiaozhou26)
+- [fatalcoder524](https://github.com/fatalcoder524)
+- [YuKongA](https://github.com/YuKongA)
+
+And everyone else who has contributed to SukiSU Ultra, KernelSU, or the projects listed under Credit, including those whose commits are not named here.
+
 ## License
 
 - The file in the “kernel” directory is under [GPL-2.0-only](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html) license.

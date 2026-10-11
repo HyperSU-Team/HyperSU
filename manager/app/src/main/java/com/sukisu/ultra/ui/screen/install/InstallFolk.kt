@@ -279,7 +279,6 @@ private fun SelectInstallMethod(
         when (option) {
             is InstallMethod.SelectFile -> onSelectBootImage(option)
             is InstallMethod.HorizonKernel -> onSelectBootImage(option)
-            is InstallMethod.AnyKernel3 -> onSelectBootImage(option)
             is InstallMethod.DownloadFile -> onDownloadFile()
             is InstallMethod.DirectInstall -> onSelected(option)
             is InstallMethod.DirectInstallToInactiveSlot ->

@@ -64,6 +64,7 @@ data class AppSettings(
     val keyColor: Int,
     val paletteStyle: PaletteStyle,
     val colorSpec: ColorSpec.SpecVersion,
+    val colorContrast: ColorContrast,
 )
 
 val PaletteStyle.supportsSpec2025: Boolean
@@ -93,8 +94,9 @@ object ThemeController {
         } catch (_: Exception) {
             ColorSpec.SpecVersion.SPEC_2025
         }
+        val colorContrast = ColorContrast.fromName(repo.colorContrast)
 
-        return AppSettings(colorMode, keyColor, paletteStyle, colorSpec)
+        return AppSettings(colorMode, keyColor, paletteStyle, colorSpec, colorContrast)
     }
 }
 
@@ -160,6 +162,7 @@ fun HyperSUTheme(
         isAmoled = false,
         paletteStyle = appSettings.paletteStyle,
         colorSpec = appSettings.colorSpec,
+        contrast = appSettings.colorContrast,
     )
 
     val amoledColorScheme = remember(baseColorScheme, amoled) {
@@ -175,6 +178,7 @@ fun HyperSUTheme(
         isAmoled = false,
         paletteStyle = appSettings.paletteStyle,
         colorSpec = appSettings.colorSpec,
+        contrast = appSettings.colorContrast,
     )
 
     val useCustomBackground = BackgroundConfig.isCustomBackgroundEnabled

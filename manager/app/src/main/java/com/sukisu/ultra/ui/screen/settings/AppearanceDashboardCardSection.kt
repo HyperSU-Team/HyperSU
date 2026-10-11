@@ -25,6 +25,7 @@ import com.sukisu.ultra.ui.component.folk.FolkSettingsGroupScope
 import com.sukisu.ultra.ui.component.folk.FolkSettingsSectionGroup
 import com.sukisu.ultra.ui.component.folk.FolkSwitchPreference
 import com.sukisu.ultra.ui.component.folk.FolkValuePreference
+import com.sukisu.ultra.ui.screen.themeSettings.crop.CropBackgroundContract
 import com.sukisu.ultra.ui.theme.BackgroundConfig
 import com.sukisu.ultra.ui.theme.BackgroundManager
 import kotlinx.coroutines.launch
@@ -54,22 +55,43 @@ fun AppearanceDashboardCardSection(
         scope.launch { snackBarHost.showSnackbar(message) }
     }
 
+    // Cropped before saving, so the user frames each tile image rather than the app
+    // centre-cropping it. pendingTile stays set across the crop, since the crop result is
+    // what completes the pick.
+    val cropLauncher = rememberLauncherForActivityResult(
+        CropBackgroundContract(),
+    ) { cropped: Uri? ->
+        val tile = pendingTile
+        pendingTile = null
+        if (cropped == null || tile == null) {
+            CropBackgroundContract.clearCache(context)
+            return@rememberLauncherForActivityResult
+        }
+        scope.launch {
+            loadingDialog.show()
+            val success = BackgroundManager.saveAndApplyDashboardTileBackground(context, tile, cropped)
+            loadingDialog.hide()
+            showMessage(
+                if (success) R.string.settings_custom_background_saved
+                else R.string.settings_custom_background_error,
+            )
+            CropBackgroundContract.clearCache(context)
+        }
+    }
+
     val pickLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.GetContent(),
     ) { uri: Uri? ->
         val tile = pendingTile
-        pendingTile = null
-        if (uri != null && tile != null) {
-            scope.launch {
-                loadingDialog.show()
-                val success = BackgroundManager.saveAndApplyDashboardTileBackground(context, tile, uri)
-                loadingDialog.hide()
-                showMessage(
-                    if (success) R.string.settings_custom_background_saved
-                    else R.string.settings_custom_background_error,
-                )
-            }
+        if (uri == null || tile == null) {
+            pendingTile = null
+            return@rememberLauncherForActivityResult
         }
+        runCatching { cropLauncher.launch(CropBackgroundContract.Input(source = uri)) }
+            .onFailure {
+                pendingTile = null
+                showMessage(R.string.file_picker_unavailable)
+            }
     }
 
     val clearDialog = rememberConfirmDialog(

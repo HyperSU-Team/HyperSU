@@ -35,21 +35,18 @@ sealed class InstallMethod : Parcelable {
     }
 
     /**
-     * An AnyKernel3 archive this app fetched, and one the user picked, are the same flow over
-     * the same kind of file. They stay separate classes so the install-method list can tell
-     * which row was chosen; [isKernelArchive] is how the shared steps accept either.
+     * An AnyKernel3 archive the user picks.
+     *
+     * The row is labelled "AnyKernel3 Kernel" and runs the whole AnyKernel3 flow - slot
+     * selection, then confirmation, then anykernel.sh against the boot image. A second row
+     * named AnyKernel3 was added alongside it and did the same thing, so the install list
+     * offered the same entry twice; this one is kept because the intent dispatcher and the
+     * kernel-flash screen are both built around it.
      */
     data class HorizonKernel(
         val uri: Uri? = null,
         val slot: String? = null,
         @get:StringRes override val label: Int = R.string.horizon_kernel,
-        override val summary: String? = null
-    ) : InstallMethod()
-
-    data class AnyKernel3(
-        val uri: Uri? = null,
-        val slot: String? = null,
-        @get:StringRes override val label: Int = R.string.anykernel3_flash,
         override val summary: String? = null
     ) : InstallMethod()
 
@@ -60,41 +57,31 @@ sealed class InstallMethod : Parcelable {
 }
 
 /*
- * These three are declared on the nullable receiver so a call site holding an
- * `InstallMethod?` needs no `?.` or `!!`. A null method simply is not an archive.
+ * Declared on the nullable receiver so a call site holding an `InstallMethod?` needs no `?.`.
+ * A null method is simply not an archive.
  */
 
-/** The uri of an archive row, or null for the methods that carry no archive. */
+/** The uri of the archive row, or null for the methods that carry no archive. */
 val InstallMethod?.archiveUri: Uri?
-    get() = when (this) {
-        is InstallMethod.HorizonKernel -> uri
-        is InstallMethod.AnyKernel3 -> uri
-        else -> null
-    }
+    get() = (this as? InstallMethod.HorizonKernel)?.uri
 
-/** The slot of an archive row, or null when none is recorded or not applicable. */
+/** The slot of the archive row, or null when none is recorded. */
 val InstallMethod?.archiveSlot: String?
-    get() = when (this) {
-        is InstallMethod.HorizonKernel -> slot
-        is InstallMethod.AnyKernel3 -> slot
-        else -> null
-    }
+    get() = (this as? InstallMethod.HorizonKernel)?.slot
 
-/** True for the two archive rows, which share the slot, KPM and confirmation steps. */
+/** True for the archive row, which owns the slot, KPM and confirmation steps. */
 val InstallMethod?.isKernelArchive: Boolean
-    get() = this is InstallMethod.HorizonKernel || this is InstallMethod.AnyKernel3
+    get() = this is InstallMethod.HorizonKernel
 
 /**
- * The same archive with a slot recorded, keeping its own type.
+ * The same archive with a slot recorded.
  *
  * The slot dialog hands back only a slot string, so the archive has to be rebuilt. Rebuilding
- * it as a fixed type is what made the install list lose its selection mark: the row the user
- * picked was an AnyKernel3, and the rebuilt value was a HorizonKernel, so the two no longer
- * matched. Copying keeps whichever type it was.
+ * it as a fixed type is what once made the install list lose its selection mark: the rebuilt
+ * value no longer matched the row the user had picked.
  */
 fun InstallMethod.withArchiveSlot(slot: String?): InstallMethod = when (this) {
     is InstallMethod.HorizonKernel -> copy(slot = slot)
-    is InstallMethod.AnyKernel3 -> copy(slot = slot)
     else -> this
 }
 

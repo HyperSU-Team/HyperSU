@@ -149,9 +149,9 @@ class ModuleRepoViewModel(
                     _uiState.update { it.copy(isRefreshing = false) }
                 }.onFailure { e ->
                     Log.e(TAG, "fetch modules failed", e)
-                    // Only blame the network when it really is unavailable: an HTTP 404 or 5xx
-                    // from the index server lands here too, and telling the user to check their
-                    // connection sends them after the wrong problem.
+                    // Only blame the network when it is really unavailable; otherwise the index
+                    // server itself may be down (an HTTP 404/5xx arrives here too), and telling
+                    // the user to check their connection sends them after the wrong problem.
                     val offlineNow = !isNetworkAvailable(ksuApp)
                     Toast.makeText(
                         ksuApp,
