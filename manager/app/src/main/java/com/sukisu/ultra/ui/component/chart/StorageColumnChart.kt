@@ -19,9 +19,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
+import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.theme.tokens.FolkShape
 
 data class StoragePartition(
@@ -52,7 +54,8 @@ fun StorageColumnChart(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Storage Partitions",
+                // Was a hard-coded English literal, so the block stayed English in every locale.
+                text = stringResource(R.string.home_storage_partitions),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = colors.onSurface

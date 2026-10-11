@@ -22,6 +22,8 @@ data class SystemMonitorState(
     val batteryCharging: Boolean = false,
     val networkRxBytes: Long = 0L,
     val networkTxBytes: Long = 0L,
+    /** Per-partition usage, empty when the partitions could not be read. */
+    val storagePartitions: List<HardwareMonitor.StoragePartitionInfo> = emptyList(),
 )
 
 /**
@@ -41,10 +43,14 @@ data class TimeSeriesData(
     }
 }
 
-/** The counts shown beside the pie chart. */
+/**
+ * The counts shown beside the pie chart.
+ *
+ * There is no kernel-module count: KernelSU has no such concept, and a field that is always zero
+ * would invite a caller to display it as one.
+ */
 @Immutable
 data class ModuleStatsState(
-    val kernelModuleCount: Int = 0,
     val apmModuleCount: Int = 0,
     val superuserCount: Int = 0,
 )

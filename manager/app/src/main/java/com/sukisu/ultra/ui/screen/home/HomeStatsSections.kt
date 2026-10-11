@@ -39,6 +39,8 @@ import com.sukisu.ultra.ui.component.ExpressiveCard
 import com.sukisu.ultra.ui.component.chart.ModulePieChart
 import com.sukisu.ultra.ui.component.chart.SystemAreaChart
 import com.sukisu.ultra.ui.component.chart.SystemLineChart
+import com.sukisu.ultra.ui.component.chart.StorageColumnChart
+import com.sukisu.ultra.ui.component.chart.StoragePartition
 import com.sukisu.ultra.ui.component.chart.rememberPieSliceDataFromCounts
 import com.sukisu.ultra.ui.util.HardwareMonitor
 import java.util.Locale
@@ -136,6 +138,29 @@ fun SystemMonitoringSection(
 
             if (systemMonitor.networkRxBytes > 0L || systemMonitor.networkTxBytes > 0L) {
                 NetworkRows(systemMonitor)
+            }
+
+            if (systemMonitor.storagePartitions.isNotEmpty()) {
+                // The ported chart, rather than a fourth set of progress bars: it was written for
+                // exactly this and had never been given any data.
+                StorageColumnChart(
+                    partitions = systemMonitor.storagePartitions.map { partition ->
+                        val percent = if (partition.totalBytes > 0L) {
+                            partition.usedBytes.toFloat() / partition.totalBytes.toFloat() * 100f
+                        } else {
+                            0f
+                        }
+                        StoragePartition(
+                            label = partition.label,
+                            usedPercent = percent,
+                            color = when {
+                                percent > 90f -> colors.error
+                                percent > 75f -> colors.tertiary
+                                else -> colors.primary
+                            },
+                        )
+                    },
+                )
             }
         }
     }
@@ -415,13 +440,19 @@ fun CpuFrequencyBars(
 
 private data class CpuCluster(val label: String, val avgFreq: Long, val maxFreq: Long)
 
-/** A pie chart of the three module counts, with the totals listed beside it. */
+/**
+ * A pie chart of the module counts, with the totals listed beside it.
+ *
+ * KernelSU has no kernel modules, so that slice and its row are omitted rather than shown at zero:
+ * a permanent zero reads as "this device has none", which is not the same as "this app has no such
+ * thing". The layout is left to adapt to the shorter list.
+ */
 @Composable
 fun ModuleStatisticsSection(
     stats: ModuleStatsState,
     modifier: Modifier = Modifier,
 ) {
-    val total = stats.kernelModuleCount + stats.apmModuleCount + stats.superuserCount
+    val total = stats.apmModuleCount + stats.superuserCount
 
     ExpressiveCard(modifier = modifier) {
         Row(
@@ -432,7 +463,7 @@ fun ModuleStatisticsSection(
         ) {
             ModulePieChart(
                 data = rememberPieSliceDataFromCounts(
-                    kernelModules = stats.kernelModuleCount,
+                    kernelModules = null,
                     apmModules = stats.apmModuleCount,
                     superusers = stats.superuserCount,
                     apmLabel = stringResource(R.string.home_stats_apm_modules),
@@ -444,11 +475,6 @@ fun ModuleStatisticsSection(
                 modifier = Modifier.align(Alignment.CenterVertically),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                StatRow(
-                    label = stringResource(R.string.home_stats_kernel_modules),
-                    value = stats.kernelModuleCount.toString(),
-                    icon = Icons.Outlined.DeveloperBoard,
-                )
                 StatRow(
                     label = stringResource(R.string.home_stats_apm_modules),
                     value = stats.apmModuleCount.toString(),

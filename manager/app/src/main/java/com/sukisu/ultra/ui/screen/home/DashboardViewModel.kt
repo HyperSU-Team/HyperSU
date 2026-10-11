@@ -38,6 +38,7 @@ class DashboardViewModel : ViewModel() {
         const val GPU_INTERVAL_MS = 2_000L
         const val MEMORY_INTERVAL_MS = 5_000L
         const val BATTERY_NETWORK_INTERVAL_MS = 10_000L
+        const val STORAGE_INTERVAL_MS = 30_000L
     }
 
     private val _systemMonitor = MutableStateFlow(SystemMonitorState())
@@ -136,6 +137,19 @@ class DashboardViewModel : ViewModel() {
                 delay(BATTERY_NETWORK_INTERVAL_MS)
             }
         }
+
+        // Partition usage changes far more slowly than anything else here, and reading it costs
+        // five `df` calls, so it is sampled on its own long interval.
+        jobs += viewModelScope.launch(Dispatchers.IO) {
+            delay(8_000L)
+            while (true) {
+                runCatching {
+                    val partitions = HardwareMonitor.getStoragePartitions()
+                    _systemMonitor.update { it.copy(storagePartitions = partitions) }
+                }.onFailure { Log.w(TAG, "storage sample failed", it) }
+                delay(STORAGE_INTERVAL_MS)
+            }
+        }
     }
 
     /** Stops sampling. Safe to call when nothing is running. */
@@ -156,7 +170,6 @@ class DashboardViewModel : ViewModel() {
                 val superusers = getSuperuserCount()
                 val modules = getModuleCount()
                 _moduleStats.value = ModuleStatsState(
-                    kernelModuleCount = 0,
                     apmModuleCount = modules,
                     superuserCount = superusers,
                 )

@@ -92,9 +92,17 @@ fun ModulePieChart(
     }
 }
 
+/**
+ * Builds the slices for [ModulePieChart].
+ *
+ * [kernelModules] is nullable rather than defaulting to zero because a zero slice and no slice mean
+ * different things: the first says "this device has none", the second says "this device has no such
+ * concept". KernelSU has no kernel modules at all, so passing null omits the slice instead of
+ * drawing a permanently empty one and listing a count that can never be anything but 0.
+ */
 @Composable
 fun rememberPieSliceDataFromCounts(
-    kernelModules: Int = 0,
+    kernelModules: Int? = null,
     apmModules: Int = 0,
     superusers: Int = 0,
     kpmLabel: String = "KPM",
@@ -104,22 +112,30 @@ fun rememberPieSliceDataFromCounts(
     val emptyColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
 
     return remember(kernelModules, apmModules, superusers, kpmLabel, apmLabel, suLabel) {
-        listOf(
-            PieSliceData(
-                label = kpmLabel,
-                value = kernelModules.toFloat(),
-                color = if (kernelModules > 0) ChartPalette.KPM else emptyColor
-            ),
-            PieSliceData(
-                label = apmLabel,
-                value = apmModules.toFloat(),
-                color = if (apmModules > 0) ChartPalette.APM else emptyColor
-            ),
-            PieSliceData(
-                label = suLabel,
-                value = superusers.toFloat(),
-                color = if (superusers > 0) ChartPalette.SU else emptyColor
+        buildList {
+            if (kernelModules != null) {
+                add(
+                    PieSliceData(
+                        label = kpmLabel,
+                        value = kernelModules.toFloat(),
+                        color = if (kernelModules > 0) ChartPalette.KPM else emptyColor
+                    )
+                )
+            }
+            add(
+                PieSliceData(
+                    label = apmLabel,
+                    value = apmModules.toFloat(),
+                    color = if (apmModules > 0) ChartPalette.APM else emptyColor
+                )
             )
-        )
+            add(
+                PieSliceData(
+                    label = suLabel,
+                    value = superusers.toFloat(),
+                    color = if (superusers > 0) ChartPalette.SU else emptyColor
+                )
+            )
+        }
     }
 }
