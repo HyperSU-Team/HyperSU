@@ -54,31 +54,30 @@ object ManagerUpdateChecker {
      *         the tags cannot be compared, and a failed [Result] when GitHub could not be asked.
      */
     suspend fun check(): Result<ManagerUpdate?> = withContext(Dispatchers.IO) {
+        // The block yields the update or null, never a Result: wrapping one here nests it and
+        // gives Result<Result<ManagerUpdate>>, which is not what the signature promises.
         runCatching {
             val request = Request.Builder()
                 .url(RELEASES_URL)
                 .header("Accept", "application/vnd.github+json")
                 .build()
 
-            val body = ksuApp.okhttpClient.newCall(request).execute().use { response ->
+            ksuApp.okhttpClient.newCall(request).execute().use { response ->
                 // 404 is the expected answer for a project with no releases yet, not an error.
-                if (response.code == 404) return@withContext Result.success(null)
+                if (response.code == 404) return@runCatching null
                 if (!response.isSuccessful) error("GitHub returned ${response.code}")
-                response.body?.string().orEmpty()
-            }
 
-            val json = JSONObject(body)
-            val tag = json.optString("tag_name").trim()
-            if (!isNewer(tag)) return@withContext Result.success(null)
+                val json = JSONObject(response.body?.string().orEmpty())
+                val tag = json.optString("tag_name").trim()
+                if (!isNewer(tag)) return@runCatching null
 
-            Result.success(
                 ManagerUpdate(
                     versionName = tag.removePrefix("v"),
                     apkUrl = apkAssetOf(json),
                     pageUrl = json.optString("html_url"),
                     notes = json.optString("body"),
-                ),
-            )
+                )
+            }
         }.onFailure { Log.w(TAG, "update check failed", it) }
     }
 

@@ -65,8 +65,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceIn
 import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlin.math.sign
 import kotlinx.coroutines.launch
 import com.sukisu.ultra.ui.component.miuix.animation.DampedDragAnimation
+import com.sukisu.ultra.ui.theme.isInDarkTheme
 
 val LocalFloatingBottomBarTabScale = staticCompositionLocalOf { { 1f } }
 
@@ -124,6 +126,8 @@ fun FloatingBottomBar(
     val accentColor = MaterialTheme.colorScheme.primary
     val tabContentColor = MaterialTheme.colorScheme.onSurface
     val containerColor = MaterialTheme.colorScheme.surfaceContainer
+    // The pill's drop shadow is lighter on a dark surface, where a heavy one reads as a smudge.
+    val isInDark = isInDarkTheme()
 
     val density = LocalDensity.current
     val isLtr = LocalLayoutDirection.current == LayoutDirection.Ltr
