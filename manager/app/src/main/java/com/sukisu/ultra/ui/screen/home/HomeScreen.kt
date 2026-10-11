@@ -6,7 +6,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -16,10 +15,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import com.sukisu.ultra.R
 import com.sukisu.ultra.magica.MagicaService
 import com.sukisu.ultra.ui.component.dialog.rememberLoadingDialog
@@ -39,7 +35,6 @@ fun HomePager(
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
     val loadingDialog = rememberLoadingDialog()
-    val scope = rememberCoroutineScope()
     val latestIsCurrentPage by rememberUpdatedState(isCurrentPage)
     val initialResumeHandled = rememberSaveable { mutableStateOf(false) }
 
@@ -59,21 +54,28 @@ fun HomePager(
         onPauseOrDispose { }
     }
 
+    // A jailbreak in progress. Held as state rather than inside a coroutine so the timeout is not
+    // tied to this composable: the scope is cancelled when the home tab leaves the composition,
+    // which used to leave the dialog up with nothing left to dismiss it.
+    var jailbreakPending by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(jailbreakPending) {
+        if (!jailbreakPending) return@LaunchedEffect
+        delay(30_000.milliseconds)
+        jailbreakPending = false
+        Toast.makeText(context, R.string.jailbreak_timeout, Toast.LENGTH_LONG).show()
+    }
+    LaunchedEffect(jailbreakPending) {
+        if (jailbreakPending) loadingDialog.showLoading() else loadingDialog.hide()
+    }
+
     val actions = HomeActions(
         onInstallClick = { navigator.push(Route.Install()) },
         onOpenUrl = uriHandler::openUri,
         onJailbreakClick = {
-            loadingDialog.showLoading()
+            // Manager will be force-stopped and restarted by late-load on success. If that does
+            // not happen within the timeout, the jailbreak likely failed.
+            jailbreakPending = true
             context.startService(Intent(context, MagicaService::class.java))
-            // Manager will be force-stopped and restarted by late-load on success.
-            // If that doesn't happen within timeout, jailbreak likely failed.
-            scope.launch(Dispatchers.IO) {
-                delay(30_000.milliseconds)
-                withContext(Dispatchers.Main) {
-                    loadingDialog.hide()
-                    Toast.makeText(context, R.string.jailbreak_timeout, Toast.LENGTH_LONG).show()
-                }
-            }
         },
     )
 
