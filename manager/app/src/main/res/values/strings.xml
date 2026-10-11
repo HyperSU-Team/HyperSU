@@ -12,6 +12,7 @@
     <string name="home_unsupported_reason">No KernelSU driver detected on your kernel, wrong kernel?</string>
     <string name="home_manager_unrecognized">Manager not recognized</string>
     <string name="home_manager_unrecognized_reason">Root works, but the kernel does not recognize this manager: the manager signature built into the module differs from this APK. Rebuild and flash the kernel module with this manager signature.</string>
+    <string name="home_manager_signature">This build is signed with: %s</string>
     <string name="home_device_model">Device model</string>
     <string name="home_kernel">Kernel version</string>
     <string name="home_manager_version">Manager version</string>

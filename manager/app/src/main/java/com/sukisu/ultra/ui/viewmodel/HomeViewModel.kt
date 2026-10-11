@@ -24,6 +24,7 @@ import com.sukisu.ultra.ui.screen.home.HomeUiState
 import com.sukisu.ultra.ui.screen.home.SystemInfo
 import com.sukisu.ultra.ui.screen.home.getManagerVersion
 import com.sukisu.ultra.ui.util.getSELinuxStatusRaw
+import com.sukisu.ultra.ui.util.managerSignatureSha256
 import com.sukisu.ultra.ui.util.resolveDeviceName
 import com.sukisu.ultra.ui.util.rootAvailable
 
@@ -123,6 +124,7 @@ class HomeViewModel(
             showHomeFingerprint = settingsRepo.showHomeFingerprint,
             showHomeSelinux = settingsRepo.showHomeSelinux,
             showHomeSeccomp = settingsRepo.showHomeSeccomp,
+            managerSignature = runCatching { managerSignatureSha256(ksuApp) }.getOrNull(),
             currentManagerVersionCode = managerVersion.versionCode,
             systemInfo = SystemInfo(
                 // `Os.uname()` needs no root, so this is the release string even on a device with

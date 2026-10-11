@@ -33,6 +33,14 @@ data class HomeUiState(
         seccompStatus = -1,
     ),
     val showFullStatus: Boolean = true,
+    /**
+     * This build's signing certificate digest, or null when it could not be read.
+     *
+     * Shown when the kernel does not recognise the manager: the kernel matches by certificate, so
+     * the digest is the one fact that explains a rejection, and without it the user can only be
+     * told to reinstall and hope.
+     */
+    val managerSignature: String? = null,
     /** Whether each of the home facts rows is shown. All default to on. */
     val showHomeDeviceModel: Boolean = true,
     val showHomeFingerprint: Boolean = true,

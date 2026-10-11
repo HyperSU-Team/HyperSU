@@ -12,6 +12,7 @@
     <string name="home_unsupported_reason">内核上未检测到 KernelSU 驱动程序，内核错误?</string>
     <string name="home_manager_unrecognized">管理器未被内核识别</string>
     <string name="home_manager_unrecognized_reason">Root 正常，但内核未把本应用识别为管理器（模块内置的管理器签名与本 APK 不一致）。请用本 APK 的签名重新构建并刷入内核模块。</string>
+    <string name="home_manager_signature">本 APK 的签名：%s</string>
     <string name="home_device_model">设备型号</string>
     <string name="home_kernel">内核版本</string>
     <string name="home_manager_version">管理器版本</string>

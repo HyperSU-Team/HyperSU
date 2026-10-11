@@ -92,6 +92,7 @@ import com.sukisu.ultra.ui.component.folk.FolkSettingsGroup
 import com.sukisu.ultra.ui.component.folk.FolkSeverity
 import com.sukisu.ultra.ui.component.folk.FolkStatusDot
 import com.sukisu.ultra.ui.component.folk.FolkTitleStyle
+import com.sukisu.ultra.ui.component.folk.FolkWrapSafeText
 import com.sukisu.ultra.ui.component.folk.folkSeverityColor
 import com.sukisu.ultra.ui.component.rebootlistpopup.RebootListPopup
 import com.sukisu.ultra.ui.component.statustag.StatusTag
@@ -487,6 +488,9 @@ private fun HomeHeroCard(
             wallpaperUri = wallpaperUri,
             titleRes = R.string.home_manager_unrecognized,
             reasonRes = R.string.home_manager_unrecognized_reason,
+            // The kernel crowns the manager by certificate, so this digest is the one fact that
+            // explains a rejection. Without it the card can only say "it did not match".
+            signature = state.managerSignature,
         )
         // Before the first load the state is its initial value, where the kernel version is
         // 0.0.0 and isGKI() is false - which used to fall through to the unsupported card and
@@ -742,6 +746,7 @@ private fun HomeUnsupportedCard(
     wallpaperUri: String? = null,
     titleRes: Int = R.string.home_unsupported,
     reasonRes: Int = R.string.home_unsupported_reason,
+    signature: String? = null,
 ) {
     val dark = isInDarkTheme()
     val palette = cardPalette(
@@ -794,6 +799,16 @@ private fun HomeUnsupportedCard(
                         style = FolkType.Summary,
                         color = palette.muted,
                     )
+                    if (!signature.isNullOrEmpty()) {
+                        Spacer(Modifier.size(6.dp))
+                        // Monospace and wrapped by the wrap-safe text, because a digest is one
+                        // unbreakable token and would otherwise push the card wider than the screen.
+                        FolkWrapSafeText(
+                            text = stringResource(R.string.home_manager_signature, signature),
+                            style = FolkType.Summary,
+                            color = palette.muted,
+                        )
+                    }
                 }
             }
         }
