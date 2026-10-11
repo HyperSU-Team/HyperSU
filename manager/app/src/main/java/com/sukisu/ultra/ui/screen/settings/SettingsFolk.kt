@@ -1,5 +1,6 @@
 package com.sukisu.ultra.ui.screen.settings
 
+import android.content.Intent
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -25,20 +26,26 @@ import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.SystemUpdateAlt
 import androidx.compose.material.icons.rounded.Android
 import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.component.KsuIsValid
+import com.sukisu.ultra.ui.component.ManagerUpdateDialog
+import com.sukisu.ultra.ui.component.dialog.rememberLoadingDialog
 import com.sukisu.ultra.ui.component.folk.FolkChoicePreference
 import com.sukisu.ultra.ui.component.folk.FolkNavigationPreference
 import com.sukisu.ultra.ui.component.folk.FolkScaffold
@@ -49,6 +56,10 @@ import com.sukisu.ultra.ui.component.folk.FolkTitleStyle
 import com.sukisu.ultra.ui.component.folk.FolkValuePreference
 import com.sukisu.ultra.ui.component.uninstalldialog.UninstallDialog
 import com.sukisu.ultra.ui.util.LocaleHelper
+import com.sukisu.ultra.ui.util.ManagerUpdate
+import com.sukisu.ultra.ui.util.ManagerUpdateChecker
+import com.sukisu.ultra.ui.util.download
+import kotlinx.coroutines.launch
 
 /**
  * The settings hub in the FolkPatch design.
@@ -70,6 +81,47 @@ fun SettingPagerFolk(
     val snackBarHost = remember { SnackbarHostState() }
     val showUninstallDialog = rememberSaveable { mutableStateOf(false) }
     var showBottomSheet by remember { mutableStateOf(false) }
+
+    // Manager update check. Kept here rather than in the settings view model because nothing else
+    // reads it: it is one request, made when the user asks, and its result lives only as long as
+    // this dialog.
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var checking by remember { mutableStateOf(false) }
+    var update by remember { mutableStateOf<ManagerUpdate?>(null) }
+    val loadingDialog = rememberLoadingDialog()
+
+    update?.let { available ->
+        ManagerUpdateDialog(
+            update = available,
+            onDismiss = { update = null },
+            onInstall = {
+                val url = available.apkUrl
+                update = null
+                if (url != null) {
+                    scope.launch {
+                        loadingDialog.show()
+                        runCatching {
+                            download(url, "HyperSU-${available.versionName}.apk")
+                        }.onFailure {
+                            snackBarHost.showSnackbar(
+                                context.getString(R.string.settings_manager_update_failed),
+                            )
+                        }
+                        loadingDialog.hide()
+                    }
+                }
+            },
+            onOpenPage = {
+                update = null
+                runCatching {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, available.pageUrl.toUri()),
+                    )
+                }
+            },
+        )
+    }
 
     UninstallDialog(
         show = showUninstallDialog.value,
@@ -110,6 +162,47 @@ fun SettingPagerFolk(
                                 onCheckedChange = actions.onSetCheckModuleUpdate,
                             )
                         }
+                    }
+                }
+            }
+
+            // The manager's own update check. Offered on its own section rather than beside the
+            // module one, because it is a different question: this build, not a module.
+            item {
+                FolkSettingsSectionGroup(title = stringResource(R.string.settings_manager_update)) {
+                    item {
+                        FolkValuePreference(
+                            title = stringResource(R.string.settings_manager_check_update),
+                            summary = stringResource(R.string.settings_manager_check_update_summary),
+                            icon = Icons.Rounded.SystemUpdate,
+                            onClick = {
+                                if (checking) return@FolkValuePreference
+                                checking = true
+                                scope.launch {
+                                    val result = ManagerUpdateChecker.check()
+                                    checking = false
+                                    result
+                                        .onSuccess { found ->
+                                            if (found != null) {
+                                                update = found
+                                            } else {
+                                                snackBarHost.showSnackbar(
+                                                    context.getString(
+                                                        R.string.settings_manager_update_none,
+                                                    ),
+                                                )
+                                            }
+                                        }
+                                        .onFailure {
+                                            snackBarHost.showSnackbar(
+                                                context.getString(
+                                                    R.string.settings_manager_update_failed,
+                                                ),
+                                            )
+                                        }
+                                }
+                            },
+                        )
                     }
                 }
             }
