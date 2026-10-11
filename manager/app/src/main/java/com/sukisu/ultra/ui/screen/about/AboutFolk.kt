@@ -2,7 +2,6 @@ package com.sukisu.ultra.ui.screen.about
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -51,19 +49,17 @@ fun AboutScreenFolk(
                     .padding(top = 40.dp, bottom = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Box(
-                    contentAlignment = Alignment.Center,
+                // The adaptive launcher icon, which brings its own background. This used to draw
+                // the transparent-cutout foreground on a hard-coded white plate, which left a
+                // white glyph on a white square in a light theme.
+                Image(
+                    painter = painterResource(id = R.mipmap.ic_launcher),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .size(88.dp)
-                        .clip(RoundedCornerShape(22.dp))
-                        .background(Color.White),
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                        contentDescription = null,
-                        contentScale = ContentScale.Fit,
-                    )
-                }
+                        .clip(RoundedCornerShape(22.dp)),
+                )
                 Text(
                     modifier = Modifier.padding(top = 14.dp),
                     text = state.appName,
