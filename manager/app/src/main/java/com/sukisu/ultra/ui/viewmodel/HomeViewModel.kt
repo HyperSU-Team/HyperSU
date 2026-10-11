@@ -6,6 +6,7 @@ import android.system.Os
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,11 +30,26 @@ class HomeViewModel(
     private val settingsRepo: SettingsRepository = SettingsRepositoryImpl()
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(buildState())
+    // Empty to begin with, then filled off the main thread. buildState() opens a root shell,
+    // runs `ksud module list` and starts another shell for `getenforce`, and it used to run in
+    // the constructor - which is the first composition of the home tab, so the first frame paid
+    // for all of it.
+    private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    fun refresh() {
-        viewModelScope.launch {
+    /** The load in flight, so the screen asking to refresh while one is already running does not
+     *  start a second - each one is a root shell and a `ksud module list`. */
+    private var loadJob: Job? = null
+
+    init {
+        reload()
+    }
+
+    fun refresh() = reload()
+
+    private fun reload() {
+        if (loadJob?.isActive == true) return
+        loadJob = viewModelScope.launch {
             val baseState = withContext(Dispatchers.IO) { buildState() }
             _uiState.update { baseState }
         }
@@ -72,9 +88,13 @@ class HomeViewModel(
             managerUAPIVersion = managerUAPIVersion,
             isRootAvailable = isRootAvailable,
             isSafeMode = Natives.isSafeMode,
+            loaded = true,
             isLateLoadMode = Natives.isLateLoadMode,
-            showFullStatus = ksuApp.getSharedPreferences("settings", Context.MODE_PRIVATE)
-                .getBoolean("show_fingerprint", true),
+            // Read through the repository rather than the preference directly. The key is
+            // "show_full_status", not FolkPatch's "show_fingerprint": that one means "hide the
+            // fingerprint" and defaults to false, so reading it here inverted the setting for
+            // anyone who had ever touched it.
+            showFullStatus = settingsRepo.showFullStatus,
             currentManagerVersionCode = managerVersion.versionCode,
             systemInfo = SystemInfo(
                 kernelVersion = Os.uname().release,

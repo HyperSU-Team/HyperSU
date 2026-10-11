@@ -463,6 +463,8 @@
     <string name="settings_tools">工具</string>
     <string name="settings_tools_summary">更多高级功能</string>
     <string name="tools_selinux_toggle">SELinux 模式</string>
+    <string name="tools_selinux_permissive">宽容</string>
+    <string name="tools_selinux_enforcing">强制</string>
     <string name="tools_selinux_summary">当前：%1$s</string>
     <string name="tools_selinux_apply_success">SELinux 已切换为 %1$s</string>
     <string name="tools_selinux_apply_failed">切换 SELinux 模式失败</string>

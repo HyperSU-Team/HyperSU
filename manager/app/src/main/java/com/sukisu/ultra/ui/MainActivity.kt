@@ -49,12 +49,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.zIndex
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -146,8 +148,17 @@ class MainActivity : ComponentActivity() {
                 (coldStart && SystemClock.uptimeMillis() - splashStartedAt < splashAnimationDurationMs)
         }
 
+        // install() builds a root shell and starts ksud, which is a root round trip and was run
+        // here on the main thread before setContent - so the first frame waited for it. It is
+        // moved to a background coroutine: nothing on screen depends on it, and the version check
+        // that guards it is cheap.
         val isManager = Natives.isManager
-        if (isManager && Natives.kernelUAPIVersion == Natives.managerUAPIVersion) install()
+        if (isManager && Natives.kernelUAPIVersion == Natives.managerUAPIVersion) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                runCatching { install() }
+                    .onFailure { android.util.Log.w("MainActivity", "install failed", it) }
+            }
+        }
 
         if (savedInstanceState == null) intent?.let { intentChannel.trySend(it) }
 

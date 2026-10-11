@@ -486,6 +486,8 @@
     <string name="settings_tools">Tools</string>
     <string name="settings_tools_summary">More advanced features.</string>
     <string name="tools_selinux_toggle">SELinux mode</string>
+    <string name="tools_selinux_permissive">Permissive</string>
+    <string name="tools_selinux_enforcing">Enforcing</string>
     <string name="tools_selinux_summary">Current: %1$s</string>
     <string name="tools_selinux_apply_success">SELinux switched to %1$s</string>
     <string name="tools_selinux_apply_failed">Failed to switch SELinux mode</string>

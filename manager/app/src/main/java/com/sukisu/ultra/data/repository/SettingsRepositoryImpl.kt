@@ -187,9 +187,15 @@ class SettingsRepositoryImpl : SettingsRepository {
         get() = prefs.getStringSet("sulog_filters", null)?.toSet()
         set(filters) = prefs.edit { putStringSet("sulog_filters", filters) }
 
+    // Its own key, not FolkPatch's "show_fingerprint". That one means "hide the fingerprint" and
+    // defaults to false, so a theme imported from there - or a user who had set it - would have
+    // inverted this switch. Reading the old key first keeps an existing install's choice.
     override var showFullStatus: Boolean
-        get() = prefs.booleanPref("show_fingerprint", true)
-        set(value) = prefs.edit { putBoolean("show_fingerprint", value) }
+        get() = prefs.booleanPref(
+            "show_full_status",
+            prefs.booleanPref("show_fingerprint", true),
+        )
+        set(value) = prefs.edit { putBoolean("show_full_status", value) }
 
     override var autoJailbreak: Boolean
         get() = prefs.booleanPref("auto_jailbreak", false)

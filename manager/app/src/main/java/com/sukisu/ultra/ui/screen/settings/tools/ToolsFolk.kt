@@ -46,7 +46,6 @@ import com.sukisu.ultra.ui.component.folk.FolkSettingsSectionGroup
 import com.sukisu.ultra.ui.component.folk.FolkSwitchPreference
 import com.sukisu.ultra.ui.component.folk.FolkTitleStyle
 import com.sukisu.ultra.ui.theme.tokens.FolkType
-import com.sukisu.ultra.ui.util.getSELinuxStatusRaw
 
 /**
  * The tools screen in the FolkPatch design: the SELinux toggle, the umount path
@@ -81,9 +80,18 @@ fun ToolsFolk(
                         item {
                             FolkSwitchPreference(
                                 title = stringResource(R.string.tools_selinux_toggle),
+                                // From the state, which ToolsScreen fills in on a background
+                                // thread. This used to call getSELinuxStatusRaw() here, and that
+                                // builds a shell and runs `getenforce` on every recomposition.
                                 summary = stringResource(
                                     R.string.tools_selinux_summary,
-                                    getSELinuxStatusRaw(),
+                                    stringResource(
+                                        if (state.selinuxEnforcing) {
+                                            R.string.tools_selinux_enforcing
+                                        } else {
+                                            R.string.tools_selinux_permissive
+                                        },
+                                    ),
                                 ),
                                 icon = Icons.Rounded.Security,
                                 enabled = !state.selinuxLoading,

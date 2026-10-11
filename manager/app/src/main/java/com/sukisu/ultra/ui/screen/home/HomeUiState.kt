@@ -5,23 +5,36 @@ import com.sukisu.ultra.KernelVersion
 
 @Immutable
 data class HomeUiState(
-    val kernelVersion: KernelVersion,
-    val ksuVersion: Int?,
-    val managerUAPIVersion: Int,
-    val kernelUAPIVersion: Int?,
-    val lkmMode: Boolean?,
-    val isLkmBundled: Boolean,
-    val isManager: Boolean,
-    val isManagerPrBuild: Boolean,
-    val isKernelPrBuild: Boolean,
-    val requiresNewKernel: Boolean,
-    val requiresNewManager: Boolean,
-    val isRootAvailable: Boolean,
-    val isSafeMode: Boolean,
-    val isLateLoadMode: Boolean,
-    val currentManagerVersionCode: Long,
-    val systemInfo: SystemInfo,
+    // Every field has a default so the home tab has something to draw before its state has been
+    // collected - the real values need a root shell, so they arrive a moment later. `loaded`
+    // tells the two apart.
+    val kernelVersion: KernelVersion = KernelVersion(0, 0, 0),
+    val ksuVersion: Int? = null,
+    val managerUAPIVersion: Int = 0,
+    val kernelUAPIVersion: Int? = null,
+    val lkmMode: Boolean? = null,
+    val isLkmBundled: Boolean = false,
+    val isManager: Boolean = false,
+    val isManagerPrBuild: Boolean = false,
+    val isKernelPrBuild: Boolean = false,
+    val requiresNewKernel: Boolean = false,
+    val requiresNewManager: Boolean = false,
+    val isRootAvailable: Boolean = false,
+    val isSafeMode: Boolean = false,
+    val isLateLoadMode: Boolean = false,
+    val currentManagerVersionCode: Long = 0L,
+    val systemInfo: SystemInfo = SystemInfo(
+        kernelVersion = "",
+        managerVersion = "",
+        deviceModel = "",
+        kernelFullVersion = null,
+        fingerprint = "",
+        selinuxStatus = "",
+        seccompStatus = -1,
+    ),
     val showFullStatus: Boolean = true,
+    /** False until the first buildState() has come back. */
+    val loaded: Boolean = false,
 ) {
     val isSELinuxPermissive: Boolean
         get() = systemInfo.selinuxStatus == "Permissive"
