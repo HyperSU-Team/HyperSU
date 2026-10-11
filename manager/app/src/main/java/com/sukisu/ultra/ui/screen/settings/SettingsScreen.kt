@@ -46,6 +46,7 @@ fun SettingPager(
 
     val actions = SettingsScreenActions(
         onSetCheckModuleUpdate = viewModel::setCheckModuleUpdate,
+        onSetCheckUpdate = viewModel::setCheckUpdate,
         onOpenTheme = { navigator.push(Route.ColorPalette) },
         onOpenProfileTemplate = { navigator.push(Route.AppProfileTemplate) },
         onSetLanguage = { tag -> viewModel.setLanguage(context, tag) },

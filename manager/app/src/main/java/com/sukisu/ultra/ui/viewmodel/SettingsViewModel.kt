@@ -36,6 +36,7 @@ class SettingsViewModel(
     fun refresh() {
         viewModelScope.launch {
             val checkModuleUpdate = repo.checkModuleUpdate
+            val checkUpdate = repo.checkUpdate
             val alternativeIcon = repo.alternativeIcon
             val themeMode = repo.themeMode
             val keyColor = repo.keyColor
@@ -77,6 +78,7 @@ class SettingsViewModel(
                 it.copy(
                     appLanguage = appLanguage,
                     checkModuleUpdate = checkModuleUpdate,
+                    checkUpdate = checkUpdate,
                     alternativeIcon = alternativeIcon,
                     themeMode = themeMode,
                     keyColor = keyColor,
@@ -128,6 +130,11 @@ class SettingsViewModel(
     fun setCheckModuleUpdate(enabled: Boolean) {
         repo.checkModuleUpdate = enabled
         _uiState.update { it.copy(checkModuleUpdate = enabled) }
+    }
+
+    fun setCheckUpdate(enabled: Boolean) {
+        repo.checkUpdate = enabled
+        _uiState.update { it.copy(checkUpdate = enabled) }
     }
     fun setAlternativeIcon(context: Context, enabled: Boolean) {
         repo.alternativeIcon = enabled

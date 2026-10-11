@@ -65,6 +65,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import coil.compose.rememberAsyncImagePainter
+import com.sukisu.ultra.ui.component.dialog.rememberConfirmDialog
 import com.sukisu.ultra.ui.component.folk.FolkFactsGroup
 import com.sukisu.ultra.ui.component.folk.FolkNavigationPreference
 import com.sukisu.ultra.ui.component.folk.FolkPreference
@@ -78,6 +79,7 @@ import com.sukisu.ultra.ui.component.rebootlistpopup.RebootListPopup
 import com.sukisu.ultra.ui.component.statustag.StatusTag
 import com.sukisu.ultra.ui.theme.BackgroundConfig
 import com.sukisu.ultra.ui.theme.BackgroundManager
+import com.sukisu.ultra.ui.util.module.LatestVersionInfo
 import com.sukisu.ultra.ui.theme.isInDarkTheme
 import com.sukisu.ultra.ui.theme.tokens.FolkShape
 import com.sukisu.ultra.ui.theme.tokens.FolkType
@@ -330,6 +332,40 @@ private fun HomeWarnings(state: HomeUiState, actions: HomeActions) {
             severity = FolkSeverity.Critical,
         )
     }
+
+    if (state.hasUpdate) {
+        HomeUpdateBanner(state.latestVersionInfo, actions)
+    }
+}
+
+/**
+ * This fork has a newer release than the running manager.
+ *
+ * The changelog comes from the release body: tapping opens it in a dialog so the version can be
+ * read before downloading, and a release without a body goes straight to the download.
+ */
+@Composable
+private fun HomeUpdateBanner(latest: LatestVersionInfo, actions: HomeActions) {
+    val title = stringResource(R.string.module_changelog)
+    val updateText = stringResource(R.string.module_update)
+    val dialog = rememberConfirmDialog(onConfirm = { actions.onOpenUrl(latest.downloadUrl) })
+
+    FolkStatusBannerMedium(
+        message = stringResource(R.string.new_version_available, latest.versionCode),
+        severity = FolkSeverity.Info,
+        onClick = {
+            if (latest.changelog.isEmpty()) {
+                actions.onOpenUrl(latest.downloadUrl)
+            } else {
+                dialog.showConfirm(
+                    title = title,
+                    content = latest.changelog,
+                    markdown = true,
+                    confirm = updateText,
+                )
+            }
+        },
+    )
 }
 
 /** A single-line message row in the Folk status colours. */

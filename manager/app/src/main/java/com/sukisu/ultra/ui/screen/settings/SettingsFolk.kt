@@ -95,12 +95,20 @@ fun SettingPagerFolk(
                 bottom = bottomInnerPadding + innerPadding.calculateBottomPadding() + 16.dp,
             ),
         ) {
-            // Update checks (KSU only). Only module updates are offered: the manager no longer
-            // compares itself against upstream releases, which used to prompt "new version,
-            // tap to upgrade" and push the upstream APK over this build.
+            // Update checks (KSU only). The manager compares itself against this fork's own
+            // releases, so the banner it raises offers this build rather than upstream's.
             item {
                 KsuIsValid {
                     FolkSettingsSectionGroup(title = stringResource(R.string.settings_check_update)) {
+                        item {
+                            FolkSwitchPreference(
+                                title = stringResource(R.string.settings_manager_check_update),
+                                summary = stringResource(R.string.settings_check_update_summary),
+                                icon = Icons.Filled.SystemUpdateAlt,
+                                checked = uiState.checkUpdate,
+                                onCheckedChange = actions.onSetCheckUpdate,
+                            )
+                        }
                         item {
                             FolkSwitchPreference(
                                 title = stringResource(R.string.settings_module_check_update),

@@ -77,6 +77,10 @@ class SettingsRepositoryImpl : SettingsRepository {
         get() = prefs.booleanPref("module_check_update", true)
         set(value) = prefs.edit { putBoolean("module_check_update", value) }
 
+    override var checkUpdate: Boolean
+        get() = prefs.booleanPref("manager_check_update", true)
+        set(value) = prefs.edit { putBoolean("manager_check_update", value) }
+
     override var alternativeIcon : Boolean
         get() = prefs.booleanPref("use_alt_icon", false)
         set(value) = prefs.edit { putBoolean("use_alt_icon", value)}

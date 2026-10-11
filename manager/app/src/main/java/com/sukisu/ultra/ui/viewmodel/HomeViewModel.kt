@@ -22,6 +22,7 @@ import com.sukisu.ultra.ui.screen.home.HomeUiState
 import com.sukisu.ultra.ui.screen.home.SystemInfo
 import com.sukisu.ultra.ui.screen.home.getManagerVersion
 import com.sukisu.ultra.ui.util.getSELinuxStatusRaw
+import com.sukisu.ultra.ui.util.checkNewVersion
 import com.sukisu.ultra.ui.util.resolveDeviceName
 import com.sukisu.ultra.ui.util.rootAvailable
 
@@ -36,6 +37,10 @@ class HomeViewModel(
         viewModelScope.launch {
             val baseState = withContext(Dispatchers.IO) { buildState() }
             _uiState.update { baseState }
+            if (settingsRepo.checkUpdate) {
+                val latest = withContext(Dispatchers.IO) { checkNewVersion() }
+                _uiState.update { it.copy(latestVersionInfo = latest) }
+            }
         }
     }
 
