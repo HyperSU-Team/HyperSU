@@ -234,6 +234,10 @@ internal fun HomePagerFolk(
                 },
             )
         },
+    
+        // The shell reserves the bottom bar and passes its height in as bottomInnerPadding,
+        // so reserving it again here would add both allowances and push the last row under it.
+        addBottomClearance = false,
     ) { innerPadding ->
         val contentPadding = PaddingValues(
             top = innerPadding.calculateTopPadding() + 8.dp,

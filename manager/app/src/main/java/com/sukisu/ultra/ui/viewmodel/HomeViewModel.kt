@@ -21,6 +21,7 @@ import com.sukisu.ultra.data.repository.SettingsRepositoryImpl
 import com.sukisu.ultra.getKernelVersion
 import com.sukisu.ultra.ksuApp
 import com.sukisu.ultra.ui.screen.home.HomeUiState
+import com.sukisu.ultra.ui.screen.home.ManagerVersion
 import com.sukisu.ultra.ui.screen.home.SystemInfo
 import com.sukisu.ultra.ui.screen.home.getManagerVersion
 import com.sukisu.ultra.ui.util.getSELinuxStatusRaw
@@ -86,7 +87,13 @@ class HomeViewModel(
             runCatching { if (kernelVersion.isGKI()) Natives.isLkmMode else null }.getOrNull()
         }
         val isRootAvailable = runCatching { rootAvailable() }.getOrDefault(false)
-        val managerVersion = getManagerVersion(ksuApp)
+        // Guarded, and it has to be: getManagerVersion dereferences the PackageManager's result and
+        // the version name with `!!`, and it is handed the global application reference, which is
+        // only assigned once the user is unlocked. A throw here used to take the manager version,
+        // the kernel version, the device name and the fingerprint down with it - which is exactly
+        // the four rows that came up blank while the rest of the card was fine.
+        val managerVersion = runCatching { getManagerVersion(ksuApp) }
+            .getOrElse { ManagerVersion(versionName = BuildConfig.VERSION_NAME, versionCode = 0L) }
         val kernelFullVersion = if (isManager) runCatching { Natives.getFullVersion() }.getOrNull() else null
 
         val zygiskImplementation = if (isManager && isRootAvailable) {

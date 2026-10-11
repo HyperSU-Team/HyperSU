@@ -377,6 +377,10 @@ internal fun ModulePagerFolk(
                 )
             }
         },
+    
+        // The shell reserves the bottom bar and passes its height in as bottomInnerPadding,
+        // so reserving it again here would add both allowances and push the last row under it.
+        addBottomClearance = false,
     ) { innerPadding ->
         val inSearchMode = uiState.searchStatus.searchText.isNotEmpty()
 

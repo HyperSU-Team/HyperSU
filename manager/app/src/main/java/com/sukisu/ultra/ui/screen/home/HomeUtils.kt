@@ -2,11 +2,10 @@ package com.sukisu.ultra.ui.screen.home
 
 import android.content.Context
 import android.os.Build
-import android.system.Os
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.pm.PackageInfoCompat
+import com.sukisu.ultra.BuildConfig
 import com.sukisu.ultra.Natives
 import com.sukisu.ultra.Natives.isManager
 import com.sukisu.ultra.ui.util.getSuSFSStatus
@@ -80,13 +79,24 @@ fun getZygiskImplementation(
 }
 
 
+/**
+ * This app's own version, from the package manager.
+ *
+ * Neither the package info nor the version name is guaranteed: a package can be installed without
+ * one, and the lookup itself can throw. Both used to be dereferenced with `!!`, so a device in
+ * either state crashed the caller rather than reporting a version. [BuildConfig] is the fallback
+ * because it is compiled in and cannot disagree with what is installed.
+ */
 fun getManagerVersion(context: Context): ManagerVersion {
-    val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)!!
-    val versionCode = PackageInfoCompat.getLongVersionCode(packageInfo)
-    return ManagerVersion(
-        versionName = packageInfo.versionName!!,
-        versionCode = versionCode
-    )
+    return runCatching {
+        val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
+        ManagerVersion(
+            versionName = packageInfo.versionName ?: BuildConfig.VERSION_NAME,
+            versionCode = PackageInfoCompat.getLongVersionCode(packageInfo),
+        )
+    }.getOrElse {
+        ManagerVersion(versionName = BuildConfig.VERSION_NAME, versionCode = 0L)
+    }
 }
 
 enum class SusfsStatus {
