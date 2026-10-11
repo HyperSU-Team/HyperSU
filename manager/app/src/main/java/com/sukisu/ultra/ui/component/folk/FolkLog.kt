@@ -151,11 +151,59 @@ fun FolkLogLine(
     )
 }
 
-/** A raw log blob rendered with the shared monospace metrics. */
+/**
+ * A raw log blob rendered with the shared monospace metrics.
+ *
+ * The level letter of each line is tinted and bolded, so an error stands out from the debug noise
+ * around it. The parsing and the colouring were both already written and had no caller, so every
+ * log read as one undifferentiated block of text.
+ *
+ * The lines are joined into a single [AnnotatedString] rather than rendered as one Text per line:
+ * a log can be thousands of lines, and one composable per line is what makes a log viewer stutter.
+ */
 @Composable
 fun FolkLogText(text: String, modifier: Modifier = Modifier) {
+    // Resolved up front and remembered on individually: folkLogLevelColor reads MaterialTheme, so
+    // it is a composable call and cannot happen inside the remember. Keying on the colours rather
+    // than on a map built here matters - a fresh map every recomposition would never hit the cache.
+    val errorColor = folkLogLevelColor(FolkLogLevel.Error)
+    val warnColor = folkLogLevelColor(FolkLogLevel.Warn)
+    val infoColor = folkLogLevelColor(FolkLogLevel.Info)
+    val debugColor = folkLogLevelColor(FolkLogLevel.Debug)
+    val verboseColor = folkLogLevelColor(FolkLogLevel.Verbose)
+    val unknownColor = folkLogLevelColor(FolkLogLevel.Unknown)
+
+    val styled = remember(
+        text, errorColor, warnColor, infoColor, debugColor, verboseColor, unknownColor,
+    ) {
+        fun colorOf(level: FolkLogLevel): Color = when (level) {
+            FolkLogLevel.Error -> errorColor
+            FolkLogLevel.Warn -> warnColor
+            FolkLogLevel.Info -> infoColor
+            FolkLogLevel.Debug -> debugColor
+            FolkLogLevel.Verbose -> verboseColor
+            FolkLogLevel.Unknown -> unknownColor
+        }
+
+        buildAnnotatedString {
+            text.lineSequence().forEachIndexed { index, line ->
+                if (index > 0) append('\n')
+                val (level, levelIndex) = parseFolkLogLevel(line)
+                if (level != FolkLogLevel.Unknown && levelIndex in line.indices) {
+                    append(line.substring(0, levelIndex))
+                    withStyle(SpanStyle(color = colorOf(level), fontWeight = FontWeight.Bold)) {
+                        append(line[levelIndex])
+                    }
+                    append(line.substring(levelIndex + 1))
+                } else {
+                    append(line)
+                }
+            }
+        }
+    }
+
     Text(
-        text = text,
+        text = styled,
         modifier = modifier,
         style = folkLogTextStyle(),
         color = MaterialTheme.colorScheme.onSurfaceVariant,
