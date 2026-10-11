@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.sukisu.ultra.R
@@ -49,12 +50,11 @@ fun FolkLanguageSwitch(tag: String) {
         LanguageSwitchState.finish()
     }
 
-    // This page replaces the app content, so nothing sits behind it: in wallpaper mode the
-    // background colour is deliberately transparent, which left the window colour showing - a
-    // near-black flash in the dark theme - instead of a page. The surface colour stays opaque
-    // in every mode, so the switch reads as the app rather than as a black frame.
+    // The caller composes the wallpaper behind this page, so with one in place the page stays
+    // transparent and the image reads through it. Without one the window colour would show
+    // instead - near-black in the dark theme - so the theme background is painted.
     val background = MaterialTheme.colorScheme.background
-    val pageColor = if (background.alpha < 1f) MaterialTheme.colorScheme.surface else background
+    val pageColor = if (background.alpha < 1f) Color.Transparent else background
 
     Surface(
         modifier = Modifier.fillMaxSize(),

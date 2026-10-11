@@ -198,6 +198,21 @@ class MainActivity : ComponentActivity() {
                 LocalIsFloatingNavMode provides uiState.enableFloatingBottomBar,
             ) {
                 HyperSUTheme(appSettings = appSettings) {
+                    // Fires once per activity instance, when the first frame is composed: the
+                    // startup sound is played after the splash condition can be released rather
+                    // than during onCreate, and never again on a configuration recreation.
+                    //
+                    // This sits above the language-switch early return below, which skips the
+                    // rest of the content. Leaving it after that return meant the switch page
+                    // never released the splash: the keep-on-screen condition reads
+                    // !contentReady, so the splash stayed up for good and the app looked hung.
+                    SideEffect {
+                        if (!contentReady) {
+                            contentReady = true
+                            com.sukisu.ultra.ui.util.SoundEffectManager.playStartup(this@MainActivity)
+                        }
+                    }
+
                     // Only the in-app switch path below Android 13 (or on a build with
                     // no system language page) lands here: that switch recreates the
                     // activity, and this page is what the recreation draws instead of
@@ -205,7 +220,16 @@ class MainActivity : ComponentActivity() {
                     // here - it switches while our task is in the background.
                     val switchingTo = LanguageSwitchState.targetTag
                     if (switchingTo != null) {
-                        FolkLanguageSwitch(tag = switchingTo)
+                        // The wallpaper is composed for the switch page too. The page replaces the
+                        // app content, so with nothing behind it the window colour - near-black in
+                        // the dark theme - is all the user sees while the switch is applied.
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            BackgroundLayer(
+                                currentRoute = navigator.current(),
+                                mainPage = selectedMainPage,
+                            )
+                            FolkLanguageSwitch(tag = switchingTo)
+                        }
                         return@HyperSUTheme
                     }
                     IntentDispatcher(intentChannel = intentChannel)
@@ -304,15 +328,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
-                    // Fires once per activity instance, when the first frame is composed: the
-                    // startup sound is played after the splash condition can be released rather
-                    // than during onCreate, and never again on a configuration recreation.
-                    SideEffect {
-                        if (!contentReady) {
-                            contentReady = true
-                            com.sukisu.ultra.ui.util.SoundEffectManager.playStartup(this@MainActivity)
-                        }
-                    }
+
                 }
             }
         }
