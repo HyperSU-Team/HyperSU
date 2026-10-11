@@ -134,10 +134,16 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
-        splashStartedAt = SystemClock.uptimeMillis()
+        // The animation is for a cold start. On a recreation - a configuration change, or the
+        // in-app language switch below Android 13 - the window is already up and holding it for
+        // another half second reads as a hang, so the timer is left at 0 and only contentReady
+        // gates the splash.
+        val coldStart = savedInstanceState == null
+        splashStartedAt = if (coldStart) SystemClock.uptimeMillis() else 0L
         super.onCreate(savedInstanceState)
         splashScreen.setKeepOnScreenCondition {
-            !contentReady || SystemClock.uptimeMillis() - splashStartedAt < splashAnimationDurationMs
+            !contentReady ||
+                (coldStart && SystemClock.uptimeMillis() - splashStartedAt < splashAnimationDurationMs)
         }
 
         val isManager = Natives.isManager
@@ -210,8 +216,17 @@ class MainActivity : ComponentActivity() {
                     // here - it switches while our task is in the background.
                     val switchingTo = LanguageSwitchState.targetTag
                     if (switchingTo != null) {
-                        FolkLanguageSwitch(tag = switchingTo)
-                        return@HyperSUTheme
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                            // Below 13 the switch recreates this activity by hand, so this page
+                            // is what the new activity has to draw first.
+                            FolkLanguageSwitch(tag = switchingTo)
+                            return@HyperSUTheme
+                        }
+                        // From 13 the locale is applied in place - MainActivity declares locale in
+                        // configChanges, so nothing is recreated - and covering the app with a
+                        // full-screen surface only produced a black frame over the page the user
+                        // was already looking at. Clear the flag instead.
+                        LaunchedEffect(Unit) { LanguageSwitchState.finish() }
                     }
                     IntentDispatcher(intentChannel = intentChannel)
                     HandleZipFileIntent()
