@@ -23,7 +23,10 @@ val managerVersionCode = rootProject.extra["managerVersionCode"] as Int
 val managerVersionName = rootProject.extra["managerVersionName"] as String
 
 val isPrBuild = project.findProperty("IS_PR_BUILD")?.toString()?.toBoolean() ?: false
-val defaultManagerPackageName = if (isPrBuild) "com.sukisu.ultra.pr" else "com.sukisu.ultra"
+// The installed package name. The code namespace below stays com.sukisu.ultra - only the
+// applicationId changed, so the sources, the zygote preload class and the LAUNCH action are
+// untouched.
+val defaultManagerPackageName = if (isPrBuild) "com.hypersu.manager.pr" else "com.hypersu.manager"
 // The only place the product name is set: it feeds resValues (launcher label, home
 // title, About, recents), and the release file name below.
 val defaultManagerName = if (isPrBuild) "HyperSU PR" else "HyperSU"
