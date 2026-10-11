@@ -86,11 +86,11 @@ fun FolkBottomBar(
     selectedIndex: Int,
     onSelectedIndexChange: (Int) -> Unit,
     badge: NavigationBadgeState,
+    destinations: List<BottomBarDestination> = BottomBarDestination.entries.toList(),
     isFloating: Boolean = false,
     backdrop: LayerBackdrop? = null,
     modifier: Modifier = Modifier,
 ) {
-    val destinations = BottomBarDestination.entries
 
     if (isFloating && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         // The pill samples the page behind it, exactly like ReSukiSU's bar: the caller records
@@ -126,7 +126,9 @@ fun FolkBottomBar(
                         onClick = { activateTab(index) },
                         modifier = Modifier.defaultMinSize(minWidth = 76.dp),
                     ) {
-                        val navBadge = badgeFor(index, badge)
+                        // Keyed by the destination, not the position: the list can be
+                        // shorter than the full set, and a badge belongs to a tab.
+                        val navBadge = badgeFor(destination.ordinal, badge)
                         val icon: @Composable () -> Unit = {
                             // The destination's own glyph, or the user's image when one is set.
                             NavBarIcon(
@@ -267,7 +269,7 @@ fun FolkBottomBar(
                 )
 
                 val pillColor = MaterialTheme.colorScheme.secondaryContainer
-                val navBadge = badgeFor(index, badge)
+                val navBadge = badgeFor(destination.ordinal, badge)
                 val interactionSource = remember { MutableInteractionSource() }
 
                 Column(

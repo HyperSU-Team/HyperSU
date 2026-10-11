@@ -60,6 +60,7 @@ fun FolkNavigationRail(
     selectedIndex: Int,
     onSelectedIndexChange: (Int) -> Unit,
     badge: NavigationBadgeState,
+    destinations: List<BottomBarDestination> = BottomBarDestination.entries.toList(),
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -82,7 +83,7 @@ fun FolkNavigationRail(
         ) {
             Spacer(Modifier.weight(1f))
 
-            BottomBarDestination.entries.forEachIndexed { index, destination ->
+            destinations.forEachIndexed { index, destination ->
                 val selected = index == selectedIndex
 
                 val selection by animateFloatAsState(
@@ -113,7 +114,9 @@ fun FolkNavigationRail(
                 )
 
                 val pillColor = MaterialTheme.colorScheme.secondaryContainer
-                val navBadge = badgeFor(index, badge)
+                // Keyed by the destination, not the position: the list can be shorter than the
+                // full set, and the badges belong to a tab rather than to a slot.
+                val navBadge = badgeFor(destination.ordinal, badge)
                 val interactionSource = remember { MutableInteractionSource() }
 
                 Column(

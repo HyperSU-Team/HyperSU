@@ -68,6 +68,7 @@ import com.sukisu.ultra.ui.navigation.FolkNavigationRail
 import com.sukisu.ultra.ui.navigation.LocalBottomBarVisible
 import com.sukisu.ultra.ui.navigation.LocalIsFloatingNavMode
 import com.sukisu.ultra.ui.navigation.LocalIsRootPage
+import com.sukisu.ultra.ui.navigation.BottomBarDestination
 import com.sukisu.ultra.ui.navigation.MainPagerState
 import com.sukisu.ultra.ui.navigation.NavigationBadgeState
 import com.sukisu.ultra.ui.navigation.rememberMainPagerState
@@ -351,7 +352,19 @@ fun MainScreen(
 ) {
     val navController = LocalNavigator.current
     val enableFloatingBottomBar = LocalEnableFloatingBottomBar.current
-    val pagerState = rememberPagerState(initialPage = initialPage, pageCount = { MainPagerConfig.PAGE_COUNT })
+    // The Superuser and Module tabs only mean something when the kernel recognises this manager:
+    // without that it hides both interfaces from the app, so the tabs would be two dead pages
+    // that still answer every question with an empty list. They leave the pager and the bar
+    // together, and the tabs that remain keep their order.
+    val destinations = remember {
+        if (Natives.isManager) {
+            BottomBarDestination.entries.toList()
+        } else {
+            listOf(BottomBarDestination.Home, BottomBarDestination.Settings)
+        }
+    }
+    val startPage = destinations.indexOfFirst { it.pageIndex == initialPage }.coerceAtLeast(0)
+    val pagerState = rememberPagerState(initialPage = startPage, pageCount = { destinations.size })
     val mainPagerState = rememberMainPagerState(
         pagerState = pagerState,
         animatePageChanges = true,
@@ -427,7 +440,9 @@ fun MainScreen(
 
     val settledPage = mainPagerState.pagerState.settledPage
     LaunchedEffect(settledPage) {
-        onPageChanged(settledPage)
+        // Report the tab's own page index rather than its position: the stored selection has to
+        // survive the manager being recognised - or not - between two launches.
+        onPageChanged(destinations[settledPage].pageIndex)
     }
 
     val currentPage = mainPagerState.pagerState.currentPage
@@ -481,11 +496,24 @@ fun MainScreen(
             ),
         ) { page ->
             val isCurrentPage = page == settledPage
-            when (page) {
-                0 -> if (contentReady || isCurrentPage) HomePager(navController, bottomInnerPadding, isCurrentPage)
-                1 -> if (contentReady || isCurrentPage) SuperUserPager(navController, bottomInnerPadding, isCurrentPage)
-                2 -> if (contentReady || isCurrentPage) ModulePager(bottomInnerPadding, isCurrentPage)
-                3 -> if (contentReady || isCurrentPage) SettingPager(navController, bottomInnerPadding, isCurrentPage)
+            when (destinations[page]) {
+                BottomBarDestination.Home ->
+                    if (contentReady || isCurrentPage) {
+                        HomePager(navController, bottomInnerPadding, isCurrentPage)
+                    }
+
+                BottomBarDestination.SuperUser ->
+                    if (contentReady || isCurrentPage) {
+                        SuperUserPager(navController, bottomInnerPadding, isCurrentPage)
+                    }
+
+                BottomBarDestination.Module ->
+                    if (contentReady || isCurrentPage) ModulePager(bottomInnerPadding, isCurrentPage)
+
+                BottomBarDestination.Settings ->
+                    if (contentReady || isCurrentPage) {
+                        SettingPager(navController, bottomInnerPadding, isCurrentPage)
+                    }
             }
         }
     }
@@ -504,6 +532,7 @@ fun MainScreen(
                         selectedIndex = mainPagerState.selectedPage,
                         onSelectedIndexChange = mainPagerState::animateToPage,
                         badge = navigationBadge,
+                        destinations = destinations,
                     )
                     Box(
                         modifier = Modifier
@@ -522,6 +551,7 @@ fun MainScreen(
                             selectedIndex = mainPagerState.selectedPage,
                             onSelectedIndexChange = mainPagerState::animateToPage,
                             badge = navigationBadge,
+                            destinations = destinations,
                             isFloating = enableFloatingBottomBar,
                             backdrop = navBarBackdrop,
                             modifier = Modifier.align(Alignment.BottomCenter),
