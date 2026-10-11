@@ -208,17 +208,6 @@ fun AppearanceBackgroundSection(
                 )
             }
 
-            item(key = "appearance_background_blur") {
-                FolkSliderPreference(
-                    title = stringResource(R.string.settings_custom_background_blur),
-                    value = BackgroundConfig.customBackgroundBlur,
-                    valueRange = 0f..50f,
-                    valueFormat = { "${it.toInt()}" },
-                    onValueChange = { BackgroundConfig.setCustomBackgroundBlurValue(it) },
-                    onValueChangeFinished = { BackgroundConfig.save(context) },
-                )
-            }
-
             if (BackgroundConfig.isDualBackgroundDimEnabled) {
                 item(key = "appearance_background_day_dim") {
                     FolkSliderPreference(

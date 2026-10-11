@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -146,6 +147,15 @@ private fun cardPalette(
 
 /** Above this the picture counts as light, and the text over it turns dark. */
 private const val WALLPAPER_LIGHT_THRESHOLD = 0.5f
+
+/**
+ * The Grid layout's working card never shrinks below this.
+ *
+ * Its three content switches - the check, the text and the mode label - can all be off at once,
+ * which is a state FolkPatch's own themes use to show nothing but the wallpaper. Without a floor
+ * the card collapses to its own padding and reads as a stripe rather than as a card.
+ */
+private val WorkingCardMinHeight = 120.dp
 
 /**
  * The wallpaper layer, sized to whatever the card measures to.
@@ -599,6 +609,17 @@ private fun HomeWorkingCard(
     androidx.compose.material3.Surface(
         modifier = Modifier
             .fillMaxWidth()
+            // Grid 布局可以把状态勾、文字和模式标签**全部**藏掉，那时这个 Column 一个子元素都不剩，
+            // wrap-content 的卡片就只剩上下各 24dp 的内边距 —— 看起来是被压扁的一条。
+            // FolkPatch 的同一张卡片放在固定尺寸的网格单元里，所以藏光内容它仍然是整张卡；
+            // 这里给它同样的最小高度，壁纸因此始终有整块区域可画。
+            .then(
+                if (gridStyle) {
+                    Modifier.heightIn(min = WorkingCardMinHeight)
+                } else {
+                    Modifier
+                }
+            )
             .then(
                 if (!state.isLateLoadMode) {
                     Modifier.clickable(onClick = actions.onInstallClick)

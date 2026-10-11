@@ -1,7 +1,6 @@
 package com.sukisu.ultra.ui.theme
 
 import android.media.MediaPlayer
-import android.os.Build
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.VideoView
@@ -22,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.zIndex
 import coil.compose.rememberAsyncImagePainter
@@ -132,23 +130,16 @@ fun BackgroundLayer(
                 animationSpec = tween(320),
                 label = "BackgroundWallpaper",
             ) { uri ->
+                // Drawn sharp. `Modifier.blur` compiles to a RenderEffect over the whole layer, so
+                // it is re-applied to a full-screen surface on every frame the wallpaper is on
+                // screen - and a theme import is the worst case, because the new wallpaper appears
+                // underneath the loading dialog while the whole app recomposes and the palette is
+                // regenerated. That is what made the app stop responding during an import.
                 Image(
                     painter = rememberAsyncImagePainter(model = uri),
                     contentDescription = null,
                     contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        // RenderEffect blur is only honoured from Android 12; below that the
-                        // slider would silently do nothing, so keep the image untouched.
-                        .then(
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
-                                BackgroundConfig.customBackgroundBlur > 0f
-                            ) {
-                                Modifier.blur(BackgroundConfig.customBackgroundBlur.dp)
-                            } else {
-                                Modifier
-                            },
-                        ),
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
 

@@ -3,6 +3,8 @@ package com.sukisu.ultra.ui.screen.home
 import android.content.Context
 import android.os.Build
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.core.content.pm.PackageInfoCompat
 import com.sukisu.ultra.BuildConfig
@@ -10,6 +12,8 @@ import com.sukisu.ultra.Natives
 import com.sukisu.ultra.Natives.isManager
 import com.sukisu.ultra.ui.util.getSuSFSStatus
 import com.sukisu.ultra.ui.util.getSuSFSVersion
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 data class ManagerVersion(
     val versionName: String,
@@ -108,37 +112,50 @@ data class SusfsInfoState(
     val detail: String = "",
 )
 
+/**
+ * The SuSFS version and hook type, read off the main thread.
+ *
+ * This used to be a plain `remember { }` that ran two root shell commands inline. `remember`
+ * executes during composition, so those two commands ran on the main thread every time the facts
+ * block was first composed - and a theme import recomposes the whole app, which is what turned an
+ * import into a window that would not respond. It is a `produceState` now, so the row starts empty
+ * and fills in when the shell answers.
+ */
 @Composable
 fun rememberSusfsInfo(
     manualHookLabel: String,
     inlineHookLabel: String,
 ): SusfsInfoState {
-    return remember(manualHookLabel, inlineHookLabel) {
-        runCatching {
-            val supported = getSuSFSStatus().equals("true", ignoreCase = true)
-            if (supported) {
-                val version = getSuSFSVersion().trim()
-                val hookLabel = when (val type = Natives.getHookType()) {
-                    "Manual" -> manualHookLabel
-                    "Inline" -> inlineHookLabel
-                    else -> type
-                }.takeIf { it.isNotBlank() }?.let { "($it)" }.orEmpty()
-                SusfsInfoState(
-                    status = SusfsStatus.Supported,
-                    detail = listOf(version, hookLabel)
-                        .filter { it.isNotBlank() }
-                        .joinToString(" ")
-                )
-            } else {
-                SusfsInfoState(
-                    status = SusfsStatus.Unsupported,
-                    detail = ""
-                )
+    val initial = remember { SusfsInfoState() }
+    val state by produceState(initialValue = initial, manualHookLabel, inlineHookLabel) {
+        value = withContext(Dispatchers.IO) {
+            runCatching {
+                val supported = getSuSFSStatus().equals("true", ignoreCase = true)
+                if (supported) {
+                    val version = getSuSFSVersion().trim()
+                    val hookLabel = when (val type = Natives.getHookType()) {
+                        "Manual" -> manualHookLabel
+                        "Inline" -> inlineHookLabel
+                        else -> type
+                    }.takeIf { it.isNotBlank() }?.let { "($it)" }.orEmpty()
+                    SusfsInfoState(
+                        status = SusfsStatus.Supported,
+                        detail = listOf(version, hookLabel)
+                            .filter { it.isNotBlank() }
+                            .joinToString(" ")
+                    )
+                } else {
+                    SusfsInfoState(
+                        status = SusfsStatus.Unsupported,
+                        detail = ""
+                    )
+                }
+            }.getOrElse {
+                SusfsInfoState(status = SusfsStatus.Error)
             }
-        }.getOrElse {
-            SusfsInfoState(status = SusfsStatus.Error)
         }
     }
+    return state
 }
 
 @Composable

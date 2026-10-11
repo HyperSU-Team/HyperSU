@@ -24,7 +24,7 @@ object BackgroundConfig {
         private set
     var customBackgroundOpacity: Float by mutableStateOf(0.5f)
         private set
-    var customBackgroundBlur: Float by mutableStateOf(0.2f)
+    var customBackgroundBlur: Float by mutableStateOf(0f)
         private set
     var customBackgroundDim: Float by mutableStateOf(0.0f)
         private set
@@ -719,7 +719,10 @@ object BackgroundConfig {
         val uri = prefs.stringPref(KEY_CUSTOM_BACKGROUND_URI, null)
         val enabled = prefs.booleanPref(KEY_CUSTOM_BACKGROUND_ENABLED, false)
         val opacity = prefs.floatPref(KEY_CUSTOM_BACKGROUND_OPACITY, 0.5f)
-        val blur = prefs.floatPref(KEY_CUSTOM_BACKGROUND_BLUR, 0.2f)
+        // Kept in the preference file for compatibility, but always read back as zero: the
+        // wallpaper is drawn sharp now, so a value left over from an older build cannot switch the
+        // per-frame RenderEffect back on.
+        val blur = 0f
         val dim = prefs.floatPref(KEY_CUSTOM_BACKGROUND_DIM, 0.0f)
         val dualDimEnabled = prefs.booleanPref(KEY_CUSTOM_BACKGROUND_DUAL_DIM_ENABLED, true)
         val dayDim = prefs.floatPref(KEY_CUSTOM_BACKGROUND_DAY_DIM, 0.0f)
@@ -876,7 +879,7 @@ object BackgroundConfig {
         customBackgroundUri = null
         isCustomBackgroundEnabled = false
         customBackgroundOpacity = 0.5f
-        customBackgroundBlur = 0.2f
+        customBackgroundBlur = 0f
         customBackgroundDim = 0.0f
         isDualBackgroundDimEnabled = true
         customBackgroundDayDim = 0.0f
