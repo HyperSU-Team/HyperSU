@@ -40,7 +40,9 @@ fun <T> SingleSelectDialog(
     onConfirm: (T) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var selected by remember { mutableStateOf(selectedItem) }
+    // Keyed on the incoming selection: this dialog is used from more than one place, and without
+    // the key a reopened dialog kept the previous choice rather than showing the current one.
+    var selected by remember(selectedItem) { mutableStateOf(selectedItem) }
 
     FolkAlertDialog(onDismissRequest = onDismiss, width = 340.dp) {
         Column(modifier = Modifier.padding(24.dp)) {

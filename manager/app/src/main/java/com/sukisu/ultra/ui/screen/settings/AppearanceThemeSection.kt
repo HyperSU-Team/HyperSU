@@ -221,8 +221,10 @@ private fun ThemeExportDialog(
     val defaultName = stringResource(R.string.theme_default_name)
     val defaultAuthor = stringResource(R.string.theme_default_author)
 
-    var name by remember { mutableStateOf(defaultName) }
-    var author by remember { mutableStateOf(defaultAuthor) }
+    // Keyed on the localized defaults: they come from stringResource, so after a language change
+    // the fields would otherwise keep the wording of the language the dialog was opened in.
+    var name by remember(defaultName) { mutableStateOf(defaultName) }
+    var author by remember(defaultAuthor) { mutableStateOf(defaultAuthor) }
     var description by remember { mutableStateOf("") }
 
     FolkAlertDialog(onDismissRequest = onDismiss) {

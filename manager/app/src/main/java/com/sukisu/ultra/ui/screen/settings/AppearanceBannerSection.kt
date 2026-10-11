@@ -202,7 +202,9 @@ private fun BannerSourceDialog(
     val hint = stringResource(R.string.banner_api_source_hint)
     val invalid = stringResource(R.string.banner_api_source_invalid)
 
-    var source by remember { mutableStateOf(initial) }
+    // Keyed on the initial value: the dialog is reused, and without the key it showed the source
+    // it was first opened with rather than the one now stored.
+    var source by remember(initial) { mutableStateOf(initial) }
     var error by remember { mutableStateOf<String?>(null) }
 
     FolkAlertDialog(onDismissRequest = onDismiss) {
