@@ -57,6 +57,7 @@ fun SettingPager(
         onSetAdbRootEnabled = viewModel::setAdbRootEnabled,
         onSetDefaultUmountModules = viewModel::setDefaultUmountModules,
         onSetEnableWebDebugging = viewModel::setEnableWebDebugging,
+        onSetEnableInfoCopy = viewModel::setEnableInfoCopy,
         onSetShowFullStatus = viewModel::setShowFullStatus,
         onSetShowHomeDeviceModel = viewModel::setShowHomeDeviceModel,
         onSetShowHomeFingerprint = viewModel::setShowHomeFingerprint,

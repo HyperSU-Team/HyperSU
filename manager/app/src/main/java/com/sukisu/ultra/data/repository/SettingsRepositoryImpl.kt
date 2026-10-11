@@ -233,6 +233,11 @@ class SettingsRepositoryImpl : SettingsRepository {
         get() = prefs.booleanPref("enable_web_debugging", false)
         set(value) = prefs.edit { putBoolean("enable_web_debugging", value) }
 
+    // Key and default follow FolkPatch's, so a theme and an existing install carry across.
+    override var enableInfoCopy: Boolean
+        get() = prefs.booleanPref("enable_info_copy", true)
+        set(value) = prefs.edit { putBoolean("enable_info_copy", value) }
+
     override var moduleSortEnabledFirst: Boolean
         get() = prefs.booleanPref("module_sort_enabled_first", false)
         set(value) = prefs.edit { putBoolean("module_sort_enabled_first", value) }

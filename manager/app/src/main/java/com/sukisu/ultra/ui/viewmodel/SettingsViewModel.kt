@@ -54,6 +54,7 @@ class SettingsViewModel(
             val showSwitchIcon = repo.showSwitchIcon
             val discreteSlider = repo.discreteSlider
             val enableWebDebugging = repo.enableWebDebugging
+            val enableInfoCopy = repo.enableInfoCopy
             val showFullStatus = repo.showFullStatus
             val showHomeDeviceModel = repo.showHomeDeviceModel
             val showHomeFingerprint = repo.showHomeFingerprint
@@ -104,6 +105,7 @@ class SettingsViewModel(
                     showSwitchIcon = showSwitchIcon,
                     discreteSlider = discreteSlider,
                     enableWebDebugging = enableWebDebugging,
+                    enableInfoCopy = enableInfoCopy,
                     showFullStatus = showFullStatus,
                     showHomeDeviceModel = showHomeDeviceModel,
                     showHomeFingerprint = showHomeFingerprint,
@@ -256,6 +258,11 @@ class SettingsViewModel(
     fun setEnableWebDebugging(enabled: Boolean) {
         repo.enableWebDebugging = enabled
         _uiState.update { it.copy(enableWebDebugging = enabled) }
+    }
+
+    fun setEnableInfoCopy(enabled: Boolean) {
+        repo.enableInfoCopy = enabled
+        _uiState.update { it.copy(enableInfoCopy = enabled) }
     }
 
     fun setShowFullStatus(enabled: Boolean) {

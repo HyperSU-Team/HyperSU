@@ -235,6 +235,9 @@
     <string name="settings_app_dpi_system">跟随系统</string>
     <string name="settings_app_dpi_value">密度</string>
     <string name="settings_module_display">模块列表</string>
+    <string name="settings_info_copy">点按复制</string>
+    <string name="settings_info_copy_summary">点按信息行即可把内容复制到剪贴板</string>
+    <string name="copied_to_clipboard">已复制</string>
     <string name="settings_module_install_confirm">安装前确认</string>
     <string name="settings_module_install_confirm_summary">刷入前先显示模块压缩包的详细信息以便确认</string>
     <string name="settings_show_switch_icon">开关显示图标</string>

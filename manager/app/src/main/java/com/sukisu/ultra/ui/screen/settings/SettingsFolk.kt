@@ -13,6 +13,7 @@ import androidx.compose.material.icons.automirrored.filled.Rule
 import androidx.compose.material.icons.filled.Adb
 import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.DeveloperMode
@@ -416,6 +417,15 @@ fun SettingPagerFolk(
                                 icon = Icons.Filled.DeveloperMode,
                                 checked = uiState.enableWebDebugging,
                                 onCheckedChange = actions.onSetEnableWebDebugging,
+                            )
+                        }
+                        item {
+                            FolkSwitchPreference(
+                                title = stringResource(R.string.settings_info_copy),
+                                summary = stringResource(R.string.settings_info_copy_summary),
+                                icon = Icons.Filled.ContentCopy,
+                                checked = uiState.enableInfoCopy,
+                                onCheckedChange = actions.onSetEnableInfoCopy,
                             )
                         }
                         item {

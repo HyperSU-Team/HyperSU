@@ -45,6 +45,8 @@ interface SettingsRepository {
      */
     var moduleInstallConfirm: Boolean
     var enableWebDebugging: Boolean
+    /** Whether tapping a home fact row copies its value. */
+    var enableInfoCopy: Boolean
     var moduleSortEnabledFirst: Boolean
     var moduleSortActionFirst: Boolean
     var moduleRepoSortOrder: Int
