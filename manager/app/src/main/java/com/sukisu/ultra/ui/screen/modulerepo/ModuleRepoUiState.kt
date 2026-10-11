@@ -16,6 +16,9 @@ data class ModuleRepoUiState(
     val sortOrder: RepoSort = RepoSort.UPDATED,
     val offline: Boolean = false,
     val modules: List<RepoModule> = emptyList(),
+    /** True once a fetch has come back, successfully or not, so an empty list can be told from
+     *  one that has not arrived yet. */
+    val loadedOnce: Boolean = false,
     val searchStatus: SearchStatus = SearchStatus(""),
     val searchResults: List<RepoModule> = emptyList(),
     val error: Throwable? = null

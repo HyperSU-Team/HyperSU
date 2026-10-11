@@ -243,6 +243,9 @@
     <string name="color_blue_grey">灰蓝</string>
     <string name="network_offline">未连接到网络</string>
     <string name="module_repo_unavailable">模块仓库暂时无法访问，请稍后重试。</string>
+    <string name="module_repo_no_readme">此模块没有 README。</string>
+    <string name="module_repo_downloads">%1$d 次下载</string>
+    <string name="module_repo_empty">仓库中目前没有任何模块。</string>
     <string name="network_retry">重试</string>
     <string name="tab_readme">自述</string>
     <string name="tab_releases">版本</string>

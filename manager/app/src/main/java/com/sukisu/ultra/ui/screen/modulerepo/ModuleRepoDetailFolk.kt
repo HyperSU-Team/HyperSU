@@ -1,4 +1,4 @@
-﻿package com.sukisu.ultra.ui.screen.modulerepo
+package com.sukisu.ultra.ui.screen.modulerepo
 
 import android.content.Context
 import android.net.Uri
@@ -231,6 +231,21 @@ private fun RepoReadmePage(
                         }
                     }
                 }
+            } else if (readmeLoaded) {
+                // The fetch is done and there is no README to show. Spinning here is what made a
+                // module without one - or a request that failed - look like it was still loading.
+                Box(
+                    modifier = Modifier
+                        .fillParentMaxSize()
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = stringResource(R.string.module_repo_no_readme),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             } else {
                 Box(
                     modifier = Modifier
@@ -392,8 +407,11 @@ private fun ReleaseAssetRow(
             else -> "$s B"
         }
     }
-    val sizeAndDownloads = remember(sizeText, asset.downloadCount) {
-        "$sizeText 路 ${asset.downloadCount} downloads"
+    // "·" rather than the mojibake this used to carry, and the count goes through a resource so
+    // it is localized rather than the hard-coded English "downloads" it had.
+    val downloadsLabel = stringResource(R.string.module_repo_downloads, asset.downloadCount)
+    val sizeAndDownloads = remember(sizeText, downloadsLabel) {
+        "$sizeText · $downloadsLabel"
     }
 
     var isDownloading by remember(fileName, asset.downloadUrl) { mutableStateOf(false) }

@@ -1,4 +1,4 @@
-﻿package com.sukisu.ultra.ui.screen.modulerepo
+package com.sukisu.ultra.ui.screen.modulerepo
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -92,6 +92,11 @@ fun ModuleRepoDetailScreen(module: RepoModuleArg) {
                             )
                         }
                     } else {
+                        // fetchModuleDetail reports failure by returning null rather than by
+                        // throwing, so this is the path a failed request actually takes. Leaving
+                        // readmeHtml null while readmeLoaded is true is what the detail screen
+                        // reads as "still loading", which is why a failed fetch used to spin for
+                        // ever.
                         detailReleases = emptyList()
                     }
                 }.onSuccess {

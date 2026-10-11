@@ -97,12 +97,21 @@ fun ModuleRepoScreenFolk(
             )
         },
     ) { innerPadding ->
-        val isLoading = state.modules.isEmpty()
+        // A fetch that has not come back yet, rather than "the list is empty". The two are not the
+        // same: an index that legitimately serves no modules produced an empty list, and the old
+        // test left the spinner turning for ever with no way out.
+        val isLoading = state.modules.isEmpty() && state.error == null && !state.loadedOnce
 
         when {
             state.error != null -> FolkStateView(
+                // The message comes from the failure itself, so it is not a resource. The
+                // localized offline page below is the one used when the network is the cause.
                 title = stringResource(R.string.operation_failed),
-                hint = state.error.message,
+                hint = if (state.offline) {
+                    stringResource(R.string.network_offline)
+                } else {
+                    state.error.message
+                },
                 tone = FolkStateTone.Critical,
                 modifier = Modifier
                     .fillMaxSize()
@@ -117,8 +126,14 @@ fun ModuleRepoScreenFolk(
                 },
             )
 
-            isLoading && state.offline -> FolkStateView(
-                title = stringResource(R.string.network_offline),
+            isLoading -> FolkLoadingIndicator(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = innerPadding.calculateTopPadding()),
+            )
+
+            state.modules.isEmpty() -> FolkStateView(
+                title = stringResource(R.string.module_repo_empty),
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(top = innerPadding.calculateTopPadding()),
@@ -130,12 +145,6 @@ fun ModuleRepoScreenFolk(
                         Text(stringResource(R.string.network_retry))
                     }
                 },
-            )
-
-            isLoading -> FolkLoadingIndicator(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = innerPadding.calculateTopPadding()),
             )
 
             else -> {

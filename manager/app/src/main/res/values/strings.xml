@@ -274,6 +274,9 @@
     <string name="color_sakura">Sakura</string>
     <string name="network_offline">Not connected to network</string>
     <string name="module_repo_unavailable">Module repository is currently unavailable. Please try again later.</string>
+    <string name="module_repo_no_readme">This module has no README.</string>
+    <string name="module_repo_downloads">%1$d downloads</string>
+    <string name="module_repo_empty">No modules are listed in the repository right now.</string>
     <string name="network_retry">Retry</string>
     <string name="tab_readme">README</string>
     <string name="tab_releases">Releases</string>

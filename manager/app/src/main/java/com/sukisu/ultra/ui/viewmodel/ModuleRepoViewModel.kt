@@ -142,7 +142,8 @@ class ModuleRepoViewModel(
                     _uiState.update {
                         it.copy(
                             modules = sorted,
-                            offline = !isNetworkAvailable(ksuApp)
+                            offline = !isNetworkAvailable(ksuApp),
+                            loadedOnce = true
                         )
                     }
                     refreshSearchResults()
@@ -165,7 +166,10 @@ class ModuleRepoViewModel(
                         it.copy(
                             isRefreshing = false,
                             error = e,
-                            offline = offlineNow
+                            offline = offlineNow,
+                            // A failed fetch still counts as an answer: the list is empty because
+                            // nothing arrived, not because the request is still out.
+                            loadedOnce = true
                         )
                     }
                 }
