@@ -43,103 +43,110 @@ fun stripTicks(s: String): String {
     return if (t.startsWith("`") && t.endsWith("`") && t.length >= 2) t.substring(1, t.length - 1) else t
 }
 
+private const val MODULES_API = "https://modules.kernelsu.org/api/v1/modules"
+private const val MODULES_SITE = "https://modules.kernelsu.org"
+
+private fun fetchText(url: String): String? = runCatching {
+    ksuApp.okhttpClient.newCall(Request.Builder().url(url).build()).execute().use { resp ->
+        if (resp.isSuccessful) resp.body.string() else null
+    }
+}.getOrNull()
+
 fun fetchReleaseDescriptionHtml(moduleId: String, latestTag: String): String? {
     if (!isNetworkAvailable(ksuApp)) return null
-    val url = "https://modules.kernelsu.org/module/$moduleId.json"
+    val url = MODULES_API + "/" + moduleId + ".json"
     return runCatching {
         ksuApp.okhttpClient.newCall(Request.Builder().url(url).build()).execute().use { resp ->
-            if (!resp.isSuccessful) null else {
-                val body = resp.body.string()
-                val obj = JSONObject(body)
-                val releasesArray = obj.optJSONArray("releases") ?: return@use null
-                var fallbackHtml: String? = null
-                for (i in 0 until releasesArray.length()) {
-                    val r = releasesArray.optJSONObject(i) ?: continue
-                    val descHtml = r.optString("descriptionHTML", "")
-                    if (fallbackHtml == null && descHtml.isNotBlank()) {
-                        fallbackHtml = descHtml
-                    }
-                    val rname = r.optString("name", r.optString("tagName", r.optString("version", "")))
-                    if (rname == latestTag && descHtml.isNotBlank()) {
-                        return@use descHtml
-                    }
-                }
-                fallbackHtml
+            if (!resp.isSuccessful) return@use null
+            val obj = JSONObject(resp.body.string())
+            val releases = obj.optJSONArray("releases") ?: return@use null
+            var fallback: String? = null
+            for (i in 0 until releases.length()) {
+                val release = releases.optJSONObject(i) ?: continue
+                val html = release.optString("changelogHtml", "")
+                if (html.isBlank()) continue
+                val tag = release.optString("tag", release.optString("version", ""))
+                if (tag == latestTag) return@use html
+                if (fallback == null) fallback = html
             }
+            fallback
         }
     }.getOrNull()
 }
 
-
 fun fetchModuleDetail(moduleId: String): ModuleDetail? {
     if (!isNetworkAvailable(ksuApp)) return null
-    val url = "https://modules.kernelsu.org/module/$moduleId.json"
+    val url = MODULES_API + "/" + moduleId + ".json"
     return runCatching {
         ksuApp.okhttpClient.newCall(Request.Builder().url(url).build()).execute().use { resp ->
             if (!resp.isSuccessful) return@use null
-            val body = resp.body.string()
-            val obj = JSONObject(body)
-            val readme = obj.optString("readme", "")
-            val readmeHtml = obj.optString("readmeHTML", "")
-            val homepageUrl = stripTicks(obj.optString("homepageUrl", ""))
-            val sourceUrl = stripTicks(obj.optString("sourceUrl", ""))
-            val url = stripTicks(obj.optString("url", ""))
-            val lr = obj.optJSONObject("latestRelease")
-            var latestTag: String
-            var latestTime = ""
+            val obj = JSONObject(resp.body.string())
+
+            // The readme field is a path on the same site, and what it serves is already HTML.
+            val readmePath = obj.optString("readme", "")
+            val readmeHtml = if (readmePath.isEmpty()) {
+                ""
+            } else {
+                fetchText(MODULES_SITE + "/" + readmePath).orEmpty()
+            }
+
+            val sourceObj = obj.optJSONObject("source")
+            val stable = obj.optJSONObject("stable")
+
+            var latestTag = stable?.optString("version", "").orEmpty()
+            var latestTime = stable?.optString("publishedAt", "").orEmpty()
             var latestAssetName: String? = null
             var latestAssetUrl: String? = null
-            if (lr != null) {
-                latestTag = lr.optString("name", lr.optString("version", ""))
-                latestTime = lr.optString("time", "")
-                var urlDl = lr.optString("downloadUrl", "")
-                urlDl = stripTicks(urlDl)
-                if (urlDl.isNotEmpty()) {
-                    latestAssetName = urlDl.substringAfterLast('/')
-                    latestAssetUrl = urlDl
-                }
-            } else {
-                latestTag = obj.optString("latestRelease", "")
-            }
 
             val releasesArray = obj.optJSONArray("releases")
             val releases = if (releasesArray != null) {
-                (0 until releasesArray.length()).mapNotNull { rIdx ->
-                    val r = releasesArray.optJSONObject(rIdx) ?: return@mapNotNull null
-                    val rname = r.optString("name", r.optString("tagName", r.optString("version", "")))
-                    val publishedAt = r.optString("publishedAt", "")
-                    val descHtml = r.optString("descriptionHTML", "")
-                    val assetsArray = r.optJSONArray("releaseAssets") ?: JSONArray()
-                    val assets = (0 until assetsArray.length()).mapNotNull { aIdx ->
-                        val a = assetsArray.optJSONObject(aIdx) ?: return@mapNotNull null
-                        val aname = a.optString("name", "")
-                        var adl = a.optString("downloadUrl", "")
-                        adl = stripTicks(adl)
-                        val asz = a.optLong("size", 0L)
-                        val dcnt = a.optInt("downloadCount", 0)
-                        if (aname.isEmpty() || adl.isEmpty()) null else ReleaseAssetInfo(aname, adl, asz, dcnt)
+                (0 until releasesArray.length()).mapNotNull { idx ->
+                    val release = releasesArray.optJSONObject(idx) ?: return@mapNotNull null
+                    val tag = release.optString("tag", release.optString("version", ""))
+                    val zip = release.optJSONObject("zip")
+                    val assets = if (zip != null) {
+                        val name = zip.optString("name", "")
+                        val download = stripTicks(zip.optString("url", ""))
+                        if (name.isEmpty() || download.isEmpty()) {
+                            emptyList()
+                        } else {
+                            listOf(ReleaseAssetInfo(name, download, zip.optLong("size", 0L), 0))
+                        }
+                    } else {
+                        emptyList()
+                    }
+                    // The first non-prerelease release is the one the stable channel points at.
+                    if (!release.optBoolean("prerelease", false) && latestAssetUrl == null) {
+                        latestTag = tag
+                        latestTime = release.optString("publishedAt", latestTime)
+                        assets.firstOrNull()?.let { asset ->
+                            latestAssetName = asset.name
+                            latestAssetUrl = asset.downloadUrl
+                        }
                     }
                     ReleaseInfo(
-                        name = rname,
-                        tagName = r.optString("tagName", rname),
-                        publishedAt = publishedAt,
-                        descriptionHTML = descHtml,
-                        assets = assets
+                        name = release.optString("name", tag),
+                        tagName = tag,
+                        publishedAt = release.optString("publishedAt", ""),
+                        descriptionHTML = release.optString("changelogHtml", ""),
+                        assets = assets,
                     )
                 }
-            } else emptyList()
+            } else {
+                emptyList()
+            }
 
             return@use ModuleDetail(
-                readme = readme,
+                readme = "",
                 readmeHtml = readmeHtml,
                 latestTag = latestTag,
                 latestTime = latestTime,
                 latestAssetName = latestAssetName,
                 latestAssetUrl = latestAssetUrl,
                 releases = releases,
-                homepageUrl = homepageUrl,
-                sourceUrl = sourceUrl,
-                url = url
+                homepageUrl = stripTicks(obj.optString("homepage", "")),
+                sourceUrl = stripTicks(sourceObj?.optString("url", "") ?: ""),
+                url = MODULES_SITE + "/en/modules/" + moduleId + "/",
             )
         }
     }.getOrNull()

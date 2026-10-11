@@ -135,12 +135,11 @@ import kotlinx.coroutines.launch
 /**
  * Whether the module repository entry point is offered.
  *
- * Off for now: the repository it opens is backed by modules.kernelsu.org, which is offline and
- * answers 404 for both the list and the per-module detail pages, so the screen could only show a
- * fetch error. The route, view model and screens are all still in place, so this is the only
- * switch to flip once a working index exists.
+ * On again: modules.kernelsu.org was rebuilt and moved its index to the versioned API, which is
+ * what the repository now reads. The switch stays so the entry can be taken away again without
+ * touching the route, view model or screens, all of which are always in place.
  */
-private val SHOW_MODULE_REPO = false
+private val SHOW_MODULE_REPO = true
 
 /**
  * The Module tab in the FolkPatch design.

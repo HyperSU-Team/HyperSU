@@ -244,6 +244,7 @@
     <string name="color_blue_grey">藍灰色</string>
     <string name="color_sakura">櫻花色</string>
     <string name="network_offline">未連上網絡</string>
+    <string name="module_repo_unavailable">模組倉庫暫時無法存取，請稍後再試。</string>
     <string name="network_retry">重試</string>
     <string name="tab_readme">自述文件</string>
     <string name="tab_releases">版本</string>
