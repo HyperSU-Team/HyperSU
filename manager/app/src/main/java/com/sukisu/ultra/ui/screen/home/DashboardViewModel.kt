@@ -9,8 +9,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.sukisu.ultra.ui.util.HardwareMonitor
+import com.sukisu.ultra.ui.util.getModuleCount
 import com.sukisu.ultra.ui.util.getSuperuserCount
-import com.sukisu.ultra.ui.util.listModules
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -154,7 +154,7 @@ class DashboardViewModel : ViewModel() {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 val superusers = getSuperuserCount()
-                val modules = countModules()
+                val modules = getModuleCount()
                 _moduleStats.value = ModuleStatsState(
                     kernelModuleCount = 0,
                     apmModuleCount = modules,
@@ -162,21 +162,6 @@ class DashboardViewModel : ViewModel() {
                 )
             }.onFailure { Log.w(TAG, "module counts failed", it) }
         }
-    }
-
-    /**
-     * Counts the installed modules.
-     *
-     * `ksud module list` returns a JSON array, so the entries are counted rather than the lines:
-     * the JSON is printed one entry per line, but an empty list is `[]` and would otherwise be
-     * counted as one.
-     */
-    private fun countModules(): Int {
-        val raw = listModules().trim()
-        if (raw.isEmpty() || raw == "[]") return 0
-        return runCatching {
-            org.json.JSONArray(raw).length()
-        }.getOrElse { raw.lines().count { it.isNotBlank() } }
     }
 
     override fun onCleared() {
