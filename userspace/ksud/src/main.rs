@@ -8,6 +8,7 @@
     clippy::doc_markdown,
     clippy::too_many_lines,
     clippy::cast_possible_wrap,
+    clippy::redundant_field_names,
     clippy::large_enum_variant
 )]
 
@@ -22,9 +23,16 @@ mod cli_non_android;
 mod debug;
 mod defs;
 #[cfg(target_os = "android")]
+mod dynamic_manager;
+#[cfg(target_os = "android")]
 mod feature;
+mod feature_id;
+#[cfg(target_os = "android")]
+mod hot_install;
 #[cfg(target_os = "android")]
 mod init_event;
+#[cfg(target_arch = "aarch64")]
+mod kpm;
 #[cfg(target_os = "android")]
 mod ksucalls;
 #[cfg(target_os = "android")]
@@ -47,6 +55,8 @@ mod resetprop;
 mod restorecon;
 #[cfg(target_os = "android")]
 mod sepolicy;
+#[cfg(target_os = "android")]
+mod soft_reboot;
 #[cfg(target_os = "android")]
 mod su;
 #[cfg(target_os = "android")]

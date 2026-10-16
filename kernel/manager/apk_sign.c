@@ -20,6 +20,8 @@
 #endif
 
 #include "manager/apk_sign.h"
+#include "manager/dynamic_manager.h"
+#include "manager/manager_identity.h"
 #include "uapi/app_profile.h"
 #include "klog.h" // IWYU pragma: keep
 
@@ -297,40 +299,27 @@ module_param_cb(ksu_debug_manager_appid, &expected_size_ops, &ksu_debug_manager_
 
 #endif
 
-int get_pkg_from_apk_path(char *pkg, const char *path)
+// /data/app/XXXXX/<PACKAGE_NAME>-YYY, which contains base.apk
+int get_pkg_from_apk_dir_path(char *pkg, const char *path)
 {
     int len = strlen(path);
     if (len >= KSU_MAX_PACKAGE_NAME || len < 1)
         return -1;
 
-    const char *last_slash = NULL;
-    const char *second_last_slash = NULL;
-
-    int i;
-    for (i = len - 1; i >= 0; i--) {
-        if (path[i] == '/') {
-            if (!last_slash) {
-                last_slash = &path[i];
-            } else {
-                second_last_slash = &path[i];
-                break;
-            }
-        }
-    }
-
-    if (!last_slash || !second_last_slash)
+    const char *last_slash = strrchr(path, '/');
+    if (!last_slash)
         return -1;
 
-    const char *last_hyphen = strchr(second_last_slash, '-');
-    if (!last_hyphen || last_hyphen > last_slash)
+    const char *last_hyphen = strchr(last_slash, '-');
+    if (!last_hyphen)
         return -1;
 
-    int pkg_len = last_hyphen - second_last_slash - 1;
+    int pkg_len = last_hyphen - last_slash - 1;
     if (pkg_len >= KSU_MAX_PACKAGE_NAME || pkg_len <= 0)
         return -1;
 
     // Copying the package name
-    memcpy(pkg, second_last_slash + 1, pkg_len);
+    memcpy(pkg, last_slash + 1, pkg_len);
     pkg[pkg_len] = '\0';
 
     return 0;
@@ -338,32 +327,10 @@ int get_pkg_from_apk_path(char *pkg, const char *path)
 
 bool is_manager_apk(char *path)
 {
-#ifdef KSU_MANAGER_PACKAGE
-    char pkg[KSU_MAX_PACKAGE_NAME];
-    if (get_pkg_from_apk_path(pkg, path) < 0) {
-        pr_err("Failed to get package name from apk path: %s\n", path);
-        return false;
-    }
+    return check_v2_signature(path, EXPECTED_SIZE, EXPECTED_HASH);
+}
 
-    // pkg is `<real package>`
-    if (strncmp(pkg, KSU_MANAGER_PACKAGE, sizeof(KSU_MANAGER_PACKAGE))) {
-        return false;
-    }
-#endif
-    if (check_v2_signature(path, EXPECTED_SIZE, EXPECTED_HASH)) {
-        return true;
-    }
-    // The certificate this workspace signs its manager builds with. The released manager
-    // uses the expected pair above; a locally built APK uses this one, and both have to be
-    // recognised. It stays out of the Kbuild slots because the second one belongs to the
-    // pull-request builds.
-    if (check_v2_signature(path, 0x360u,
-                           "98d74b92982f6f6dc8cdfc1900e15a9ddba9d71c704c496a184120d8236adf0a")) {
-        return true;
-    }
-#ifdef EXPECTED_SIZE2
-    return check_v2_signature(path, EXPECTED_SIZE2, EXPECTED_HASH2);
-#else
-    return false;
-#endif
+bool ksu_check_apk_signature(char *path, unsigned int size, const char *hash)
+{
+    return check_v2_signature(path, size, hash);
 }

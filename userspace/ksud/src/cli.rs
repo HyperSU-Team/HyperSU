@@ -173,12 +173,24 @@ enum Commands {
         command: Umount,
     },
 
+    /// KPM module manager
+    #[cfg(target_arch = "aarch64")]
+    Kpm {
+        #[command(subcommand)]
+        command: kpm_cmd::Kpm,
+    },
 
     #[cfg(target_arch = "aarch64")]
     /// Susfs
     Susfs {
         #[command(subcommand)]
         command: Susfs,
+    },
+
+    /// Manage dynamic userspace managers
+    Manager {
+        #[command(subcommand)]
+        command: Manager,
     },
 }
 
@@ -456,7 +468,7 @@ enum Profile {
 enum Feature {
     /// Get feature value and support status
     Get {
-        /// Feature ID or name (su_compat, kernel_umount, sulog, adb_root, selinux_hide)
+        /// Feature ID or name (su_compat, kernel_umount, sulog, adb_root, selinux_hide, shell_su_adb_only)
         id: String,
         /// Read from config file
         #[arg(long, default_value_t = false)]
@@ -474,9 +486,9 @@ enum Feature {
     /// List all available features
     List,
 
-    /// Check feature status (supported/unsupported/managed)
+    /// Check feature status (supported/unsupported/managed/forced)
     Check {
-        /// Feature ID or name (su_compat, kernel_umount, sulog, adb_root, selinux_hide)
+        /// Feature ID or name (su_compat, kernel_umount, sulog, adb_root, selinux_hide, shell_su_adb_only)
         id: String,
     },
 
@@ -578,6 +590,30 @@ enum Umount {
     Apply,
     /// Clear custom umount paths (wipe kernel list)
     ClearCustom,
+}
+
+#[cfg(target_arch = "aarch64")]
+mod kpm_cmd {
+    use clap::Subcommand;
+    use std::path::PathBuf;
+
+    #[derive(Subcommand, Debug)]
+    pub enum Kpm {
+        /// Load a KPM module: load <path> [args]
+        Load { path: PathBuf, args: Option<String> },
+        /// Unload a KPM module: unload <name>
+        Unload { name: String },
+        /// Get number of loaded modules
+        Num,
+        /// List loaded KPM modules
+        List,
+        /// Get info of a KPM module: info <name>
+        Info { name: String },
+        /// Send control command to a KPM module: control <name> <args>
+        Control { name: String, args: String },
+        /// Print KPM Loader version
+        Version,
+    }
 }
 
 #[cfg(target_arch = "aarch64")]
@@ -700,6 +736,24 @@ enum Susfs {
     },
 }
 
+#[derive(clap::Subcommand, Debug)]
+enum Manager {
+    /// List dynamic managers and global state
+    List,
+    /// Authorize a manager using its package, certificate size and SHA-256
+    Add {
+        package: String,
+        cert_size: u32,
+        hash: String,
+    },
+    /// Remove a manager by package name
+    Remove { package: String },
+    /// Enable or disable dynamic managers (true/false or 1/0)
+    SetEnabled { enabled: String },
+    /// Remove all dynamic managers
+    Clear,
+}
+
 /// susfs module subcommands
 #[cfg(target_arch = "aarch64")]
 #[derive(clap::Subcommand, Debug)]
@@ -766,13 +820,13 @@ pub fn run() -> Result<()> {
     log::info!("command: {:?}", cli.command);
 
     let result = match cli.command {
-        Commands::PostFsData => init_event::on_post_data_fs(),
+        Commands::PostFsData => init_event::on_post_fs_data(),
         Commands::BootCompleted => {
             init_event::on_boot_completed();
             Ok(())
         }
 
-        Commands::SoftReboot => init_event::soft_reboot(),
+        Commands::SoftReboot => crate::soft_reboot::soft_reboot(),
 
         Commands::Insmod { module, params } => debug::insmod(&module, &params),
 
@@ -943,6 +997,47 @@ pub fn run() -> Result<()> {
             Profile::ListTemplates => crate::profile::list_templates(),
         },
 
+        Commands::Manager { command } => match command {
+            Manager::List => {
+                let state = crate::dynamic_manager::manager_get()?;
+                println!("enabled: {}", state.enabled != 0);
+                for entry in state.entries.iter().take(state.count as usize) {
+                    let package = String::from_utf8_lossy(unsafe {
+                        std::slice::from_raw_parts(
+                            entry.package.as_ptr().cast::<u8>(),
+                            entry.package.len(),
+                        )
+                    })
+                    .trim_end_matches('\0')
+                    .to_string();
+                    let hash = String::from_utf8_lossy(unsafe {
+                        std::slice::from_raw_parts(
+                            entry.hash.as_ptr().cast::<u8>(),
+                            entry.hash.len(),
+                        )
+                    })
+                    .trim_end_matches('\0')
+                    .to_string();
+                    println!("{package}\t{}\t{hash}\t{}", entry.cert_size, entry.uid);
+                }
+                Ok(())
+            }
+            Manager::Add {
+                package,
+                cert_size,
+                hash,
+            } => crate::dynamic_manager::manager_add(&package, cert_size, &hash),
+            Manager::Remove { package } => crate::dynamic_manager::manager_remove(&package),
+            Manager::SetEnabled { enabled } => {
+                let enabled = match enabled.as_str() {
+                    "1" | "true" => true,
+                    "0" | "false" => false,
+                    _ => anyhow::bail!("enabled must be true, false, 1, or 0"),
+                };
+                crate::dynamic_manager::manager_set_enabled(enabled)
+            }
+            Manager::Clear => crate::dynamic_manager::manager_clear(),
+        },
         Commands::Feature { command } => match command {
             Feature::Get { id, config } => {
                 if config {
@@ -965,7 +1060,7 @@ pub fn run() -> Result<()> {
             Debug::SetManager { apk } => debug::set_manager(&apk),
             Debug::GetSign { apk } => {
                 let sign = apk_sign::get_apk_signature(&apk)?;
-                println!("size: {:#x}, hash: {}", sign.0, sign.1);
+                println!("size: {}, hash: {}", sign.0, sign.1);
                 Ok(())
             }
             Debug::Version => {
@@ -1107,6 +1202,25 @@ pub fn run() -> Result<()> {
             Umount::ClearCustom => umount::clear_umount_config(),
         },
         #[cfg(target_arch = "aarch64")]
+        Commands::Kpm { command } => {
+            use crate::cli::kpm_cmd::Kpm;
+            match command {
+                Kpm::Load { path, args } => {
+                    crate::kpm::load_module(path.to_str().unwrap(), args.as_deref())
+                }
+                Kpm::Unload { name } => crate::kpm::unload_module(name),
+                Kpm::Num => crate::kpm::num().map(|_| ()),
+                Kpm::List => crate::kpm::list(),
+                Kpm::Info { name } => crate::kpm::info(name),
+                Kpm::Control { name, args } => {
+                    let ret = crate::kpm::control(name, args)?;
+                    println!("{ret}");
+                    Ok(())
+                }
+                Kpm::Version => crate::kpm::version(),
+            }
+        }
+        #[cfg(target_arch = "aarch64")]
         Commands::Susfs { command } => {
             let _ = match command {
                 Susfs::Status => {
@@ -1171,12 +1285,10 @@ pub fn run() -> Result<()> {
                         SusfsModuleCmd::Install => {
                             susfs_module::install_module()?;
                             println!("SuSFS module installed successfully");
-                            Ok(())
                         }
                         SusfsModuleCmd::Remove => {
                             susfs_module::remove_module()?;
                             println!("SuSFS module removed successfully");
-                            Ok(())
                         }
                         SusfsModuleCmd::Status => {
                             if susfs_module::is_module_installed() {
@@ -1184,42 +1296,37 @@ pub fn run() -> Result<()> {
                             } else {
                                 println!("not installed");
                             }
-                            Ok(())
                         }
                     }
+                    Ok(())
                 }
                 Susfs::Config { command } => {
                     use crate::susfs_config;
                     match command {
                         SusfsConfigCmd::Get { key } => {
                             println!("{}", susfs_config::get(&key)?);
-                            Ok(())
                         }
                         SusfsConfigCmd::Set { key, value } => {
                             susfs_config::set(&key, &value)?;
                             println!("ok");
-                            Ok(())
                         }
                         SusfsConfigCmd::Remove { key } => {
                             susfs_config::remove(&key)?;
                             println!("ok");
-                            Ok(())
                         }
                         SusfsConfigCmd::Clear => {
                             susfs_config::clear()?;
                             println!("ok");
-                            Ok(())
                         }
                         SusfsConfigCmd::Reset => {
                             susfs_config::reset_to_defaults()?;
                             println!("ok");
-                            Ok(())
                         }
                         SusfsConfigCmd::List => {
                             println!("{}", susfs_config::export_json()?);
-                            Ok(())
                         }
                     }
+                    Ok(())
                 }
             };
             Ok(())

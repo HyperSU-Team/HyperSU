@@ -1,6 +1,7 @@
 kernelsu-objs := core/init.o
 
 kernelsu-objs += feature/kernel_umount.o
+kernelsu-objs += feature/module_blacklist.o
 kernelsu-objs += feature/sulog.o
 kernelsu-objs += feature/sucompat.o
 
@@ -28,6 +29,7 @@ kernelsu-objs += infra/symbol_resolver.o
 
 ifneq ($(CONFIG_KSU_DISABLE_MANAGER),y)
 kernelsu-objs += manager/apk_sign.o
+kernelsu-objs += manager/dynamic_manager.o
 kernelsu-objs += manager/pkg_observer.o
 kernelsu-objs += manager/throne_tracker.o
 endif
@@ -53,6 +55,7 @@ kernelsu-objs += supercall/supercall.o
 kernelsu-objs += feature/adb_root.o
 
 kernelsu-objs += feature/selinux_hide.o
+kernelsu-objs += feature/shell_su_adb_only.o
 
 kernelsu-objs += feature/uts_spoof.o
 
@@ -73,6 +76,9 @@ ccflags-y += -DCONFIG_KSU_X86_PATCH_SYSCALL_DISPATCHER=1
 endif
 endif
 
+obj-$(CONFIG_KPM) += kpm/compact.o
+obj-$(CONFIG_KPM) += kpm/kpm.o
+obj-$(CONFIG_KPM) += kpm/super_access.o
 
 ccflags-y += -I$(srctree)/security/selinux -I$(srctree)/security/selinux/include
 ccflags-y += -I$(objtree)/security/selinux -include $(srctree)/include/uapi/asm-generic/errno.h
@@ -91,9 +97,15 @@ KSU_KERNEL_DIR := $(src)
 endif
 endif
 
-# ======= 修改了下面这一行，增加了 -I$(KSU_KERNEL_DIR)/.. =======
+# `-I$(KSU_KERNEL_DIR)/..` is required, not cosmetic.
+#
+# Upstream stores the shared uapi headers at the repository root and points at them with a
+# symlink: `kernel/include/uapi -> ../../uapi`. That symlink cannot survive a checkout on
+# Windows - git writes an empty file where it should write a link - so this repository carries
+# `kernel/include/uapi` as an empty placeholder and resolves `uapi/...` through the repository
+# root instead. Without the extra -I every `#include "uapi/..."` in the kernel fails to resolve,
+# which is what stopped the builtin sources from building.
 ccflags-y += -I$(KSU_KERNEL_DIR) -I$(KSU_KERNEL_DIR)/include -I$(KSU_KERNEL_DIR)/..
-# ==============================================================
 
 obj-$(CONFIG_KSU) += kernelsu.o
 
@@ -124,49 +136,37 @@ KSU_GITHUB_VER   := $(shell $(CURL_BIN) -s "$(GITHUB_API_BASE)/releases/latest" 
 GITHUB_COMMITS   := $(shell $(CURL_BIN) -sI "$(GITHUB_API_BASE)/commits?sha=$(REPO_BRANCH)&per_page=1" 2>/dev/null | grep -i "link:" | sed -n 's/.*page=\([0-9]*\)>; rel="last".*/\1/p')
 LOCAL_COUNT     := $(if $(GITHUB_COMMITS),$(GITHUB_COMMITS),$(git_commit_count))
 KSU_VERSION     := $(if $(LOCAL_COUNT),$(shell expr $(VERSION_BASE) + $(LOCAL_COUNT) - $(VERSION_OFFSET)),13000)
-VERSION_TAG     := $(or $(KSU_GITHUB_VER),$(git_latest_tag),4.2.0)
+VERSION_TAG     := $(or $(KSU_GITHUB_VER),$(git_latest_tag),4.2.1)
 KSU_VERSION_FULL := $(if $(call git_short_sha),v$(VERSION_TAG)-$(call git_short_sha)@$(call git_branch),v$(VERSION_TAG)-$(REPO_NAME)-unknown@unknown)
 $(info -- $(REPO_NAME) version: $(KSU_VERSION) [$(KSU_VERSION_FULL)])
 
 ccflags-y += -DKSU_VERSION=$(KSU_VERSION)
 ccflags-y += -DKSU_VERSION_FULL=\"$(KSU_VERSION_FULL)\"
 
+KSU_IS_PR_BUILD ?= 0
+ifeq ($(KSU_IS_PR_BUILD),0)
+KSU_PACKAGE_NAME ?= com.hypersu.manager
+else
+KSU_PACKAGE_NAME ?= com.hypersu.manager.pr
+endif
+
 # HyperSU's release signing certificate.
 #
-# These are the values for the key that signs the released manager, and they are what makes
-# the kernel recognise that manager. They used to hold SukiSU's certificate, so a kernel
-# built here accepted SukiSU's manager and rejected HyperSU's own.
-#
-# KSU_EXPECTED_SIZE2/HASH2 stay free for the pull-request build, whose throwaway keystore
-# differs every run and is passed in by the workflow.
-ifndef KSU_EXPECTED_SIZE
-KSU_EXPECTED_SIZE := 0x378
-endif
+# The kernel recognises the manager by this certificate as well as by package name, and these are
+# the values for the key that signs the released HyperSU manager. They used to hold SukiSU's
+# certificate, so a kernel built here accepted SukiSU's manager and rejected HyperSU's own.
+KSU_EXPECTED_SIZE ?= 0x378
+KSU_EXPECTED_HASH ?= aaef52d74182a668b257065f27a53ecb3669047826c5090ed8102af6a7c3bcc4
 
-ifndef KSU_EXPECTED_HASH
-KSU_EXPECTED_HASH := aaef52d74182a668b257065f27a53ecb3669047826c5090ed8102af6a7c3bcc4
-endif
-
-ifdef KSU_MANAGER_PACKAGE
-ccflags-y += -DKSU_MANAGER_PACKAGE=\"$(KSU_MANAGER_PACKAGE)\"
-$(info -- KernelSU Manager package name: $(KSU_MANAGER_PACKAGE))
-endif
-
+$(info -- KernelSU Manager package name: $(KSU_PACKAGE_NAME))
 $(info -- KernelSU Manager signature size: $(KSU_EXPECTED_SIZE))
 $(info -- KernelSU Manager signature hash: $(KSU_EXPECTED_HASH))
+$(info -- KernelSU is PR Build: $(KSU_IS_PR_BUILD))
 
+ccflags-y += -DKSU_PACKAGE_NAME=\"$(KSU_PACKAGE_NAME)\"
 ccflags-y += -DEXPECTED_SIZE=$(KSU_EXPECTED_SIZE)
 ccflags-y += -DEXPECTED_HASH=\"$(KSU_EXPECTED_HASH)\"
-
-ifdef KSU_EXPECTED_SIZE2
-ifndef KSU_EXPECTED_HASH2
-$(error KSU_EXPECTED_HASH2 must be set when KSU_EXPECTED_SIZE2 is set)
-endif
-ccflags-y += -DEXPECTED_SIZE2=$(KSU_EXPECTED_SIZE2)
-ccflags-y += -DEXPECTED_HASH2=\"$(KSU_EXPECTED_HASH2)\"
-$(info -- KernelSU Manager signature size2: $(KSU_EXPECTED_SIZE2))
-$(info -- KernelSU Manager signature hash2: $(KSU_EXPECTED_HASH2))
-endif
+ccflags-y += -DKSU_IS_PR_BUILD=$(KSU_IS_PR_BUILD)
 
 KERNEL_VERSION := $(VERSION).$(PATCHLEVEL)
 KERNEL_TYPE := Non-GKI
@@ -182,6 +182,12 @@ endif
 $(info -- KERNEL_VERSION: $(KERNEL_VERSION))
 $(info -- KERNEL_TYPE: $(KERNEL_TYPE))
 
+ifeq ($(CONFIG_KPM), y)
+$(info -- KPM is enabled)
+else
+$(info -- KPM is disabled)
+endif
+
 KSU_NEW_DCACHE_FLUSH := $(shell grep -q __flush_dcache_area $(srctree)/arch/arm64/include/asm/cacheflush.h ; echo $$?)
 $(info -- KSU_NEW_DCACHE_FLUSH: $(KSU_NEW_DCACHE_FLUSH))
 
@@ -193,16 +199,6 @@ endif
 # Function proc_ops check
 ifeq ($(shell grep -q "struct proc_ops " $(srctree)/include/linux/proc_fs.h; echo $$?),0)
 ccflags-y += -DKSU_COMPAT_HAS_PROC_OPS
-endif
-
-ifdef KSU_EXPECTED_SIZE2
-ifndef KSU_EXPECTED_HASH2
-$(error KSU_EXPECTED_HASH2 must be set when KSU_EXPECTED_SIZE2 is set)
-endif
-ccflags-y += -DEXPECTED_SIZE2=$(KSU_EXPECTED_SIZE2)
-ccflags-y += -DEXPECTED_HASH2=\"$(KSU_EXPECTED_HASH2)\"
-$(info -- KernelSU Manager signature size2: $(KSU_EXPECTED_SIZE2))
-$(info -- KernelSU Manager signature hash2: $(KSU_EXPECTED_HASH2))
 endif
 
 ccflags-y += -DKSU_NEW_DCACHE_FLUSH=$(KSU_NEW_DCACHE_FLUSH)

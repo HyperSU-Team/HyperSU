@@ -42,15 +42,27 @@ jobs:
     outputs:
       # PR runs sign with the throwaway pr-key, release runs sign with
       # secrets.KEYSTORE - whichever actually signs the manager must feed the
-      # kernel's second signature slot, or the LKM built here rejects the very
+      # kernel's expected certificate, or the LKM built here rejects the very
       # APK this workflow ships.
       expected_size: ${{ steps.extract.outputs.expected_size || steps.extract_release.outputs.expected_size }}
       expected_hash: ${{ steps.extract.outputs.expected_hash || steps.extract_release.outputs.expected_hash }}
+      # The applicationId the manager is built with. The kernel matches on this as well as on
+      # the certificate, so it has to be the same value the manager's build.gradle.kts resolves
+      # for this event - including the .pr suffix a pull request gets.
+      package_name: ${{ steps.package.outputs.package_name }}
       keystore: ${{ steps.gen.outputs.keystore }}
       keystore_password: ${{ steps.gen.outputs.keystore_password }}
       key_password: ${{ steps.gen.outputs.key_password }}
 
     steps:
+      - name: Resolve the manager package name
+        id: package
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "package_name=com.hypersu.manager.pr" >> $GITHUB_OUTPUT
+          else
+            echo "package_name=com.hypersu.manager" >> $GITHUB_OUTPUT
+          fi
       - name: Generate temporary keystore
         if: github.event_name == 'pull_request'
         id: gen
@@ -139,8 +151,12 @@ jobs:
     uses: ./.github/workflows/build-lkm.yml
 
     with:
-      expected_size2: ${{ needs.generate-key.outputs.expected_size || '' }}
-      expected_hash2: ${{ needs.generate-key.outputs.expected_hash || '' }}
+      # The kernel recognises the manager by package name and by the certificate that signs it.
+      # Both have to describe the APK this workflow ships, or the LKM built here rejects it.
+      # On a pull request that is the throwaway pr-key; on a release it is secrets.KEYSTORE.
+      package_name: ${{ needs.generate-key.outputs.package_name }}
+      expected_size: ${{ needs.generate-key.outputs.expected_size || '' }}
+      expected_hash: ${{ needs.generate-key.outputs.expected_hash || '' }}
 
     secrets: inherit
 

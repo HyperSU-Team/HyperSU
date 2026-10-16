@@ -141,19 +141,12 @@ static void fillArrayWithList(JNIEnv *env, jobject list, int *data, int count) {
 extern "C"
 JNIEXPORT jobject JNICALL
 Java_com_sukisu_ultra_Natives_getAppProfile(JNIEnv *env, jobject, jstring pkg, jint uid) {
-    if (pkg == nullptr) {
-        return nullptr;
-    }
-    // Reject strings whose length would not fit the destination buffer plus terminator.
-    if (env->GetStringLength(pkg) >= KSU_MAX_PACKAGE_NAME) {
+    if (env->GetStringLength(pkg) > KSU_MAX_PACKAGE_NAME) {
         return nullptr;
     }
 
     p_key_t key = {};
     auto cpkg = env->GetStringUTFChars(pkg, nullptr);
-    if (cpkg == nullptr) {
-        return nullptr;
-    }
     strcpy(key, cpkg);
     env->ReleaseStringUTFChars(pkg, cpkg);
 
@@ -267,17 +260,14 @@ Java_com_sukisu_ultra_Natives_setAppProfile(JNIEnv *env, jobject clazz, jobject 
     auto umountModulesField = env->GetFieldID(cls, "umountModules", "Z");
 
     auto key = env->GetObjectField(profile, keyField);
-    if (key == nullptr) {
+    if (!key) {
         return false;
     }
-    if (env->GetStringLength((jstring) key) >= KSU_MAX_PACKAGE_NAME) {
+    if (env->GetStringLength((jstring) key) > KSU_MAX_PACKAGE_NAME) {
         return false;
     }
 
     auto cpkg = env->GetStringUTFChars((jstring) key, nullptr);
-    if (cpkg == nullptr) {
-        return false;
-    }
     p_key_t p_key = {};
     strcpy(p_key, cpkg);
     env->ReleaseStringUTFChars((jstring) key, cpkg);
@@ -302,15 +292,9 @@ Java_com_sukisu_ultra_Natives_setAppProfile(JNIEnv *env, jobject clazz, jobject 
     if (allowSu) {
         p.rp_config.use_default = env->GetBooleanField(profile, rootUseDefaultField);
         auto templateName = env->GetObjectField(profile, rootTemplateField);
-        if (templateName != nullptr) {
+        if (templateName) {
             auto ctemplateName = env->GetStringUTFChars((jstring) templateName, nullptr);
-            if (ctemplateName == nullptr) {
-                return false;
-            }
-            // Bounded copy: template_name lives inside app_profile.
-            strncpy(p.rp_config.template_name, ctemplateName,
-                    sizeof(p.rp_config.template_name) - 1);
-            p.rp_config.template_name[sizeof(p.rp_config.template_name) - 1] = '\0';
+            strcpy(p.rp_config.template_name, ctemplateName);
             env->ReleaseStringUTFChars((jstring) templateName, ctemplateName);
         }
 
@@ -327,18 +311,8 @@ Java_com_sukisu_ultra_Natives_setAppProfile(JNIEnv *env, jobject clazz, jobject 
 
         p.rp_config.profile.capabilities.effective = capListToBits(env, capabilities);
 
-        if (domain == nullptr) {
-            return false;
-        }
         auto cdomain = env->GetStringUTFChars((jstring) domain, nullptr);
-        if (cdomain == nullptr) {
-            return false;
-        }
-        // Bounded copy: selinux_domain is a fixed-size buffer inside app_profile.
-        strncpy(p.rp_config.profile.selinux_domain, cdomain,
-                sizeof(p.rp_config.profile.selinux_domain) - 1);
-        p.rp_config.profile.selinux_domain[
-                sizeof(p.rp_config.profile.selinux_domain) - 1] = '\0';
+        strcpy(p.rp_config.profile.selinux_domain, cdomain);
         env->ReleaseStringUTFChars((jstring) domain, cdomain);
 
         p.rp_config.profile.namespaces = env->GetIntField(profile, namespacesField);
@@ -440,18 +414,8 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_sukisu_ultra_magica_AppZygotePreload_forkDontCareAndExecKsud(JNIEnv *env, jclass clazz,
                                                                         jstring ksud_path, jstring pkg_name) {
-    if (ksud_path == nullptr || pkg_name == nullptr) {
-        return;
-    }
     auto path = env->GetStringUTFChars(ksud_path, nullptr);
-    if (path == nullptr) {
-        return;
-    }
     auto pkg = env->GetStringUTFChars(pkg_name, nullptr);
-    if (pkg == nullptr) {
-        env->ReleaseStringUTFChars(ksud_path, path);
-        return;
-    }
     LOGD("executing magica %s (pkg %s)", path, pkg);
     fork_dont_care_and_exec_ksud(path, pkg);
     env->ReleaseStringUTFChars(ksud_path, path);
