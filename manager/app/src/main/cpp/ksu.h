@@ -66,6 +66,9 @@ inline std::pair<int, int> legacy_get_info() {
     return {version, flags};
 }
 
+// NOTE: this macro intentionally expands to a NON-inline function so that the shared library
+// can be linked against from jni.cc. Previously it used `inline`, which caused
+// `undefined symbol: get_full_version(char*)` / `get_hook_type(char*)` at link time.
 #define DEFINE_CACHED_GETTER(name, ioctl, cmd_type, field, size) \
     static char g_##name[size] = {0}; \
     bool get_##name(char *buff) { \

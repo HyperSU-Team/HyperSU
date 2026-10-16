@@ -1,5 +1,3 @@
-#[cfg(target_arch = "aarch64")]
-use crate::kpm;
 use crate::module::{ScriptWait, handle_updated_modules, prune_modules};
 use crate::utils::is_safe_mode;
 use crate::{
@@ -97,11 +95,6 @@ pub fn on_post_fs_data() -> Result<()> {
         warn!("safe mode, skip load feature config");
     } else if let Err(e) = crate::feature::init_features() {
         warn!("init features failed: {e}");
-    }
-
-    #[cfg(target_arch = "aarch64")]
-    if let Err(e) = kpm::booted_load() {
-        warn!("KPM: Failed to start KPM watcher: {e}");
     }
 
     // execute metamodule post-fs-data script first (priority)

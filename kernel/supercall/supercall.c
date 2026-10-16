@@ -12,7 +12,6 @@
 #include <linux/version.h>
 
 #include "uapi/supercall.h"
-#include "kpm/kpm.h"
 #include "supercall/internal.h"
 #include "arch.h"
 #include "util.h"
