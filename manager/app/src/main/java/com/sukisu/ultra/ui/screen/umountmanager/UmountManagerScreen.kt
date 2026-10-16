@@ -1,4 +1,4 @@
-﻿package com.sukisu.ultra.ui.screen.umountmanager
+package com.sukisu.ultra.ui.screen.umountmanager
 
 import android.annotation.SuppressLint
 import android.widget.Toast

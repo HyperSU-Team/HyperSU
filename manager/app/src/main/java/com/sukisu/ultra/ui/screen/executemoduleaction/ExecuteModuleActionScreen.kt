@@ -1,4 +1,4 @@
-﻿package com.sukisu.ultra.ui.screen.executemoduleaction
+package com.sukisu.ultra.ui.screen.executemoduleaction
 
 import androidx.activity.compose.LocalActivity
 import androidx.compose.material3.SnackbarHostState

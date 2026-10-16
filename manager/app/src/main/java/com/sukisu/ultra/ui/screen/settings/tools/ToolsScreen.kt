@@ -1,4 +1,4 @@
-﻿package com.sukisu.ultra.ui.screen.settings.tools
+package com.sukisu.ultra.ui.screen.settings.tools
 
 import android.annotation.SuppressLint
 import android.widget.Toast

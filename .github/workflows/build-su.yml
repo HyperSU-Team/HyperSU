@@ -5,7 +5,6 @@ on:
     paths:
       - '.github/workflows/build-su.yml'
       - 'userspace/su/**'
-      - 'scripts/ksubot.py'
   pull_request:
     branches: [ "main" ]
     paths:
@@ -18,14 +17,6 @@ jobs:
     - uses: actions/checkout@v6
       with:
         fetch-depth: 0
-    - name: Setup need_upload
-      id: need_upload
-      run: |
-        if [ ! -z "${{ secrets.BOT_TOKEN }}" ]; then
-          echo "UPLOAD=true" >> $GITHUB_OUTPUT
-        else
-          echo "UPLOAD=false" >> $GITHUB_OUTPUT
-        fi
     - name: Build su
       working-directory: ./userspace/su
       run: $ANDROID_NDK/ndk-build

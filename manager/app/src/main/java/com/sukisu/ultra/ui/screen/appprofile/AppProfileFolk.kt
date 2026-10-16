@@ -1,4 +1,4 @@
-﻿package com.sukisu.ultra.ui.screen.appprofile
+package com.sukisu.ultra.ui.screen.appprofile
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade

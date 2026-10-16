@@ -1,4 +1,4 @@
-﻿package com.sukisu.ultra.ui.screen.templateeditor
+package com.sukisu.ultra.ui.screen.templateeditor
 
 import android.widget.Toast
 import androidx.compose.runtime.Composable

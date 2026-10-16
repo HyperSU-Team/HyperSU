@@ -1,15 +1,8 @@
 package com.sukisu.ultra.ui.kernelFlash
 
 import android.net.Uri
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -17,20 +10,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
-import com.sukisu.ultra.R
-import com.sukisu.ultra.ui.component.folk.FolkAlertDialog
-import com.sukisu.ultra.ui.component.folk.FolkButtonDefaults
-import com.sukisu.ultra.ui.component.folk.FolkSelectableRow
 import com.sukisu.ultra.ui.screen.install.InstallMethod
 import com.sukisu.ultra.ui.screen.install.archiveSlot
 import com.sukisu.ultra.ui.screen.install.archiveUri
 import com.sukisu.ultra.ui.screen.install.withArchiveSlot
-import com.sukisu.ultra.ui.theme.tokens.FolkType
 
 /**
  * The AnyKernel3 install flow, in the FolkPatch design.

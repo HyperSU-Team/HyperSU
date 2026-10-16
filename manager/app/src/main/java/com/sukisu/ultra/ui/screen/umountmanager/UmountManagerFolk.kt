@@ -1,4 +1,4 @@
-﻿package com.sukisu.ultra.ui.screen.umountmanager
+package com.sukisu.ultra.ui.screen.umountmanager
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box

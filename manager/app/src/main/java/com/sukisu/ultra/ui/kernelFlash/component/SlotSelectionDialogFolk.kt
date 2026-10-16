@@ -1,4 +1,4 @@
-﻿package com.sukisu.ultra.ui.kernelFlash.component
+package com.sukisu.ultra.ui.kernelFlash.component
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

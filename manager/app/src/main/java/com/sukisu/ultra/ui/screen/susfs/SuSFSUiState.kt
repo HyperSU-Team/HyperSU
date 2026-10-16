@@ -4,7 +4,6 @@ import androidx.compose.runtime.Immutable
 import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.screen.susfs.util.AppInfo
 import com.sukisu.ultra.ui.screen.susfs.util.EnabledFeature
-import com.sukisu.ultra.ui.screen.susfs.util.ModuleConfig
 import com.sukisu.ultra.ui.screen.susfs.util.SlotInfo
 
 @Immutable

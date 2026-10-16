@@ -1,4 +1,4 @@
-﻿package com.sukisu.ultra.ui.screen.appprofile
+package com.sukisu.ultra.ui.screen.appprofile
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable

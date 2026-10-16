@@ -1,4 +1,4 @@
-﻿package com.sukisu.ultra.ui.screen.flash
+package com.sukisu.ultra.ui.screen.flash
 
 import android.content.Intent
 import androidx.activity.compose.LocalActivity

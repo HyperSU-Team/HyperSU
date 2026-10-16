@@ -1,7 +1,6 @@
 package com.sukisu.ultra.ui.screen.home
 
 import android.content.Context
-import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState

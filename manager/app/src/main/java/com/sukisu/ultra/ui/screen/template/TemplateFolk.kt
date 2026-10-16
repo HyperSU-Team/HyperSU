@@ -1,4 +1,4 @@
-﻿package com.sukisu.ultra.ui.screen.template
+package com.sukisu.ultra.ui.screen.template
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

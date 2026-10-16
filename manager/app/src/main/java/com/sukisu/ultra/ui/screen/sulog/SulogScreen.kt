@@ -1,4 +1,4 @@
-﻿package com.sukisu.ultra.ui.screen.sulog
+package com.sukisu.ultra.ui.screen.sulog
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect

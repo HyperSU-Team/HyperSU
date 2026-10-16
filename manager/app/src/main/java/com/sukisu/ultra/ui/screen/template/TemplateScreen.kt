@@ -1,4 +1,4 @@
-﻿package com.sukisu.ultra.ui.screen.template
+package com.sukisu.ultra.ui.screen.template
 
 import android.content.ClipData
 import androidx.compose.material3.SnackbarHostState
