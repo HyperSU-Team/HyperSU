@@ -51,21 +51,6 @@ curl -LSs "https://raw.githubusercontent.com/KirinNova/HyperSU/main/kernel/setup
    - 非 GKI カーネル用のデフォルトフック方式
    - `CONFIG_KSU_MANUAL_HOOK=y` が必要です
 
-## KPM に対応
-
-- KernelPatch に基づいて重複した KSU の機能を削除、KPM の対応を維持させています。
-- KPM 機能の整合性を確保するために、APatch の互換機能を更に向上させる予定です。
-
-オープンソースアドレス: https://github.com/ShirkNeko/SukiSU_KernelPatch_patch
-
-KPM テンプレートのアドレス: https://github.com/udochina/KPM-Build-Anywhere
-
-> [!Note]
->
-> 1. `CONFIG_KPM=y` が必要です。
-> 2. 非 GKI デバイスには `CONFIG_KALLSYMS=y` と `CONFIG_KALLSYMS_ALL=y` も必要です。
-> 3. いくつかのカーネル `4.19` およびそれ以降のソースコードでは、 `4.19` からバックポートされた `set_memory.h` ヘッダーファイルも必要です。
-
 ## ROOT を保持した状態でのシステムアップデートの方法
 
 - 始めに OTA 後すぐに再起動せずにマネージャーのカーネルのフラッシュ、パッチのインターフェースを開いて`GKI/非 GKI のインストール`を見つけます。フラッシュする AnyKernel3 の zip ファイルを選択し、フラッシュする実行中のスロットと逆のスロットを選択後に再起動をして GKI モードの更新が保持できます (この方法はすべての非 GKI のデバイスが対応している訳ではないので、自分でお試しください。これは非 GKI のデバイスで TWRP を使用する最も安全な方法です)。
@@ -118,7 +103,6 @@ KPM テンプレートのアドレス: https://github.com/udochina/KPM-Build-Any
 3. [アプリプロファイル](https://kernelsu.org/guide/app-profile.html): root 権限をケージ内にロックします。
 4. 非 GKI / GKI 1.0 の対応を復活
 5. その他のカスタマイズ
-6. KPM カーネルモジュールに対応
 
 ## トラブルシューティング
 

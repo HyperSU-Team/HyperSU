@@ -16,8 +16,7 @@
 1. Управление доступом `su` и root на уровне ядра.
 2. [App Profile](https://kernelsu.org/guide/app-profile.html): закройте root-права для конкретных приложений.
 3. Поддержка non-GKI и GKI 1.0.
-4. Поддержка KPM.
-5. Изменения в теме менеджера и встроенный susfs.
+4. Изменения в теме менеджера и встроенный susfs.
 
 ## Статус совместимости
 
@@ -40,21 +39,6 @@
 ## Перевод
 
 Если вы хотите предложить перевод для менеджера, пожалуйста, воспользуйтесь [Crowdin](https://crowdin.com/project/SukiSU-Ultra).
-
-## Поддержка KPM
-
-- На базе KernelPatch: мы удалили функции, дублирующие возможности KSU, оставив только поддержку KPM.
-- В разработке: расширение совместимости с APatch путем интеграции дополнительных функций для обеспечения работы в различных реализациях.
-
-**Open-source репозиторий**: [https://github.com/ShirkNeko/SukiSU_KernelPatch_patch](https://github.com/ShirkNeko/SukiSU_KernelPatch_patch)
-
-**Шаблон KPM**: [https://github.com/udochina/KPM-Build-Anywhere](https://github.com/udochina/KPM-Build-Anywhere)
-
-> [!Note]
->
-> 1. Требуется `CONFIG_KPM=y`
-> 2. Для non-GKI устройств требуются `CONFIG_KALLSYMS=y` и `CONFIG_KALLSYMS_ALL=y`
-> 3. Для ядер ниже `4.19` требуется бэкпорт `set_memory.h` из версии `4.19`.
 
 ## Устранение неполадок
 

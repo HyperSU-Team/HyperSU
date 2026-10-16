@@ -52,21 +52,6 @@ curl -LSs "https://raw.githubusercontent.com/KirinNova/HyperSU/main/kernel/setup
    - GKI olmayan çekirdeğin varsayılan kanca yöntemi
    - `CONFIG_KSU_MANUAL_HOOK=y` gerektirir
 
-## KPM Desteği
-
-- KernelPatch tabanlı olarak KSU ile çakışan işlevleri kaldırdık ve yalnızca KPM desteğini koruduk
-- APatch ile daha fazla uyumlu fonksiyon ekleyerek KPM işlevlerinin bütünlüğünü sağlayacağız
-
-Kaynak kodu: https://github.com/ShirkNeko/SukiSU_KernelPatch_patch
-
-KPM şablonu: https://github.com/udochina/KPM-Build-Anywhere
-
-> [!Note]
->
-> 1. `CONFIG_KPM=y` gerektirir
-> 2. GKI olmayan cihazlar ayrıca `CONFIG_KALLSYMS=y` ve `CONFIG_KALLSYMS_ALL=y` gerektirir
-> 3. Bazı çekirdek `4.19` altı kaynak kodları, `4.19`dan geri taşınan başlık dosyası `set_memory.h` gerektirir
-
 ## Sistem Güncellemesini Yaparak ROOT\'u Koruma
 
 - OTA\'dan sonra hemen yeniden başlatmayın, yöneticiye girin ve çekirdek yazma/onarma arayüzüne gidin, `GKI/non_GKI yükleme` seçeneğini bulun ve Anykernel3 çekirdek sıkıştırma dosyasını seçin, şu anda sistemin çalıştığı yuva ile zıt yuvaya yazın ve yeniden başlatın, böylece GKI modu güncellemesini koruyabilirsiniz (şu anda tüm GKI olmayan cihazlar bu yöntemi desteklemiyor, lütfen kendiniz deneyin. GKI olmayan cihazlar için TWRP kullanmak en güvenlidir)
@@ -118,7 +103,6 @@ Lütfen **tümünü** https://kernelsu.org/zh_CN/guide/installation.html adresin
 3. [App Profile](https://kernelsu.org/guide/app-profile.html): root yetkilerini kafeste kilitleyin
 4. GKI 2.0 olmayan çekirdekler için desteğin geri getirilmesi
 5. Daha fazla özelleştirme özelliği
-6. KPM çekirdek modülleri için destek
 
 ## Üst Kaynağa Teşekkür
 

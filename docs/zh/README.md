@@ -15,8 +15,7 @@
 1. 基于内核的 `su` 和权限管理。
 2. [App Profile](https://kernelsu.org/zh_CN/guide/app-profile.html): 把 Root 权限关进笼子里。
 3. 支持 non-GKI 与 GKI 1.0。
-4. KPM 支持
-5. 可调整管理器外观，可自定义 susfs 配置。
+4. 可调整管理器外观，可自定义 susfs 配置。
 
 ## 兼容状态
 
@@ -39,21 +38,6 @@
 ## 参与翻译
 
 要将 HyperSU 翻译成您的语言，或完善现有的翻译，请向 [KirinNova/HyperSU](https://github.com/KirinNova/HyperSU) 提交 Pull Request。
-
-## KPM 支持
-
-- 基于 KernelPatch 开发，移除了与 KernelSU 重复的功能。
-- 正在进行（WIP）：通过集成附加功能来扩展 APatch 兼容性，以确保跨不同实现的兼容性。
-
-**开源仓库**: [https://github.com/ShirkNeko/SukiSU_KernelPatch_patch](https://github.com/ShirkNeko/SukiSU_KernelPatch_patch)
-
-**KPM 模板**: [https://github.com/udochina/KPM-Build-Anywhere](https://github.com/udochina/KPM-Build-Anywhere)
-
-> [!Note]
->
-> 1. 需要 `CONFIG_KPM=y`
-> 2. Non-GKI 设备需要 `CONFIG_KALLSYMS=y` and `CONFIG_KALLSYMS_ALL=y`
-> 3. 对于低于 `4.19` 的内核，需要从 `4.19` 的 `set_memory.h` 进行反向移植。
 
 ## 故障排除
 

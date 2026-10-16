@@ -15,8 +15,7 @@ A kernel-based root solution for Android devices, forked from [`SukiSU-Ultra/Suk
 1. Kernel-based `su` and root access management
 2. [App Profile](https://kernelsu.org/guide/app-profile.html): Lock up the root power in a cage
 3. Support non-GKI and GKI 1.0
-4. KPM Support
-5. Tweaks to the manager theme and the built-in susfs management tool.
+4. Tweaks to the manager theme and the built-in susfs management tool.
 
 ## Compatibility Status
 
@@ -39,21 +38,6 @@ See [`guide/how-to-integrate.md`](guide/how-to-integrate.md)
 ## Translation
 
 If you need to submit a translation for the manager, please open a pull request on GitHub.
-
-## KPM Support
-
-- Based on KernelPatch, we removed features redundant with KSU and retained only KPM support.
-- Work in Progress: Expanding APatch compatibility by integrating additional functions to ensure compatibility across different implementations.
-
-**Open-source repository**: [https://github.com/ShirkNeko/SukiSU_KernelPatch_patch](https://github.com/ShirkNeko/SukiSU_KernelPatch_patch)
-
-**KPM template**: [https://github.com/udochina/KPM-Build-Anywhere](https://github.com/udochina/KPM-Build-Anywhere)
-
-> [!Note]
->
-> 1. Requires `CONFIG_KPM=y`
-> 2. Non-GKI devices requires `CONFIG_KALLSYMS=y` and `CONFIG_KALLSYMS_ALL=y`
-> 3. For kernels below `4.19`, backporting from `set_memory.h` from `4.19` is required.
 
 ## Troubleshooting
 
