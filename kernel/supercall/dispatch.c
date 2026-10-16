@@ -59,6 +59,11 @@ static int do_get_info_legacy(void __user *arg)
 static int do_report_event(void __user *arg)
 {
     struct ksu_report_event_cmd cmd;
+    // The services stage is a one-shot per boot: ksud calls it from the init
+    // trigger and again from the boot trigger, and running it twice re-executes
+    // every module's service.sh. Cleared on post-fs-data so an emulated soft
+    // reboot can run it again.
+    static bool services_started = false;
 
     if (copy_from_user(&cmd, arg, sizeof(cmd))) {
         return -EFAULT;
@@ -72,6 +77,9 @@ static int do_report_event(void __user *arg)
             pr_info("post-fs-data triggered\n");
             on_post_fs_data();
         }
+
+        // Reset for emulated soft reboot
+        services_started = false;
         break;
     }
     case EVENT_BOOT_COMPLETED: {
@@ -90,6 +98,15 @@ static int do_report_event(void __user *arg)
         pr_info("module mounted!\n");
         on_module_mounted();
         break;
+    }
+    case EVENT_SERVICES: {
+        if (services_started) {
+            pr_info("services already started, skipping\n");
+            return 0;
+        }
+        services_started = true;
+        pr_info("services triggered\n");
+        return 1;
     }
     default:
         break;
