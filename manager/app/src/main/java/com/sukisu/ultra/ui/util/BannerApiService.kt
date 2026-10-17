@@ -5,7 +5,14 @@ import android.util.Log
 import com.sukisu.ultra.ksuApp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.Request
+import kotlinx.coroutines.resume
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.Response
+import java.io.IOException
 import java.io.File
 import java.security.MessageDigest
 import java.util.Locale
@@ -23,6 +30,15 @@ object BannerApiService {
     private const val TAG = "BannerApiService"
     private const val API_BANNER_DIR_NAME = "api_banners"
     private const val CACHE_TTL_MS = 24 * 60 * 60 * 1000L
+
+    /**
+     * How long a single banner fetch may take.
+     *
+     * Short on purpose. These images are decoration and several are fetched at once while the list
+     * scrolls, so a slow source must not hold a card blank indefinitely - and it must not keep
+     * sockets open behind a screen the user has already scrolled past.
+     */
+    private const val FETCH_TIMEOUT_MS = 4_000L
 
     private val IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp", "gif", "bmp")
 
@@ -97,24 +113,50 @@ object BannerApiService {
         }
     }
 
-    private suspend fun getFromApi(moduleId: String, apiUrl: String): ByteArray? =
-        withContext(Dispatchers.IO) {
-            try {
-                val urlWithSeed = buildUrlWithSeed(apiUrl, moduleId)
-                val response = ksuApp.okhttpClient
-                    .newCall(Request.Builder().url(urlWithSeed).build())
-                    .execute()
+    /**
+     * Fetches one image from the configured source.
+     *
+     * Bounded by [FETCH_TIMEOUT_MS]. A random-image endpoint is a third party and is free to be
+     * slow or to hang; without a deadline the card waiting on it simply never drew a banner, which
+     * is what "banners do not load" looked like.
+     *
+     * The request is dispatched with `enqueue` rather than `execute`. `execute` blocks its thread
+     * and cannot be interrupted, so a timeout wrapped around it would return while the call kept
+     * running and holding its socket - the timeout would only hide the problem. With `enqueue` the
+     * cancellation reaches the call and the connection is actually closed.
+     */
+    private suspend fun getFromApi(moduleId: String, apiUrl: String): ByteArray? {
+        val urlWithSeed = buildUrlWithSeed(apiUrl, moduleId)
+        val call = ksuApp.okhttpClient.newCall(Request.Builder().url(urlWithSeed).build())
 
-                if (!response.isSuccessful) {
-                    Log.w(TAG, "API request failed with code: ${response.code}")
-                    return@withContext null
+        return try {
+            withTimeoutOrNull(FETCH_TIMEOUT_MS) {
+                suspendCancellableCoroutine { continuation ->
+                    continuation.invokeOnCancellation { call.cancel() }
+                    call.enqueue(object : Callback {
+                        override fun onFailure(call: Call, e: IOException) {
+                            Log.w(TAG, "Banner request failed: ${e.message}")
+                            continuation.resume(null)
+                        }
+
+                        override fun onResponse(call: Call, response: Response) {
+                            response.use {
+                                if (!it.isSuccessful) {
+                                    Log.w(TAG, "API request failed with code: ${it.code}")
+                                    continuation.resume(null)
+                                } else {
+                                    continuation.resume(runCatching { it.body?.bytes() }.getOrNull())
+                                }
+                            }
+                        }
+                    })
                 }
-                response.body?.bytes()
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to fetch banner from API: ${e.message}", e)
-                null
             }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to fetch banner from API: ${e.message}")
+            null
         }
+    }
 
     /** 已带查询参数就用 `&` 追加，否则用 `?`。 */
     private fun buildUrlWithSeed(baseUrl: String, moduleId: String): String {

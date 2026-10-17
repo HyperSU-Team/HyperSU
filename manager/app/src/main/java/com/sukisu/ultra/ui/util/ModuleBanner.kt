@@ -7,6 +7,12 @@ import com.sukisu.ultra.ui.theme.BackgroundConfig
 import com.topjohnwu.superuser.io.SuFile
 import com.topjohnwu.superuser.io.SuFileInputStream
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 
 /**
@@ -41,27 +47,73 @@ object ModuleBanner {
             size > MAX_CACHED_MODULES
     }
 
+    /**
+     * 同时在途的取图数量上限。
+     *
+     * 列表一次组合好几张卡片，每张都会发起一次取图；不设上限时滑到一屏新卡片会同时开出十来个
+     * 连接，把带宽和线程池都占满 —— 结果是每张都慢，看起来就是「横幅加载不出来」并且列表发卡。
+     * 串行一点，先到的先显示，比一起卡着好。
+     */
+    private val loadSemaphore = Semaphore(permits = 3)
+
+    /** 同一个模块正在取图时，后来的请求等它的结果，而不是再发一次。 */
+    private val inFlight = mutableMapOf<String, Deferred<ByteArray?>>()
+
+    /**
+     * 取图协程的作用域。
+     *
+     * 用进程级作用域而不是调用方的：卡片可能因为滚动而离开组合，它的 `produceState` 随之取消，
+     * 但已经发出的请求和已下载的字节仍然有用 —— 下一个滚回来的卡片会直接命中缓存。
+     */
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     /** 丢弃某个模块的缓存（用户手动换了横幅之后调用）。 */
     fun invalidate(moduleId: String) {
-        memory.remove(moduleId)
+        synchronized(memory) { memory.remove(moduleId) }
     }
 
     fun invalidateAll() {
-        memory.clear()
+        synchronized(memory) { memory.clear() }
     }
 
-    /** 取横幅字节；三步都没取到就返回 null，卡片据此不画横幅层。 */
+    /**
+     * 取横幅字节；三步都没取到就返回 null，卡片据此不画横幅层。
+     *
+     * **失败不进缓存。** 只有真取到了才记下来。之前不区分「取到了」和「这次没取到」，于是第一次
+     * 取图恰好超时（网络图源是第三方，慢是常态）就把 null 缓存住了，这个模块在本次进程存活期间
+     * 再也不会显示横幅 —— 看起来就是「横幅加载不出来」。不缓存失败，下次进列表会再试一次。
+     */
     suspend fun load(
         context: Context,
         moduleId: String,
         reload: Boolean = false,
     ): ByteArray? {
         if (!reload && memory.containsKey(moduleId)) {
-            return memory[moduleId]
+            return synchronized(memory) { memory[moduleId] }
         }
-        val bytes = withContext(Dispatchers.IO) { resolve(context, moduleId) }
-        memory[moduleId] = bytes
-        return bytes
+        // One fetch per module at a time: the card can be asked for its banner again while the
+        // first request is still out (a recomposition, a scroll back), and firing a second identical
+        // request only made both slower.
+        val pending = synchronized(inFlight) { inFlight[moduleId] }
+        if (pending != null) return pending.await()
+
+        val job = scope.async {
+            loadSemaphore.withPermit {
+                val resolved = withContext(Dispatchers.IO) { resolve(context, moduleId) }
+                // A null means the fetch did not succeed; leaving it out of the cache lets the next
+                // visit try again instead of pinning the card blank for the life of the process.
+                if (resolved != null) {
+                    synchronized(memory) { memory[moduleId] = resolved }
+                }
+                resolved
+            }
+        }
+        synchronized(inFlight) { inFlight[moduleId] = job }
+        try {
+            return job.await()
+        } finally {
+            synchronized(inFlight) { inFlight.remove(moduleId) }
+        }
     }
 
     /**
@@ -76,7 +128,9 @@ object ModuleBanner {
      */
     fun loadSync(moduleId: String): ByteArray? {
         if (!BackgroundConfig.isBannerEnabled) return null
-        return memory[moduleId]
+        // Called during composition, so it must not take a lock that a background fetch holds for
+        // long; the fetch only ever swaps the entry in, so a plain read is enough.
+        return synchronized(memory) { memory[moduleId] }
     }
 
     private suspend fun resolve(context: Context, moduleId: String): ByteArray? {

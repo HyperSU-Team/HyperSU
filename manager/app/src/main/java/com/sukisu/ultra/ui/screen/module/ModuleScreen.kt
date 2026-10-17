@@ -78,9 +78,18 @@ fun ModulePager(
     }
 
     LifecycleResumeEffect(Unit) {
+        // Only when something actually changed.
+        //
+        // This used to reload on every resume, and a tab switch inside the pager counts as one -
+        // so moving between Home and Module refetched the whole module list from `ksud` each time.
+        // That is the refresh the user sees, and it is also why the banners kept disappearing: a
+        // new list means new Module objects, which re-keys every card's banner state.
+        //
+        // `isNeedRefresh` is set by the actions that change what is on disk (install, uninstall,
+        // toggle, WebUI exit). A plain resume has nothing to reload.
         if (initialResumeHandled.value && latestIsCurrentPage) {
             val state = viewModel.uiState.value
-            if (!state.isRefreshing) {
+            if (!state.isRefreshing && (!state.hasLoaded || viewModel.isNeedRefresh)) {
                 viewModel.fetchModuleList(
                     checkUpdate = !state.hasLoaded || viewModel.isNeedRefresh,
                     resort = !state.hasLoaded,

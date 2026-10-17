@@ -183,29 +183,55 @@ class ModuleViewModel(
         }
     }
 
+    /**
+     * Rebuilds `moduleList` / `searchResults` off the main thread.
+     *
+     * Used by the settings that only re-sort; `loadModuleList` calls [recomputeModuleList] directly
+     * because it already runs on the main thread and must publish everything in one state change.
+     */
     private fun updateModuleList(resort: Boolean = true) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val state = _uiState.value
-            val searchText = state.searchStatus.searchText
-            val shorted = if (resort || state.moduleList.isEmpty()) {
-                state.modules.sortedWith(moduleComparator(state))
-            } else {
-                // Order-preserving reload: keep order, refresh data, drop removed, append new (no re-sort on toggle/uninstall)
-                val byId = state.modules.associateBy { it.id }
-                val existingIds = state.moduleList.mapTo(HashSet()) { it.id }
-                state.moduleList.mapNotNull { byId[it.id] } + state.modules.filter { it.id !in existingIds }
-            }
-            val searchResults = filterModules(shorted, searchText)
+        viewModelScope.launch {
+            recomputeModuleList(resort)
+        }
+    }
 
-            _uiState.update {
-                it.copy(
-                    moduleList = shorted,
-                    searchResults = searchResults,
-                    searchStatus = it.searchStatus.copy(
-                        resultStatus = searchResultStatusFor(searchText, searchResults.isEmpty())
-                    )
+    private fun recomputeModuleList(resort: Boolean = true) {
+        val state = _uiState.value
+        val searchText = state.searchStatus.searchText
+
+        // Reuse the objects that did not change.
+        //
+        // `loadModuleList` builds a fresh Module for every module on disk, and Module is a data
+        // class, so two reads of an unchanged module are equal but are different instances.
+        // Compose compares by equality so it does skip them - but the list itself was rebuilt,
+        // which re-ran the sort, the search filter, and the banner state keyed on the module.
+        // Mapping unchanged entries back onto the objects already in the list keeps the list
+        // structurally identical when nothing changed, so a refresh that finds no difference
+        // produces no visible work at all.
+        val previousById = state.moduleList.associateBy { it.id }
+        val reconciled = state.modules.map { fresh ->
+            val old = previousById[fresh.id]
+            if (old == fresh) old else fresh
+        }
+
+        val shorted = if (resort || state.moduleList.isEmpty()) {
+            reconciled.sortedWith(moduleComparator(state))
+        } else {
+            // Order-preserving reload: keep order, refresh data, drop removed, append new (no re-sort on toggle/uninstall)
+            val byId = reconciled.associateBy { it.id }
+            val existingIds = state.moduleList.mapTo(HashSet()) { it.id }
+            state.moduleList.mapNotNull { byId[it.id] } + reconciled.filter { it.id !in existingIds }
+        }
+        val searchResults = filterModules(shorted, searchText)
+
+        _uiState.update {
+            it.copy(
+                moduleList = shorted,
+                searchResults = searchResults,
+                searchStatus = it.searchStatus.copy(
+                    resultStatus = searchResultStatusFor(searchText, searchResults.isEmpty())
                 )
-            }
+            )
         }
     }
 
@@ -241,13 +267,13 @@ class ModuleViewModel(
         }
 
         withContext(Dispatchers.Main) {
-            _uiState.update {
-                it.copy(
-                    modules = parsedModules,
-                )
-            }
-            // Trigger recalculation of moduleList
-            updateModuleList(resort)
+            // `modules` is written once, together with the derived lists.
+            //
+            // It used to be published first and the derived lists filled in by a second coroutine,
+            // so every refresh went through an intermediate state where `modules` was new and
+            // `moduleList` still old - one extra recomposition of the whole list, per refresh.
+            _uiState.update { it.copy(modules = parsedModules) }
+            recomputeModuleList(resort)
             isNeedRefresh = false
         }
     }
