@@ -73,9 +73,9 @@ local value.
 | `kernel/Kbuild` | `KSU_PACKAGE_NAME ?= com.hypersu.manager` | The kernel matches the manager by package name. |
 | `kernel/Kbuild` | `KSU_EXPECTED_SIZE ?= 0x378`, `KSU_EXPECTED_HASH ?= aaef52d7…` | The release certificate. Upstream's values accept SukiSU's manager and reject ours. |
 | `kernel/Kbuild` | `-I$(KSU_KERNEL_DIR)/..` | See "The uapi symlinks" below. |
-| `kernel/Kbuild` | `REPO_OWNER := KirinNova`, `REPO_NAME := HyperSU` | Version reporting and the CI commit count. |
+| `kernel/Kbuild` | `REPO_OWNER := HyperSU-Team`, `REPO_NAME := HyperSU` | Version reporting and the CI commit count. |
 | `kernel/Makefile` | `EXTRA_CFLAGS="-I$(MDIR)/.."` | Same reason as the Kbuild include path. |
-| `kernel/setup.sh` | clones `KirinNova/HyperSU`, checks out `main` | Upstream checks out the newest tag, which here predates the rebrand and silently downgrades the sources. |
+| `kernel/setup.sh` | clones `HyperSU-Team/HyperSU`, checks out `main` | Upstream checks out the newest tag, which here predates the rebrand and silently downgrades the sources. |
 | `userspace/ksud/build.rs` | `KSU_PACKAGE_NAME=com.hypersu.manager` | Must match the manager's `applicationId`. |
 | `manager/app/src/main/cpp/CMakeLists.txt` | `include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../../..)` | See "The uapi symlinks" below. |
 | `.github/workflows/build-manager.yml` | `package_name: com.hypersu.manager[.pr]` | Feeds the kernel's expected package name. |
@@ -143,7 +143,7 @@ git log --oneline -1                       # what you are about to build
 Then check the run for that commit. The useful endpoints, since `api.github.com` is
 intercepted on this machine:
 
-- runs: `https://github.com/KirinNova/HyperSU/actions/workflows/build-manager.yml`
+- runs: `https://github.com/HyperSU-Team/HyperSU/actions/workflows/build-manager.yml`
 - badge status is CDN cached for a while and can report the previous run
 
 Verify before pushing:

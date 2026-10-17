@@ -107,7 +107,7 @@ obj-$(CONFIG_KSU) += kernelsu.o
 
 MDIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
-REPO_OWNER  := KirinNova
+REPO_OWNER  := HyperSU-Team
 REPO_NAME   := HyperSU
 REPO_BRANCH := main
 

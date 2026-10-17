@@ -6,9 +6,9 @@
 
 A kernel-based root solution for Android devices, forked from [`SukiSU-Ultra/SukiSU-Ultra`](https://github.com/SukiSU-Ultra/SukiSU-Ultra), which is forked from [`tiann/KernelSU`](https://github.com/tiann/KernelSU), and added some interesting changes.
 
-[![Latest release](https://img.shields.io/github/v/release/KirinNova/HyperSU?label=Release&logo=github)](https://github.com/KirinNova/HyperSU/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/HyperSU-Team/HyperSU?label=Release&logo=github)](https://github.com/HyperSU-Team/HyperSU/releases/latest)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-orange.svg?logo=gnu)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
-[![GitHub License](https://img.shields.io/github/license/KirinNova/HyperSU?logo=gnu)](/LICENSE)
+[![GitHub License](https://img.shields.io/github/license/HyperSU-Team/HyperSU?logo=gnu)](/LICENSE)
 
 ## Features
 

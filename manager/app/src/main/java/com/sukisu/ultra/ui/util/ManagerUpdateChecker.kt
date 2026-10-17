@@ -44,7 +44,7 @@ object ManagerUpdateChecker {
 
     /** The project this build comes from. */
     private const val RELEASES_URL =
-        "https://api.github.com/repos/KirinNova/HyperSU/releases/latest"
+        "https://api.github.com/repos/HyperSU-Team/HyperSU/releases/latest"
 
     private val NUMERIC_TAG = Regex("""^v?(\d+)$""")
     private val SEMANTIC_TAG = Regex("""^v?(\d+)\.(\d+)\.(\d+)$""")

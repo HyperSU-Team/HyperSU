@@ -6,9 +6,9 @@
 
 一个 Android 上基于内核的 root 方案，由 [`SukiSU-Ultra/SukiSU-Ultra`](https://github.com/SukiSU-Ultra/SukiSU-Ultra) 分叉而来，而 SukiSU Ultra 由 [`tiann/KernelSU`](https://github.com/tiann/KernelSU) 分叉而来，添加了一些有趣的变更。
 
-[![最新发行](https://img.shields.io/github/v/release/KirinNova/HyperSU?label=Release&logo=github)](https://github.com/KirinNova/HyperSU/releases/latest)
+[![最新发行](https://img.shields.io/github/v/release/HyperSU-Team/HyperSU?label=Release&logo=github)](https://github.com/HyperSU-Team/HyperSU/releases/latest)
 [![协议: GPL v2](https://img.shields.io/badge/License-GPL%20v2-orange.svg?logo=gnu)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
-[![GitHub 协议](https://img.shields.io/github/license/KirinNova/HyperSU?logo=gnu)](/LICENSE)
+[![GitHub 协议](https://img.shields.io/github/license/HyperSU-Team/HyperSU?logo=gnu)](/LICENSE)
 
 ## 特性
 
@@ -37,7 +37,7 @@
 
 ## 参与翻译
 
-要将 HyperSU 翻译成您的语言，或完善现有的翻译，请向 [KirinNova/HyperSU](https://github.com/KirinNova/HyperSU) 提交 Pull Request。
+要将 HyperSU 翻译成您的语言，或完善现有的翻译，请向 [HyperSU-Team/HyperSU](https://github.com/HyperSU-Team/HyperSU) 提交 Pull Request。
 
 ## 故障排除
 

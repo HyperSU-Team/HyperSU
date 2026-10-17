@@ -19,13 +19,13 @@
 Ana dalı kullanın (GKI olmayan cihazlar için desteklenmez)
 
 ```
-curl -LSs "https://raw.githubusercontent.com/KirinNova/HyperSU/main/kernel/setup.sh" | bash -s main
+curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s main
 ```
 
 GKI olmayan cihazları destekleyen dalı kullanın
 
 ```
-curl -LSs "https://raw.githubusercontent.com/KirinNova/HyperSU/main/kernel/setup.sh" | bash -s builtin
+curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s builtin
 ```
 
 ## susfs Nasıl Entegre Edilir
@@ -33,7 +33,7 @@ curl -LSs "https://raw.githubusercontent.com/KirinNova/HyperSU/main/kernel/setup
 1. Doğrudan susfs-main veya susfs-\* dalını kullanın, susfs entegrasyonuna gerek yok
 
 ```
-curl -LSs "https://raw.githubusercontent.com/KirinNova/HyperSU/main/kernel/setup.sh" | bash -s susfs-main
+curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s susfs-main
 ```
 
 ## Kanca Yöntemleri
