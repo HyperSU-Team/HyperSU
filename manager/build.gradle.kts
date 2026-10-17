@@ -21,7 +21,12 @@ fun getGitCommitCount(): Int {
 }
 
 fun getGitDescribe(): String {
-    val process = Runtime.getRuntime().exec(arrayOf("git", "describe", "--tags", "--always", "--abbrev=0"))
+    // Only version tags name the build. The repository also carries milestone tags such as
+    // glass-p0; git describe picks whichever is nearest, which renamed a release build after a
+    // milestone tag instead of after its version.
+    val process = Runtime.getRuntime().exec(
+        arrayOf("git", "describe", "--tags", "--always", "--abbrev=0", "--match", "v[0-9]*")
+    )
     return process.inputStream.bufferedReader().use { it.readText().trim() }
 }
 
