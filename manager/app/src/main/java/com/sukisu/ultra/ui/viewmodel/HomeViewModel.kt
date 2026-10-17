@@ -69,6 +69,17 @@ class HomeViewModel(
     private fun reload() {
         if (loadJob?.isActive == true) return
         loadJob = viewModelScope.launch {
+            // The facts that need no root are published on their own first, before anything that
+            // can fail, and the full reading replaces them when it arrives.
+            //
+            // This is what makes the blank screen impossible rather than merely unlikely. The
+            // refactor that moved this work off the main thread replaced a state built in the
+            // constructor with the all-blank default of HomeUiState() plus a coroutine to fill it
+            // in, so any way the coroutine could end early left the screen blank with nothing left
+            // running to replace it. Publishing here means the rows are already correct before the
+            // driver, the root shell or `ksud` are touched at all.
+            _uiState.update { previous -> if (previous.loaded) previous else readBasicsState() }
+
             // A cold start's first read can come back without the facts that need no root at all:
             // the driver is still coming up, the package manager has not settled, or the process
             // was started before the user unlocked. A single attempt then left the rows showing
@@ -76,11 +87,17 @@ class HomeViewModel(
             // language, and nothing else, appeared to fix it. So it is retried, and only while the
             // state is still missing something it should always have.
             var attempt = 0
-            var state = readState()
+            var state = runCatching { readState() }.getOrElse { failure ->
+                // readState() already guards its own reads; this is the last resort. Publishing a
+                // loaded state even here matters: the alternative is leaving the screen on the
+                // all-blank default with no job left running to replace it.
+                Log.w(TAG, "could not read the home state at all", failure)
+                readBasicsState()
+            }
             while (!state.hasAlwaysAvailableFacts() && attempt < MaxLoadAttempts - 1) {
                 attempt++
                 delay(RetryDelayMillis * attempt)
-                state = readState()
+                state = runCatching { readState() }.getOrElse { state }
             }
 
             // A later read that fails must not replace a good one with a blank screen, so the
@@ -95,11 +112,34 @@ class HomeViewModel(
         }
     }
 
+    /**
+     * The home state carrying only the facts that need no root, no driver and no shell.
+     *
+     * Every field is read through its own guard, so this cannot throw and cannot come back blank:
+     * `Os.uname`, `Build` and the package manager answer on every device.
+     */
+    private fun readBasicsState(): HomeUiState = runCatching {
+        HomeUiState(
+            loaded = true,
+            systemInfo = basicsAsSystemInfo(readBasics(), kernelUAPIVersion = 0),
+        )
+    }.getOrElse { failure ->
+        Log.w(TAG, "could not read the home basics", failure)
+        HomeUiState(loaded = true)
+    }
+
     private suspend fun readState(): HomeUiState = withContext(Dispatchers.IO) {
+        // The fallback is built first, and is guarded separately.
+        //
+        // It used to be constructed inside `getOrElse`, which is not covered by the `runCatching`
+        // above it: `readBasics()` and `basicsAsSystemInfo()` ran unprotected, so a second failure
+        // there escaped `readState()` entirely and took the load coroutine with it.
+        val fallback = readBasicsState()
+
         runCatching { buildState() }.getOrElse { failure ->
             Log.w(TAG, "could not read the home state", failure)
             // Even a failed read reports the facts that need nothing, rather than blanking them.
-            HomeUiState(loaded = true, systemInfo = basicsAsSystemInfo(readBasics(), kernelUAPIVersion = 0))
+            fallback
         }
     }
 
@@ -132,7 +172,11 @@ class HomeViewModel(
         kernelUAPIVersion: Int,
     ): SystemInfo = SystemInfo(
         kernelVersion = basics.kernelRelease,
-        managerVersion = "${basics.managerVersion.versionName} " +
+        // The version name is the one part of this string that can legitimately be empty: a build
+        // whose `git describe` found no tag gets an empty VERSION_NAME, and a package installed
+        // without a versionName reports null. An empty name would otherwise leave " (0-0)" as the
+        // whole value, so the compiled-in fallback is used instead.
+        managerVersion = "${basics.managerVersion.versionName.ifBlank { BuildConfig.VERSION_NAME }} " +
                 "(${basics.managerVersion.versionCode}-$kernelUAPIVersion)",
         deviceModel = basics.deviceModel,
         kernelFullVersion = null,
