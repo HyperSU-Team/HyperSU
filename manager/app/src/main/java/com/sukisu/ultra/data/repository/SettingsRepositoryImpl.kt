@@ -161,7 +161,10 @@ class SettingsRepositoryImpl : SettingsRepository {
         set(value) = prefs.edit { putString("color_generation_mode", value) }
 
     override var statsTopLayout: String
-        get() = prefs.stringPref("stats_top_layout", STATS_TOP_LIST) ?: STATS_TOP_LIST
+        // Side by side is the arrangement FolkPatch draws and the one the Grid layout was built
+        // around, so it is the default here too. A stored value still wins, so an installation
+        // that had already chosen the stacked one keeps it.
+        get() = prefs.stringPref("stats_top_layout", STATS_TOP_GRID) ?: STATS_TOP_GRID
         set(value) = prefs.edit { putString("stats_top_layout", value) }
 
     override var enablePredictiveBack: Boolean

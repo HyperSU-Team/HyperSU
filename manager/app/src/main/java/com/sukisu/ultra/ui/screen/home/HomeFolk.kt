@@ -43,9 +43,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -66,13 +64,11 @@ import com.sukisu.ultra.data.repository.HOME_LAYOUT_LIST
 import com.sukisu.ultra.data.repository.HOME_LAYOUT_OPTIONS
 import com.sukisu.ultra.data.repository.HOME_LAYOUT_STATS
 import com.sukisu.ultra.data.repository.KEY_HOME_LAYOUT
-import com.sukisu.ultra.data.repository.KEY_STATS_TOP_LAYOUT
-import com.sukisu.ultra.data.repository.STATS_TOP_GRID
-import com.sukisu.ultra.data.repository.STATS_TOP_LIST
 import com.sukisu.ultra.data.repository.SettingsRepositoryImpl
 import com.sukisu.ultra.ksuApp
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
@@ -215,16 +211,10 @@ internal fun HomePagerFolk(
     // app restarted.
     val prefs = remember { ksuApp.getSharedPreferences("settings", Context.MODE_PRIVATE) }
     var layout by remember { mutableStateOf(settingsRepo.homeLayoutStyle) }
-    // Same reason as the layout above: a theme import rewrites this key while the screen is
-    // alive, and a plain remember would keep the old arrangement until a restart.
-    var statsTopLayout by remember { mutableStateOf(settingsRepo.statsTopLayout) }
     DisposableEffect(prefs) {
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == null || key == KEY_HOME_LAYOUT) {
                 layout = settingsRepo.homeLayoutStyle
-            }
-            if (key == null || key == KEY_STATS_TOP_LAYOUT) {
-                statsTopLayout = settingsRepo.statsTopLayout
             }
         }
         prefs.registerOnSharedPreferenceChangeListener(listener)
@@ -261,26 +251,16 @@ internal fun HomePagerFolk(
                 },
         )
 
-        CompositionLocalProvider(LocalStatsTopLayout provides statsTopLayout) {
-            when (layout) {
-                HOME_LAYOUT_LIST -> HomeLayoutList(state, actions, contentPadding)
-                HOME_LAYOUT_FOCUS -> HomeLayoutFocus(state, actions, contentPadding)
-                HOME_LAYOUT_DASHBOARD -> HomeLayoutDashboard(state, actions, contentPadding)
-                HOME_LAYOUT_GRID -> HomeLayoutGrid(state, actions, contentPadding)
-                HOME_LAYOUT_STATS -> HomeLayoutStats(state, actions, contentPadding)
-                else -> HomeLayoutCircle(state, actions, contentPadding)
-            }
+        when (layout) {
+            HOME_LAYOUT_LIST -> HomeLayoutList(state, actions, contentPadding)
+            HOME_LAYOUT_FOCUS -> HomeLayoutFocus(state, actions, contentPadding)
+            HOME_LAYOUT_DASHBOARD -> HomeLayoutDashboard(state, actions, contentPadding)
+            HOME_LAYOUT_GRID -> HomeLayoutGrid(state, actions, contentPadding)
+            HOME_LAYOUT_STATS -> HomeLayoutStats(state, actions, contentPadding)
+            else -> HomeLayoutCircle(state, actions, contentPadding)
         }
     }
 }
-
-/**
- * Which arrangement the Grid layout's status cards take.
- *
- * A composition local rather than a parameter because only the Grid layout reads it: threading it
- * through the other four layouts, which ignore it, would be noise at four call sites to serve one.
- */
-private val LocalStatsTopLayout = compositionLocalOf { STATS_TOP_LIST }
 
 // ---------------------------------------------------------------------------
 // Top bar
@@ -942,7 +922,6 @@ private fun HomeSupportLinks(actions: HomeActions) {
 // Layouts
 // ---------------------------------------------------------------------------
 
-/** The flagship layout: hero, warnings, quick links, full facts. */
 /**
  * 主卡片壁纸，凡是要画主状态卡的地方都用它（圆形 / 焦点 / 网格布局）。
  *
@@ -997,68 +976,40 @@ private fun HomeLayoutGrid(
 }
 
 /**
- * The Grid layout's status cards: a hero card, and the kernel and SELinux tiles.
+ * The Grid layout's status cards: the hero card, and the kernel and SELinux tiles beside it.
  *
  * Extracted so the Stats layout draws exactly these rather than a second copy that could drift.
- * "grid" puts the two tiles beside the hero instead of under it, which is what FolkPatch's stats
- * top layout switch does; both arrangements carry the same cards, so only the reading order
- * changes.
+ *
+ * The row used to be forced to `IntrinsicSize.Min`, which measured the whole row against the
+ * *shortest* of its two columns. The tiles are short, so the hero card was squeezed to their
+ * height and its own text was clipped - the card read as a strip of wallpaper with the version
+ * line cut off. Letting the row take the height of its tallest child instead means the hero card
+ * keeps the height its content needs, and the tiles stretch beside it.
  */
 @Composable
 private fun HomeGridStatusCards(
     state: HomeUiState,
     actions: HomeActions,
 ) {
-    val gridTop = LocalStatsTopLayout.current == STATS_TOP_GRID
-
-    if (gridTop) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Box(modifier = Modifier.weight(1f)) {
-                HomeHeroCard(
-                    state = state,
-                    actions = actions,
-                    wallpaperUri = gridHeroWallpaperUri(),
-                    gridStyle = true,
-                )
-            }
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                HomeTile(
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Outlined.Info,
-                    label = stringResource(R.string.home_kernel),
-                    value = state.systemInfo.kernelVersion,
-                    severity = if (state.isManager) FolkSeverity.Positive else FolkSeverity.Critical,
-                )
-                HomeTile(
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Outlined.Security,
-                    label = stringResource(R.string.home_selinux_status),
-                    value = state.systemInfo.selinuxStatus,
-                    severity = if (state.isSELinuxPermissive) FolkSeverity.Caution else FolkSeverity.Positive,
-                )
-            }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Max),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(modifier = Modifier.weight(1f)) {
+            HomeHeroCard(
+                state = state,
+                actions = actions,
+                wallpaperUri = gridHeroWallpaperUri(),
+                gridStyle = true,
+            )
         }
-    } else {
-        HomeHeroCard(
-            state = state,
-            actions = actions,
-            wallpaperUri = gridHeroWallpaperUri(),
-            gridStyle = true,
-        )
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             HomeTile(
                 modifier = Modifier.weight(1f),
@@ -1338,7 +1289,14 @@ private fun HomeTile(
                 dim = tileDim,
                 opacity = BackgroundConfig.getEffectiveDashboardCardBgOpacity(dark),
             )
-            Column(modifier = Modifier.padding(16.dp)) {
+            // The tiles stretch to the hero card's height beside them, so the content is centred
+            // rather than left pinned to the top of a taller box.
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Center,
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = icon,

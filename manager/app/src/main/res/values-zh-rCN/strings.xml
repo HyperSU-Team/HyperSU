@@ -837,11 +837,6 @@
     <string name="nav_icon_clear">移除该图标</string>
     <string name="nav_icon_clear_confirm">移除自定义图标并恢复内置图标？</string>
     <string name="layout_options_section_title">布局与配色</string>
-    <string name="stats_top_layout">网格卡片排列</string>
-    <string name="stats_top_layout_summary">网格布局的附加卡片放在状态卡下方还是旁边</string>
-    <string name="stats_top_layout_list">上下排列</string>
-    <string name="stats_top_layout_grid">左右并排</string>
-    <string name="stats_top_layout_changed">排列已更新</string>
     <string name="color_contrast">颜色对比度</string>
     <string name="color_contrast_summary">生成配色中前景与背景的分离强度</string>
     <string name="color_contrast_standard">标准</string>

@@ -917,11 +917,6 @@
     <string name="nav_icon_clear">Remove this icon</string>
     <string name="nav_icon_clear_confirm">Remove the custom icon and go back to the built-in one?</string>
     <string name="layout_options_section_title">Layout and Colours</string>
-    <string name="stats_top_layout">Grid card arrangement</string>
-    <string name="stats_top_layout_summary">Whether the Grid layout\'s extra cards sit under the status card or beside it</string>
-    <string name="stats_top_layout_list">Stacked</string>
-    <string name="stats_top_layout_grid">Side by side</string>
-    <string name="stats_top_layout_changed">Arrangement updated</string>
     <string name="color_contrast">Colour contrast</string>
     <string name="color_contrast_summary">How strongly the generated palette separates foreground from background</string>
     <string name="color_contrast_standard">Standard</string>

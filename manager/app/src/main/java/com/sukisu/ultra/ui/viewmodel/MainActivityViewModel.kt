@@ -69,6 +69,8 @@ class MainActivityViewModel(
             // Not part of MainActivityUiState, but a theme import writes these and the home screen
             // has to rebuild for the new layout to appear without a restart.
             "home_layout_style",
+            // Kept so that importing a FolkPatch theme still refreshes the screen: the arrangement
+            // is fixed now, but the key is part of what a theme carries.
             "stats_top_layout",
             "page_scale",
             "module_description_max_lines",

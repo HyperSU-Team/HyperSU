@@ -161,7 +161,9 @@ object ThemeManager {
             resolveHomeLayout(json.optString("homeLayoutStyle", ""))?.let {
                 putString("home_layout_style", it)
             }
-            // The Grid layout's card arrangement. Only the two names this app renders.
+            // The Grid layout's card arrangement. Only the two names this app knows, and only so
+            // that a FolkPatch theme carrying one still round-trips through export; the screen
+            // itself always draws the cards side by side now.
             json.optString("statsTopLayout", "")
                 .takeIf { it == STATS_TOP_LIST || it == STATS_TOP_GRID }
                 ?.let { putString("stats_top_layout", it) }
@@ -714,7 +716,7 @@ object ThemeManager {
                         ?: HOME_LAYOUT_FALLBACK,
                 ) ?: HOME_LAYOUT_FALLBACK,
             )
-            put("statsTopLayout", settings.stringPref("stats_top_layout", STATS_TOP_LIST) ?: STATS_TOP_LIST)
+            put("statsTopLayout", settings.stringPref("stats_top_layout", STATS_TOP_GRID) ?: STATS_TOP_GRID)
             put("colorContrast", settings.stringPref("color_contrast", ColorContrast.STANDARD.name) ?: ColorContrast.STANDARD.name)
             // The language, so a theme carries it both ways. Read through LocaleHelper for the
             // same reason it is applied through it: the preference is only a mirror of the
