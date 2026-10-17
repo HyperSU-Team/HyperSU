@@ -92,6 +92,8 @@ import com.sukisu.ultra.ui.component.folk.FolkSeverity
 import com.sukisu.ultra.ui.component.folk.FolkStatusDot
 import com.sukisu.ultra.ui.component.folk.FolkTitleStyle
 import com.sukisu.ultra.ui.component.folk.FolkWrapSafeText
+import com.sukisu.ultra.ui.component.folk.folkPreferenceSummaryStyle
+import com.sukisu.ultra.ui.component.folk.folkPreferenceValueStyle
 import com.sukisu.ultra.ui.component.folk.folkSeverityColor
 import com.sukisu.ultra.ui.component.rebootlistpopup.RebootListPopup
 import com.sukisu.ultra.ui.component.statustag.StatusTag
@@ -1017,6 +1019,7 @@ private fun HomeGridStatusCards(
                 label = stringResource(R.string.home_kernel),
                 value = state.systemInfo.kernelVersion,
                 severity = if (state.isManager) FolkSeverity.Positive else FolkSeverity.Critical,
+                plain = true,
             )
             HomeTile(
                 modifier = Modifier.weight(1f),
@@ -1024,6 +1027,7 @@ private fun HomeGridStatusCards(
                 label = stringResource(R.string.home_selinux_status),
                 value = state.systemInfo.selinuxStatus,
                 severity = if (state.isSELinuxPermissive) FolkSeverity.Caution else FolkSeverity.Positive,
+                plain = true,
             )
         }
     }
@@ -1261,6 +1265,14 @@ private fun HomeTile(
     value: String,
     severity: FolkSeverity,
     cardId: String? = null,
+    /**
+     * Draw the tile as plain text rather than as a card.
+     *
+     * This is how FolkPatch's own home screen shows these two readings: a small icon and a label
+     * on one line, the value under them, and no surface, no border and no status dot. Only the
+     * Dashboard layout, which gives each tile its own wallpaper, still draws the card form.
+     */
+    plain: Boolean = false,
 ) {
     // 只有 Dashboard 布局的磁贴会带 cardId，其余布局的磁贴不受该开关影响。
     val uri = if (cardId != null && BackgroundConfig.isDashboardCardBackgroundEnabled) {
@@ -1277,6 +1289,43 @@ private fun HomeTile(
         muted = MaterialTheme.colorScheme.onSurfaceVariant,
         dim = tileDim,
     )
+
+    if (plain) {
+        // FolkPatch's arrangement: icon and label on one line, the value beneath, nothing else.
+        Column(
+            modifier = modifier.padding(horizontal = 16.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Spacer(Modifier.size(6.dp))
+                Text(
+                    text = label,
+                    style = folkPreferenceSummaryStyle(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = value,
+                style = folkPreferenceValueStyle(),
+                fontWeight = FontWeight.SemiBold,
+                // The same severity colour the card form tints its dot with, so a permissive
+                // SELinux still reads as a caution here rather than as plain text.
+                color = folkSeverityColor(severity),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        return
+    }
 
     androidx.compose.material3.Surface(
         modifier = modifier,

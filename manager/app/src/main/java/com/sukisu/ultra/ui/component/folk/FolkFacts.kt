@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -21,7 +20,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.sukisu.ultra.R
 import com.sukisu.ultra.data.repository.SettingsRepositoryImpl
-import com.sukisu.ultra.ui.theme.tokens.FolkTheme
 
 /**
  * A list of label/value facts inside one container.
@@ -42,6 +40,14 @@ class FolkFactsScope {
     }
 }
 
+/**
+ * A list of label/value facts.
+ *
+ * No dividers and no container: FolkPatch draws these as plain stacked text, with the label and
+ * its value directly under one another and nothing between rows. Drawing hairlines between them
+ * turned the block into a settings list, which is a different thing from what this screen is -
+ * a readout of what the device is.
+ */
 @Composable
 fun FolkFactsGroup(
     modifier: Modifier = Modifier,
@@ -52,15 +58,7 @@ fun FolkFactsGroup(
     if (scope.items.isEmpty()) return
 
     Column(modifier = modifier.fillMaxWidth()) {
-        scope.items.forEachIndexed { index, item ->
-            if (index > 0) {
-                HorizontalDivider(
-                    color = FolkTheme.palette.separator,
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                )
-            }
-            item()
-        }
+        scope.items.forEach { item -> item() }
     }
 }
 
@@ -105,8 +103,12 @@ fun FolkFactRow(
                     Modifier
                 }
             )
-            .padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+            // FolkPatch's spacing, not a settings row's: the label and its value are one block of
+            // text, so the gap inside the row is small and the gap between rows is what separates
+            // them. A settings row's taller padding plus a divider made each fact read as its own
+            // card, which is why the block looked nothing like the original.
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         Text(
             text = label,
