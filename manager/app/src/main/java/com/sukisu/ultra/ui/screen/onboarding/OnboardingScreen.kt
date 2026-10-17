@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
@@ -29,19 +28,24 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.core.content.ContextCompat
 import com.sukisu.ultra.R
 import com.sukisu.ultra.data.repository.SettingsRepositoryImpl
 import com.sukisu.ultra.ui.component.folk.FolkButtonDefaults
+import com.sukisu.ultra.ui.component.folk.FolkFactsGroup
 import com.sukisu.ultra.ui.component.folk.FolkPreference
 import com.sukisu.ultra.ui.component.folk.FolkScaffold
-import com.sukisu.ultra.ui.component.folk.FolkSettingsSectionGroup
+import com.sukisu.ultra.ui.component.folk.FolkSettingsGroup
+import com.sukisu.ultra.ui.component.folk.FolkSettingsSection
+import com.sukisu.ultra.ui.component.folk.FolkSeverity
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
 import com.sukisu.ultra.ui.viewmodel.HomeViewModel
 
@@ -51,7 +55,8 @@ import com.sukisu.ultra.ui.viewmodel.HomeViewModel
  *
  * Deliberately short and skippable - this is a root tool for people who already know what they
  * came for, so the guide exists to surface the one thing that silently breaks everything (a
- * kernel that does not recognise the manager) rather than to hold anyone's hand.
+ * kernel that does not recognise the manager) rather than to hold anyone's hand. The layout is
+ * the settings page's: section title, one group surface, facts inside it.
  */
 @Composable
 fun OnboardingScreen() {
@@ -85,7 +90,10 @@ fun OnboardingScreen() {
             if (step > 0) step -= 1 else finish()
         },
         actions = {
-            TextButton(onClick = finish) {
+            TextButton(
+                onClick = finish,
+                colors = FolkButtonDefaults.textColors(),
+            ) {
                 Text(stringResource(R.string.onboard_skip))
             }
         },
@@ -99,8 +107,7 @@ fun OnboardingScreen() {
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth(),
-                contentPadding = PaddingValues(bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(top = 8.dp, bottom = 8.dp),
             ) {
                 when (step) {
                     0 -> item {
@@ -118,37 +125,55 @@ fun OnboardingScreen() {
                             )
                         }
                         item {
-                            FolkSettingsSectionGroup(
-                                title = stringResource(R.string.onboard_env_title),
-                            ) {
-                                item {
-                                    FolkPreference(
-                                        title = stringResource(R.string.onboard_env_root),
-                                        summary = if (state.isRootAvailable) yes else no,
-                                    )
-                                }
-                                item {
-                                    FolkPreference(
-                                        title = stringResource(R.string.onboard_env_manager),
-                                        summary = if (state.isManager) yes else no,
-                                    )
-                                }
-                                item {
-                                    FolkPreference(
-                                        title = stringResource(R.string.onboard_env_kernel),
-                                        summary = state.kernelUAPIVersion?.toString() ?: no,
-                                    )
+                            FolkSettingsSection(title = stringResource(R.string.onboard_env_title)) {
+                                FolkSettingsGroup {
+                                    item {
+                                        FolkFactsGroup {
+                                            fact(
+                                                label = stringResource(R.string.onboard_env_root),
+                                                value = if (state.isRootAvailable) yes else no,
+                                                valueTone = if (state.isRootAvailable) {
+                                                    FolkSeverity.Positive
+                                                } else {
+                                                    FolkSeverity.Critical
+                                                },
+                                            )
+                                            fact(
+                                                label = stringResource(R.string.onboard_env_manager),
+                                                value = if (state.isManager) yes else no,
+                                                valueTone = if (state.isManager) {
+                                                    FolkSeverity.Positive
+                                                } else {
+                                                    FolkSeverity.Critical
+                                                },
+                                            )
+                                            fact(
+                                                label = stringResource(R.string.onboard_env_kernel),
+                                                value = state.kernelUAPIVersion?.toString() ?: no,
+                                                valueTone = if (state.requiresNewKernel) {
+                                                    FolkSeverity.Caution
+                                                } else {
+                                                    FolkSeverity.Neutral
+                                                },
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
                         if (!state.isManager) {
                             item {
-                                Text(
-                                    text = stringResource(R.string.onboard_env_bad),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.error,
-                                    modifier = Modifier.padding(horizontal = 20.dp),
-                                )
+                                FolkSettingsSection {
+                                    Text(
+                                        text = stringResource(R.string.onboard_env_bad),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.error,
+                                        modifier = Modifier.padding(
+                                            horizontal = 20.dp,
+                                            vertical = 4.dp,
+                                        ),
+                                    )
+                                }
                             }
                         }
                     }
@@ -161,44 +186,56 @@ fun OnboardingScreen() {
                             )
                         }
                         item {
-                            FolkSettingsSectionGroup(
-                                title = stringResource(R.string.onboard_perm_title),
-                            ) {
-                                item {
-                                    PermissionRow(
-                                        title = stringResource(R.string.onboard_perm_notification),
-                                        summary = stringResource(
-                                            R.string.onboard_perm_notification_summary,
-                                        ),
-                                        granted = notificationsGranted,
-                                        actionLabel = stringResource(R.string.onboard_perm_grant),
-                                        onAction = {
-                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                                permissionLauncher.launch(
-                                                    Manifest.permission.POST_NOTIFICATIONS,
+                            FolkSettingsSection(title = stringResource(R.string.onboard_perm_title)) {
+                                FolkSettingsGroup {
+                                    item {
+                                        FolkPreference(
+                                            title = stringResource(R.string.onboard_perm_notification),
+                                            summary = stringResource(
+                                                R.string.onboard_perm_notification_summary,
+                                            ),
+                                            trailing = {
+                                                PermissionAction(
+                                                    granted = notificationsGranted,
+                                                    label = stringResource(R.string.onboard_perm_grant),
+                                                    onAction = {
+                                                        if (Build.VERSION.SDK_INT >=
+                                                            Build.VERSION_CODES.TIRAMISU
+                                                        ) {
+                                                            permissionLauncher.launch(
+                                                                Manifest.permission
+                                                                    .POST_NOTIFICATIONS,
+                                                            )
+                                                        }
+                                                    },
                                                 )
-                                            }
-                                        },
-                                    )
-                                }
-                                item {
-                                    PermissionRow(
-                                        title = stringResource(R.string.onboard_perm_battery),
-                                        summary = stringResource(
-                                            R.string.onboard_perm_battery_summary,
-                                        ),
-                                        granted = false,
-                                        actionLabel = stringResource(R.string.onboard_perm_open),
-                                        onAction = {
-                                            runCatching {
-                                                context.startActivity(
-                                                    Intent(
-                                                        Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS,
-                                                    ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                                            },
+                                        )
+                                    }
+                                    item {
+                                        FolkPreference(
+                                            title = stringResource(R.string.onboard_perm_battery),
+                                            summary = stringResource(
+                                                R.string.onboard_perm_battery_summary,
+                                            ),
+                                            trailing = {
+                                                PermissionAction(
+                                                    granted = false,
+                                                    label = stringResource(R.string.onboard_perm_open),
+                                                    onAction = {
+                                                        runCatching {
+                                                            context.startActivity(
+                                                                Intent(
+                                                                    Settings
+                                                                        .ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS,
+                                                                ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                                                            )
+                                                        }
+                                                    },
                                                 )
-                                            }
-                                        },
-                                    )
+                                            },
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -210,17 +247,23 @@ fun OnboardingScreen() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 if (step > 0) {
-                    TextButton(onClick = { step -= 1 }) {
+                    TextButton(
+                        onClick = { step -= 1 },
+                        colors = FolkButtonDefaults.textColors(),
+                    ) {
                         Text(stringResource(R.string.onboard_back))
                     }
                 }
                 Spacer(Modifier.weight(1f))
                 if (step == 1) {
-                    TextButton(onClick = { viewModel.refresh() }) {
+                    TextButton(
+                        onClick = { viewModel.refresh() },
+                        colors = FolkButtonDefaults.textColors(),
+                    ) {
                         Text(stringResource(R.string.onboard_refresh))
                     }
                 }
@@ -247,46 +290,43 @@ private const val LAST_STEP = 2
 
 @Composable
 private fun StepCard(title: String, body: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp, vertical = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Text(text = title, style = MaterialTheme.typography.headlineSmall)
-        Text(
-            text = body,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+    FolkSettingsSection {
+        FolkSettingsGroup {
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                    Text(
+                        text = body,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
     }
 }
 
 @Composable
-private fun PermissionRow(
-    title: String,
-    summary: String,
+private fun PermissionAction(
     granted: Boolean,
-    actionLabel: String,
+    label: String,
     onAction: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+    TextButton(
+        onClick = onAction,
+        enabled = !granted,
+        colors = FolkButtonDefaults.textColors(),
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(text = title, style = MaterialTheme.typography.bodyLarge)
-            Text(
-                text = summary,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        TextButton(onClick = onAction, enabled = !granted) {
-            Text(text = if (granted) stringResource(R.string.device_value_yes) else actionLabel)
-        }
+        Text(text = if (granted) stringResource(R.string.device_value_yes) else label)
     }
 }
 

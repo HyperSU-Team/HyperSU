@@ -6,8 +6,10 @@ import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
@@ -27,9 +29,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.component.folk.FolkButtonDefaults
-import com.sukisu.ultra.ui.component.folk.FolkPreference
+import com.sukisu.ultra.ui.component.folk.FolkFactsGroup
 import com.sukisu.ultra.ui.component.folk.FolkScaffold
-import com.sukisu.ultra.ui.component.folk.FolkSettingsSectionGroup
+import com.sukisu.ultra.ui.component.folk.FolkSettingsGroup
+import com.sukisu.ultra.ui.component.folk.FolkSettingsSection
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
 import com.sukisu.ultra.ui.util.getSuperuserCount
 import com.sukisu.ultra.ui.util.rememberSuSFSStatus
@@ -42,10 +45,10 @@ import kotlinx.coroutines.withContext
  * Everything about this device in one place: the phone itself, the kernel underneath it, the
  * manager running on top, and what each of them is currently doing.
  *
- * The layout follows the device card in HyperCeiler's about page (device name, market name,
- * Android version, system version), then adds the parts this app is actually about - the kernel
- * UAPI, the SUSFS state, whether the kernel recognises this manager - and a copy action, so a
- * bug report can carry the whole picture instead of a screenshot of four screens.
+ * The rows are FolkFactsGroup facts, the same label/value shape the home page uses, so a value
+ * that is long (a kernel string, a fingerprint-sized version) wraps under its label instead of
+ * squeezing it. The groups and the section titles are the settings page's, so the page reads as
+ * part of the app rather than as a table bolted onto it.
  */
 @Composable
 fun DeviceScreen() {
@@ -108,14 +111,17 @@ fun DeviceScreen() {
                 (if (state.kernelVersion.isGKI()) yes else no),
         )
         add(context.getString(R.string.device_row_selinux) to state.systemInfo.selinuxStatus)
-        add(context.getString(R.string.device_row_seccomp) to state.systemInfo.seccompStatus.toString())
+        add(
+            context.getString(R.string.device_row_seccomp) to
+                state.systemInfo.seccompStatus.toString(),
+        )
         add(context.getString(R.string.device_row_susfs) to (if (susfs) yes else no))
         add(
             context.getString(R.string.device_row_lkm) to
                 when (state.lkmMode) {
                     true -> yes
                     false -> no
-                    null -> context.getString(R.string.device_value_no)
+                    null -> no
                 },
         )
     }
@@ -154,15 +160,20 @@ fun DeviceScreen() {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
             item { DeviceSection(stringResource(R.string.device_section_device), deviceRows) }
             item { DeviceSection(stringResource(R.string.device_section_kernel), kernelRows) }
             item { DeviceSection(stringResource(R.string.device_section_manager), managerRows) }
             item { DeviceSection(stringResource(R.string.device_section_stats), statsRows) }
             item {
+                Spacer(Modifier.height(8.dp))
                 Button(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    colors = FolkButtonDefaults.filledColors(),
                     onClick = {
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
                             as? ClipboardManager
@@ -181,10 +192,6 @@ fun DeviceScreen() {
                         )
                         copied = true
                     },
-                    colors = FolkButtonDefaults.filledColors(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
                 ) {
                     Text(
                         text = context.getString(
@@ -200,10 +207,12 @@ fun DeviceScreen() {
 @Composable
 private fun DeviceSection(title: String, rows: List<Pair<String, String>>) {
     if (rows.isEmpty()) return
-    FolkSettingsSectionGroup(title = title) {
-        rows.forEach { (label, value) ->
-            item(key = label) {
-                FolkPreference(title = label, summary = value)
+    FolkSettingsSection(title = title) {
+        FolkSettingsGroup {
+            item {
+                FolkFactsGroup {
+                    rows.forEach { row -> fact(row.first, row.second) }
+                }
             }
         }
     }
