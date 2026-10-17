@@ -159,9 +159,12 @@ fun FloatingBottomBar(
     // The caller works in pages, the bar in tab positions. When the bar shows every page the two
     // are the same number; when entries are dropped they are not, so the incoming page is mapped
     // back to the tab that opens it before anything measures with it.
-    val tabForPage = remember(tabsCount, pageForTab) {
-        (0 until tabsCount).firstOrNull { pageForTab(it) == selectedIndex } ?: 0
-    }
+    //
+    // Computed on every composition rather than remembered: `pageForTab` is a fresh lambda each
+    // time, so remembering on it never hit the cache, and remembering without it froze the result
+    // at whatever page was selected when the bar first composed - which pinned the pill to Home.
+    // The work is a walk over at most four entries.
+    val tabForPage = (0 until tabsCount).firstOrNull { pageForTab(it) == selectedIndex } ?: 0
 
     var currentIndex by remember { mutableIntStateOf(tabForPage) }
     val onSelectedUpdated by rememberUpdatedState(onSelected)
@@ -175,7 +178,11 @@ fun FloatingBottomBar(
             .coerceIn(0, tabsCount - 1)
     }
 
-    val dampedDragAnimation = remember(animationScope, tabsCount, density, isLtr, tabForPage) {
+    // Keyed on the tab count and the layout, not on `tabForPage`: the animation object holds
+    // position state, so rebuilding it whenever the selected page changed would reset the pill
+    // instead of animating it. The initial value only matters on the first composition, and
+    // `LaunchedEffect` below drives every later change.
+    val dampedDragAnimation = remember(animationScope, tabsCount, density, isLtr) {
         DampedDragAnimation(
             animationScope = animationScope,
             initialValue = tabForPage.toFloat(),

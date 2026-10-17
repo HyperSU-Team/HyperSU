@@ -364,16 +364,21 @@ class ModuleViewModel(
                         fileName = "${module.name}-${updateInfo.version}.zip",
                     ),
                     title = res.getString(R.string.module_update),
-                    content = "",
+                    // Never blank: the dialog skips its whole content area for a blank string, so
+                    // an empty placeholder left the user with a title and two buttons and no word
+                    // about which module or version was being installed. The changelog replaces
+                    // this once it arrives.
+                    content = res.getString(R.string.module_start_downloading).format(module.name),
+                    markdown = false,
                     html = false,
-                    confirm = res.getString(R.string.update),
+                    confirm = res.getString(R.string.module_update),
                     dismiss = res.getString(android.R.string.cancel),
                 ),
-                // The spinner's job ends here: the dialog is up, so the card can go back to normal.
-                preparingUpdateModuleIds = it.preparingUpdateModuleIds - module.id,
             )
         }
-
+        // The spinner stays until the dialog is dismissed, not until it appears. Clearing it here
+        // made it last a single frame - the dialog covers the card, so the user never saw the
+        // feedback that the tap had been received.
         viewModelScope.launch {
             val changelog = runCatching { fetchUpdateChangelog(module, updateInfo) }.getOrNull()
             if (changelog.isNullOrBlank()) return@launch
@@ -398,6 +403,13 @@ class ModuleViewModel(
         }
     }
 
+    /** Clears the spinner for a module whose update dialog has been closed. */
+    private fun clearPreparingUpdate(moduleId: String) {
+        _uiState.update {
+            it.copy(preparingUpdateModuleIds = it.preparingUpdateModuleIds - moduleId)
+        }
+    }
+
     fun requestUninstallConfirmation(module: Module) {
         val res = ksuApp.resources
         _uiState.update {
@@ -416,6 +428,11 @@ class ModuleViewModel(
     }
 
     fun dismissConfirmRequest() {
+        // The update chip's spinner is cleared here rather than when the dialog opened, so the
+        // feedback survives as long as the dialog does.
+        (_uiState.value.confirmDialogState?.request as? ModuleConfirmRequest.Update)
+            ?.module?.id
+            ?.let { clearPreparingUpdate(it) }
         _uiState.update { it.copy(confirmDialogState = null) }
     }
 

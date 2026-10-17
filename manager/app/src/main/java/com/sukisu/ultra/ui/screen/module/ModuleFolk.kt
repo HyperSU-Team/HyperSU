@@ -160,11 +160,11 @@ private const val ModuleChipAnimationMillis = 120
 /**
  * How long the update chip takes to appear or disappear.
  *
- * Shorter than the other chips on purpose: this one toggles whenever the update check answers, so
- * it is seen far more often than the rest, and anything above about a tenth of a second reads as
- * the module list hesitating instead of the chip arriving.
+ * Short, because this chip toggles on every update check, but not so short that it is invisible:
+ * below roughly a tenth of a second the eye reads it as a jump rather than as a fade, which is
+ * what 60ms looked like.
  */
-private const val UpdateChipAnimationMillis = 60
+private const val UpdateChipAnimationMillis = 120
 
 /**
  * The Module tab in the FolkPatch design.
@@ -845,19 +845,29 @@ private fun BoxScope.ModuleBannerLayer(module: Module) {
         wallpaperOpacity = BackgroundConfig.customBackgroundOpacity,
     )
     // 任何一个影响解析顺序的配置变化都要重取，否则切了 API 源还会继续显示旧源的图。
-    val configKey = listOf(
-        BackgroundConfig.isBannerEnabled,
-        BackgroundConfig.isFolkBannerEnabled,
-        BackgroundConfig.isBannerApiModeEnabled,
-        BackgroundConfig.bannerApiSource,
-    )
+    //
+    // 拼成一个字符串而不是留一个 list：`produceState` 按相等性判断 key，而每次重组新建的
+    // list 与上一个永远不相等，等于每帧都重启一次加载 —— 那正是「滑到哪里加载到哪里」。
+    val configKey = buildString {
+        append(BackgroundConfig.isBannerEnabled).append('|')
+        append(BackgroundConfig.isFolkBannerEnabled).append('|')
+        append(BackgroundConfig.isBannerApiModeEnabled).append('|')
+        append(BackgroundConfig.bannerApiSource)
+    }
 
+    // The banner is resolved once per module, not once per composition.
+    //
+    // It used to pass `reload = true`, which forced a fresh resolve every time the card entered
+    // composition - so scrolling back over a card re-fetched its picture instead of using the one
+    // already in memory, and the list appeared to load a banner per card as it scrolled past. The
+    // cache is keyed by module id, so a plain load is already the right answer; what invalidates
+    // it is the source settings changing, and `configKey` is what re-keys this state for that.
     val bytes by produceState(
         initialValue = ModuleBanner.loadSync(module.id),
         key1 = module.id,
         key2 = configKey,
     ) {
-        value = ModuleBanner.load(context, module.id, reload = true)
+        value = ModuleBanner.load(context, module.id)
     }
 
     // Decoded off the main thread.
