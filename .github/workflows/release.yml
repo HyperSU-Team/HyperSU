@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v4
 
       - name: Rename ksud
         run: |
@@ -93,7 +93,8 @@ jobs:
       - name: release
         uses: softprops/action-gh-release@v2
         with:
-          token: ${{ secrets.GH_TOKEN }}
+          # 使用内置令牌，无需任何 Secret
+          token: ${{ github.token }}
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
