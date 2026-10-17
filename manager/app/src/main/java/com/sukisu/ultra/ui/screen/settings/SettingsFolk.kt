@@ -383,6 +383,22 @@ fun SettingPagerFolk(
                     }
                     item {
                         FolkNavigationPreference(
+                            title = stringResource(R.string.settings_device),
+                            summary = stringResource(R.string.settings_device_summary),
+                            icon = Icons.Rounded.Android,
+                            onClick = actions.onOpenDevice,
+                        )
+                    }
+                    item {
+                        FolkNavigationPreference(
+                            title = stringResource(R.string.settings_onboarding),
+                            summary = stringResource(R.string.settings_onboarding_summary),
+                            icon = Icons.AutoMirrored.Filled.Article,
+                            onClick = actions.onOpenOnboarding,
+                        )
+                    }
+                    item {
+                        FolkNavigationPreference(
                             title = stringResource(R.string.about),
                             icon = Icons.Filled.Info,
                             onClick = actions.onOpenAbout,

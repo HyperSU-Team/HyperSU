@@ -63,6 +63,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import com.sukisu.ultra.Natives
+import com.sukisu.ultra.data.repository.SettingsRepositoryImpl
 import com.sukisu.ultra.ui.navigation.FolkBottomBar
 import com.sukisu.ultra.ui.navigation.FolkNavigationRail
 import com.sukisu.ultra.ui.navigation.LocalBottomBarVisible
@@ -85,10 +86,12 @@ import com.sukisu.ultra.ui.screen.colorpalette.ColorPaletteScreen
 import com.sukisu.ultra.ui.screen.executemoduleaction.ExecuteModuleActionScreen
 import com.sukisu.ultra.ui.screen.flash.FlashScreen
 import com.sukisu.ultra.ui.screen.home.HomePager
+import com.sukisu.ultra.ui.screen.device.DeviceScreen
 import com.sukisu.ultra.ui.screen.install.InstallScreen
 import com.sukisu.ultra.ui.screen.module.ModulePager
 import com.sukisu.ultra.ui.screen.modulerepo.ModuleRepoDetailScreen
 import com.sukisu.ultra.ui.screen.modulerepo.ModuleRepoScreen
+import com.sukisu.ultra.ui.screen.onboarding.OnboardingScreen
 import com.sukisu.ultra.ui.screen.settings.LanguagePickerScreen
 import com.sukisu.ultra.ui.screen.settings.SettingPager
 import com.sukisu.ultra.ui.screen.settings.tools.ToolsScreen
@@ -313,6 +316,8 @@ class MainActivity : ComponentActivity() {
                                 entry<Route.SuSFS>(swipeDismiss = swipeDismiss) { SuSFSScreen() }
                                 entry<Route.Tool>(swipeDismiss = swipeDismiss) { ToolsScreen() }
                                 entry<Route.UmountManager>(swipeDismiss = swipeDismiss) { UmountManagerScreen() }
+                                entry<Route.Device>(swipeDismiss = swipeDismiss) { DeviceScreen() }
+                                entry<Route.Onboarding>(swipeDismiss = swipeDismiss) { OnboardingScreen() }
                                 entry<Route.Language>(swipeDismiss = swipeDismiss) {
                                     // The language lives in SettingsViewModel, which owns both
                                     // the stored value and the switch that recreates the
@@ -351,6 +356,16 @@ fun MainScreen(
     onPageChanged: (Int) -> Unit = {},
 ) {
     val navController = LocalNavigator.current
+
+    // First run: the guide introduces the one thing that silently breaks everything - a kernel
+    // that does not recognise this manager - before the home page is read as broken.
+    val onboardingRepo = remember { SettingsRepositoryImpl() }
+    LaunchedEffect(Unit) {
+        if (!onboardingRepo.onboardingDone) {
+            navController.push(Route.Onboarding)
+        }
+    }
+
     val enableFloatingBottomBar = LocalEnableFloatingBottomBar.current
     // The Superuser and Module tabs only mean something when the kernel recognises this manager:
     // without that it hides both interfaces from the app, so the tabs would be two dead pages

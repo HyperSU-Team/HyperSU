@@ -4,6 +4,7 @@ interface SettingsRepository {
     var appLanguage: String
     var checkModuleUpdate: Boolean
     var checkUpdate: Boolean
+    var onboardingDone: Boolean
     var alternativeIcon : Boolean
     var themeMode: Int
     var keyColor: Int
