@@ -23,7 +23,7 @@ MDIR    := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 # the repository and the branch name the main branch. The LKM build counts commits on main;
 # counting this branch instead would give a different number, because this branch carries
 # its own commit on top of main.
-REPO_OWNER  := KirinNova
+REPO_OWNER  := HyperSU-Team
 REPO_NAME   := HyperSU
 REPO_BRANCH := main
 

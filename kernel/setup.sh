@@ -4,7 +4,7 @@ set -eu
 KERNEL_ROOT=$(pwd)
 # HyperSU's own builtin branch. The version the kernel reports is derived from this
 # repository, so cloning anything else would report that other project's version.
-KSU_REPO=${KSU_REPO:-https://github.com/KirinNova/HyperSU.git}
+KSU_REPO=${KSU_REPO:-https://github.com/HyperSU-Team/HyperSU.git}
 KSU_BRANCH=${KSU_BRANCH:-builtin}
 KSU_DIR=${KSU_DIR:-$KERNEL_ROOT/KernelSU}
 MANAGED_MARKER=$KSU_DIR/.git/hyper-su-builtin-setup-managed
