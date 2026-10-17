@@ -8,7 +8,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.suspendCancellableCoroutine
 import okhttp3.Request
-import kotlinx.coroutines.resume
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.Response
@@ -136,17 +135,23 @@ object BannerApiService {
                     call.enqueue(object : Callback {
                         override fun onFailure(call: Call, e: IOException) {
                             Log.w(TAG, "Banner request failed: ${e.message}")
-                            continuation.resume(null)
+                            // tryResume rather than resume: the timeout may already have cancelled
+                            // this continuation, and resume would throw for that.
+                            continuation.tryResume(null)
+                            Unit
                         }
 
                         override fun onResponse(call: Call, response: Response) {
                             response.use {
                                 if (!it.isSuccessful) {
                                     Log.w(TAG, "API request failed with code: ${it.code}")
-                                    continuation.resume(null)
+                                    continuation.tryResume(null)
                                 } else {
-                                    continuation.resume(runCatching { it.body?.bytes() }.getOrNull())
+                                    continuation.tryResume(
+                                        runCatching { it.body?.bytes() }.getOrNull(),
+                                    )
                                 }
+                                Unit
                             }
                         }
                     })
