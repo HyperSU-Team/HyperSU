@@ -57,7 +57,7 @@ class ModuleRepoRepositoryImpl : ModuleRepoRepository {
         val request = Request.Builder().url(url).build()
         ksuApp.okhttpClient.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
-                throw Exception("Fetch failed: ${response.statusCode} for $url")
+                throw Exception("Fetch failed: ${response.code} for $url")
             }
             return response.body?.string().orEmpty()
         }
