@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -66,17 +67,25 @@ fun SuperUserPager(
         navigator.push(Route.AppProfile(group.uid))
         viewModel.markNeedRefresh()
     }
-    val actions = SuperUserActions(
-        onRefresh = { viewModel.loadAppList(force = true) },
-        onOpenSulog = { navigator.push(Route.Sulog) },
-        onSearchTextChange = onSearchTextChange,
-        onSearchStatusChange = viewModel::updateSearchStatus,
-        onClearSearch = { onSearchTextChange("") },
-        onToggleShowSystemApps = onToggleShowSystemApps,
-        onToggleShowOnlyPrimaryUserApps = onToggleShowOnlyPrimaryUserApps,
-        onUpdateSortConfig = { viewModel.updateSortConfig(it) },
-        onOpenProfile = onOpenProfile,
-    )
+    // Remembered so the app list can skip recomposing rows whose data has not changed.
+    //
+    // A new SuperUserActions on every composition makes every child that takes it recompose -
+    // and this screen's child is a list of every installed app, so a search keystroke or a
+    // scroll-driven state change recomposed the whole list. Every captured value is a stable
+    // reference: the view model, the navigator, and lambdas over them.
+    val actions = remember(viewModel, navigator, onSearchTextChange) {
+        SuperUserActions(
+            onRefresh = { viewModel.loadAppList(force = true) },
+            onOpenSulog = { navigator.push(Route.Sulog) },
+            onSearchTextChange = onSearchTextChange,
+            onSearchStatusChange = viewModel::updateSearchStatus,
+            onClearSearch = { onSearchTextChange("") },
+            onToggleShowSystemApps = onToggleShowSystemApps,
+            onToggleShowOnlyPrimaryUserApps = onToggleShowOnlyPrimaryUserApps,
+            onUpdateSortConfig = { viewModel.updateSortConfig(it) },
+            onOpenProfile = onOpenProfile,
+        )
+    }
 
     SuperUserPagerFolk(
         uiState = uiState,

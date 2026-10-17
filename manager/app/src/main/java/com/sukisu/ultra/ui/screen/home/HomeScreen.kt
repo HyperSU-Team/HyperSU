@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -68,16 +69,21 @@ fun HomePager(
         if (jailbreakPending) loadingDialog.showLoading() else loadingDialog.hide()
     }
 
-    val actions = HomeActions(
-        onInstallClick = { navigator.push(Route.Install()) },
-        onOpenUrl = uriHandler::openUri,
-        onJailbreakClick = {
-            // Manager will be force-stopped and restarted by late-load on success. If that does
-            // not happen within the timeout, the jailbreak likely failed.
-            jailbreakPending = true
-            context.startService(Intent(context, MagicaService::class.java))
-        },
-    )
+    // Remembered so the home page can skip recomposing when nothing it shows has changed.
+    // A fresh HomeActions on every composition invalidates every child that takes it, which is
+    // the whole page - and this page recomposes on every scroll of its facts list.
+    val actions = remember(navigator, uriHandler, context) {
+        HomeActions(
+            onInstallClick = { navigator.push(Route.Install()) },
+            onOpenUrl = uriHandler::openUri,
+            onJailbreakClick = {
+                // Manager will be force-stopped and restarted by late-load on success. If that does
+                // not happen within the timeout, the jailbreak likely failed.
+                jailbreakPending = true
+                context.startService(Intent(context, MagicaService::class.java))
+            },
+        )
+    }
 
     HomePagerFolk(
         state = uiState,

@@ -605,30 +605,57 @@ private fun ModuleList(
     ) {
         items(displayModules, key = { it.id }, contentType = { "module" }) { module ->
             val moduleUpdateInfo = updateInfoMap[module.id] ?: ModuleUpdateInfo.Empty
+            val preparing = module.id in preparingUpdateModuleIds
 
-            ModuleItem(
-                module = module,
-                updateUrl = moduleUpdateInfo.downloadUrl,
-                onUninstallClicked = {
+            // The callbacks are remembered on the module they act on.
+            //
+            // A lambda written inline is a new object every time this item composes, and Compose
+            // compares parameters by equality to decide whether to skip a child. With five fresh
+            // lambdas per card, ModuleItem could never skip - so scrolling past a module whose
+            // data had not changed still recomposed the whole card, text and banner layer included.
+            // The captured values are the module and `actions`, both immutable, so keying on the
+            // id is enough.
+            val onUninstallClicked = remember(module.id, actions) {
+                {
                     if (module.remove) {
                         actions.onUndoUninstallModule(module)
                     } else {
                         actions.onRequestUninstallConfirmation(module)
                     }
-                },
-                onCheckChanged = { actions.onToggleModule(module) },
-                // No loading dialog. The chip itself spins while the update is being prepared, so
-                // a dialog on top of it only said the same thing twice - and a dialog that appears
-                // and disappears for a fraction of a second reads as a flash, not as progress.
-                onUpdate = { actions.onRequestUpdateConfirmation(module, moduleUpdateInfo) },
-                isPreparingUpdate = module.id in preparingUpdateModuleIds,
-                onAddShortcut = { type -> onModuleAddShortcut(module, type) },
-                onOpenWebUi = {
-                    if (module.hasWebUi) {
-                        actions.onOpenWebUi(module)
-                    }
-                },
-                onExecuteAction = { actions.onExecuteModuleAction(module) },
+                }
+            }
+            val onCheckChanged = remember(module.id, actions) {
+                // The switch's new value is not used: the view model reads the module's current
+                // state and flips it, so passing the value through would only be a second source
+                // of truth for the same thing.
+                { _: Boolean -> actions.onToggleModule(module) }
+            }
+            // No loading dialog. The chip itself spins while the update is being prepared, so a
+            // dialog on top of it only said the same thing twice - and a dialog that appears and
+            // disappears for a fraction of a second reads as a flash, not as progress.
+            val onUpdate = remember(module.id, actions, moduleUpdateInfo) {
+                { actions.onRequestUpdateConfirmation(module, moduleUpdateInfo) }
+            }
+            val onAddShortcut = remember(module.id, actions) {
+                { type: ShortcutType -> onModuleAddShortcut(module, type) }
+            }
+            val onOpenWebUi = remember(module.id, actions) {
+                { if (module.hasWebUi) actions.onOpenWebUi(module) }
+            }
+            val onExecuteAction = remember(module.id, actions) {
+                { actions.onExecuteModuleAction(module) }
+            }
+
+            ModuleItem(
+                module = module,
+                updateUrl = moduleUpdateInfo.downloadUrl,
+                onUninstallClicked = onUninstallClicked,
+                onCheckChanged = onCheckChanged,
+                onUpdate = onUpdate,
+                isPreparingUpdate = preparing,
+                onAddShortcut = onAddShortcut,
+                onOpenWebUi = onOpenWebUi,
+                onExecuteAction = onExecuteAction,
             )
         }
     }
@@ -663,7 +690,9 @@ private fun ModuleItem(
     androidx.compose.material3.Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(FolkShape.Corner20)
+            // No explicit clip: Surface already clips its content to `shape` below, so clipping
+            // here as well made the card take an extra offscreen layer for every frame it was
+            // drawn - one of the costs that showed up as scroll stutter on a long module list.
             .then(
                 if (canOpenWebUi || hasDescription) {
                     Modifier.clickable(interactionSource = cardInteractionSource, indication = null) {
@@ -678,7 +707,7 @@ private fun ModuleItem(
     ) {
         Box {
             ModuleBannerLayer(module)
-        Column(modifier = Modifier.padding(16.dp, 14.dp, 16.dp, 10.dp)) {
+            Column(modifier = Modifier.padding(16.dp, 14.dp, 16.dp, 10.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -888,8 +917,16 @@ private fun BoxScope.ModuleBannerLayer(module: Module) {
     }
     val image = bitmap ?: return
 
+    // The brush and its colour list are remembered on the colour they are built from. Both were
+    // allocated on every composition, which is a fresh Brush and a fresh List per card per frame -
+    // during a scroll that is continuous garbage for the collector to chase.
+    val fadeColor = bannerFadeColor()
+    val fadeBrush = remember(fadeColor) {
+        Brush.verticalGradient(colors = listOf(Color.Transparent, fadeColor))
+    }
+
     Image(
-        painter = BitmapPainter(image),
+        painter = remember(image) { BitmapPainter(image) },
         contentDescription = null,
         contentScale = ContentScale.Crop,
         modifier = Modifier
@@ -900,11 +937,7 @@ private fun BoxScope.ModuleBannerLayer(module: Module) {
     Box(
         modifier = Modifier
             .matchParentSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(Color.Transparent, bannerFadeColor()),
-                ),
-            ),
+            .background(fadeBrush),
     )
 }
 

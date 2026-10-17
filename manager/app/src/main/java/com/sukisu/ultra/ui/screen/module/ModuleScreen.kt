@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -90,7 +91,12 @@ fun ModulePager(
         onPauseOrDispose {}
     }
 
-    val actions = ModuleActions(
+    // Remembered so the module list can skip recomposing cards whose data has not changed.
+    // Rebuilt on every composition otherwise, and a new ModuleActions makes every child
+    // that takes it as a parameter recompose - which for a long list is the whole list.
+    // Every captured value below is a stable reference (viewModel, navigator, scope, launcher).
+    val actions = remember(viewModel, navigator, scope, webUILauncher) {
+    ModuleActions(
         onRefresh = {
             viewModel.fetchModuleList(checkUpdate = true)
         },
@@ -169,6 +175,7 @@ fun ModulePager(
             viewModel.markNeedRefresh()
         },
     )
+    }
 
     ModulePagerFolk(
         uiState = rawUiState,
