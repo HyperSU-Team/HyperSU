@@ -130,28 +130,26 @@ object BannerApiService {
 
         return try {
             withTimeoutOrNull(FETCH_TIMEOUT_MS) {
-                suspendCancellableCoroutine { continuation ->
+                suspendCancellableCoroutine<ByteArray?> { continuation ->
                     continuation.invokeOnCancellation { call.cancel() }
                     call.enqueue(object : Callback {
                         override fun onFailure(call: Call, e: IOException) {
                             Log.w(TAG, "Banner request failed: ${e.message}")
-                            // tryResume rather than resume: the timeout may already have cancelled
-                            // this continuation, and resume would throw for that.
-                            continuation.tryResume(null)
-                            Unit
+                            // resumeWith, not resume: it is the plain Continuation API, so it is
+                            // public and it is safe to call after the timeout has already
+                            // cancelled the continuation - it simply has no effect then.
+                            continuation.resumeWith(Result.success(null))
                         }
 
                         override fun onResponse(call: Call, response: Response) {
                             response.use {
-                                if (!it.isSuccessful) {
+                                val bytes: ByteArray? = if (!it.isSuccessful) {
                                     Log.w(TAG, "API request failed with code: ${it.code}")
-                                    continuation.tryResume(null)
+                                    null
                                 } else {
-                                    continuation.tryResume(
-                                        runCatching { it.body?.bytes() }.getOrNull(),
-                                    )
+                                    runCatching { it.body?.bytes() }.getOrNull()
                                 }
-                                Unit
+                                continuation.resumeWith(Result.success(bytes))
                             }
                         }
                     })
