@@ -8,6 +8,15 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -110,11 +119,19 @@ fun OnboardingScreen() {
                 contentPadding = PaddingValues(top = 8.dp, bottom = 8.dp),
             ) {
                 when (step) {
-                    0 -> item {
-                        StepCard(
-                            title = stringResource(R.string.onboard_welcome_title),
-                            body = stringResource(R.string.onboard_welcome_body),
-                        )
+                    0 -> {
+                        item {
+                            GuideHeader(
+                                name = context.getString(R.string.app_name),
+                                version = state.systemInfo.managerVersion,
+                            )
+                        }
+                        item {
+                            StepCard(
+                                title = stringResource(R.string.onboard_welcome_title),
+                                body = stringResource(R.string.onboard_welcome_body),
+                            )
+                        }
                     }
 
                     1 -> {
@@ -287,6 +304,46 @@ fun OnboardingScreen() {
 }
 
 private const val LAST_STEP = 2
+
+/**
+ * The mark and version above the first step, the same header the about page carries: this is
+ * a guide that introduces the app, so it opens with the app rather than with a paragraph.
+ */
+@Composable
+private fun GuideHeader(name: String, version: String) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(top = 40.dp, bottom = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(88.dp)
+                .clip(RoundedCornerShape(22.dp))
+                .background(Color.White),
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.ic_launcher_foreground),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
+            )
+        }
+        Text(
+            modifier = Modifier.padding(top = 14.dp),
+            text = name,
+            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.headlineSmall,
+        )
+        Text(
+            text = version,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
 
 @Composable
 private fun StepCard(title: String, body: String) {
