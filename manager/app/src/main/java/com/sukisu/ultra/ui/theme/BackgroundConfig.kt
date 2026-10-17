@@ -154,12 +154,17 @@ object BackgroundConfig {
     var bannerCustomOpacity: Float by mutableStateOf(1.0f)
         private set
 
-    /** API 模式：按模块 ID 做种子，从随机图接口或本地目录取横幅。 */
-    var isBannerApiModeEnabled: Boolean by mutableStateOf(false)
+    /**
+     * API 模式：按模块 ID 做种子，从随机图接口或本地目录取横幅。
+     *
+     * 默认开。模块卡片没有横幅时只有一行文字，列表读起来是一堵墙；默认给一个随机图源，
+     * 用户第一次打开就能看到效果，不想要可以在设置里关掉。
+     */
+    var isBannerApiModeEnabled: Boolean by mutableStateOf(true)
         private set
 
     /** 随机图 API 的 URL，或一个以 `/` 开头的本地目录路径。 */
-    var bannerApiSource: String by mutableStateOf("")
+    var bannerApiSource: String by mutableStateOf(DEFAULT_BANNER_API_SOURCE)
         private set
 
     // Multi-Background Mode
@@ -264,6 +269,14 @@ object BackgroundConfig {
     private fun dashboardTileKey(tile: String) = "dashboard_tile_bg_uri_$tile"
 
     // ---- 模块卡片横幅 ----
+    /**
+     * 默认的随机图源。
+     *
+     * 只作为**出厂默认值**使用：用户改过之后以存下来的值为准，这里不再生效。选它是因为它按
+     * 请求直接返回一张图，不需要 API key，也不挑模块 ID —— 横幅只要一张能看的图就够了。
+     */
+    const val DEFAULT_BANNER_API_SOURCE = "https://www.loliapi.com/acg/pc/"
+
     private const val KEY_BANNER_ENABLED = "banner_enabled"
     private const val KEY_FOLK_BANNER_ENABLED = "folk_banner_enabled"
     private const val KEY_BANNER_CUSTOM_OPACITY_ENABLED = "banner_custom_opacity_enabled"
@@ -795,8 +808,9 @@ object BackgroundConfig {
         val folkBannerEnabled = prefs.booleanPref(KEY_FOLK_BANNER_ENABLED, true)
         val bannerCustomOpacityEnabled = prefs.booleanPref(KEY_BANNER_CUSTOM_OPACITY_ENABLED, true)
         val bannerCustomOpacity = prefs.floatPref(KEY_BANNER_CUSTOM_OPACITY, 1.0f)
-        val bannerApiModeEnabled = prefs.booleanPref(KEY_BANNER_API_MODE_ENABLED, false)
-        val bannerApiSource = prefs.stringPref(KEY_BANNER_API_SOURCE, "") ?: ""
+        val bannerApiModeEnabled = prefs.booleanPref(KEY_BANNER_API_MODE_ENABLED, true)
+        val bannerApiSource = prefs.stringPref(KEY_BANNER_API_SOURCE, DEFAULT_BANNER_API_SOURCE)
+            ?: DEFAULT_BANNER_API_SOURCE
 
         Log.d(TAG, "加载背景配置: URI=$uri, enabled=$enabled, opacity=$opacity, dim=$dim")
         
@@ -925,8 +939,8 @@ object BackgroundConfig {
         isFolkBannerEnabled = true
         isBannerCustomOpacityEnabled = true
         bannerCustomOpacity = 1.0f
-        isBannerApiModeEnabled = false
-        bannerApiSource = ""
+        isBannerApiModeEnabled = true
+        bannerApiSource = DEFAULT_BANNER_API_SOURCE
     }
 }
 

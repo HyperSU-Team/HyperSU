@@ -54,6 +54,14 @@ data class ModuleUiState(
     val isSafeMode: Boolean = false,
     val magiskInstalled: Boolean = false,
     val confirmDialogState: ModuleConfirmDialogState? = null,
+    /**
+     * Modules whose update is being prepared right now.
+     *
+     * Holds only ids, so a card can ask whether it is in here without comparing anything else. The
+     * update chip renders a spinner while its module is listed - it is the only feedback between
+     * the tap and the dialog appearing.
+     */
+    val preparingUpdateModuleIds: Set<String> = emptySet(),
 ) {
     val installButtonVisible: Boolean
         get() = !(isSafeMode || magiskInstalled)

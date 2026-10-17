@@ -52,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.sukisu.ultra.ui.component.FloatingBottomBar
+import com.sukisu.ultra.Natives
 import com.sukisu.ultra.ui.component.FloatingBottomBarItem
 import com.sukisu.ultra.ui.theme.tokens.ContinuousCornerShape
 import com.sukisu.ultra.ui.theme.tokens.FolkShape
@@ -94,7 +95,12 @@ fun FolkBottomBar(
     isFloating: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
-    val destinations = BottomBarDestination.entries
+    // Without a working driver there is nothing behind Superuser or Module, so the bar offers only
+    // the pages that work. `Natives.isManager` is read once per composition rather than per item.
+    val hasKernelSupport = remember { runCatching { Natives.isManager }.getOrDefault(false) }
+    val destinations = remember(hasKernelSupport) {
+        BottomBarDestination.available(hasKernelSupport)
+    }
 
     if (isFloating && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         // A plain tinted pill. The backdrop and the AGSL lens were removed along with the blur
@@ -124,11 +130,16 @@ fun FolkBottomBar(
                 selectedIndex = selectedIndex,
                 onSelected = onSelectedIndexChange,
                 tabsCount = destinations.size,
+                pageForTab = { position -> destinations[position].pageIndex },
             ) { activateTab ->
                 destinations.forEachIndexed { index, destination ->
+                    // The tab's position in the bar and the page it opens are not the same number
+                    // once entries are dropped: with Superuser and Module hidden, Settings is the
+                    // second tab but still page 3. Selection goes by `pageIndex`; `activateTab`
+                    // takes both, because the pill travels in tab positions.
                     FloatingBottomBarItem(
-                        selected = index == selectedIndex,
-                        onClick = { activateTab(index) },
+                        selected = destination.pageIndex == selectedIndex,
+                        onClick = { activateTab(index, destination.pageIndex) },
                         modifier = Modifier.defaultMinSize(minWidth = 76.dp),
                     ) {
                         val navBadge = badgeFor(index, badge)
@@ -240,7 +251,8 @@ fun FolkBottomBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             destinations.forEachIndexed { index, destination ->
-                val selected = index == selectedIndex
+                // By page, not by position: the two differ once entries are dropped.
+                val selected = destination.pageIndex == selectedIndex
 
                 // One spring drives the pill, the icon scale and the colour, so the whole item
                 // settles as a single movement instead of three.
@@ -284,7 +296,7 @@ fun FolkBottomBar(
                             interactionSource = interactionSource,
                             indication = null,
                             role = Role.Tab,
-                            onClick = { onSelectedIndexChange(index) },
+                            onClick = { onSelectedIndexChange(destination.pageIndex) },
                         )
                         .padding(vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,

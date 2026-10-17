@@ -124,10 +124,17 @@ fun BackgroundLayer(
             VideoWallpaper(uri = videoUri, dim = dim)
         } else if (!targetUri.isNullOrEmpty()) {
             // Crossfading between the per-page images keeps multi-background mode from popping.
+            //
+            // The duration is short because of what happens on a theme import: every wallpaper URI
+            // changes at once, so every page that is composed starts a full-screen crossfade at the
+            // same moment, and each one decodes its new image while the previous one is still being
+            // drawn. At 320ms those overlaps stacked up into the freeze that made an import look
+            // like the app had stopped responding. 120ms is still visible as a fade but finishes
+            // before the next decode has to share the frame.
             Crossfade(
                 targetState = targetUri,
                 modifier = Modifier.fillMaxSize(),
-                animationSpec = tween(320),
+                animationSpec = tween(120),
                 label = "BackgroundWallpaper",
             ) { uri ->
                 // Drawn sharp. `Modifier.blur` compiles to a RenderEffect over the whole layer, so

@@ -167,7 +167,9 @@
     <string name="enable_web_debugging_summary">可用于调试 WebUI，请仅在需要时启用</string>
     <string name="direct_install">直接安装（推荐）</string>
     <string name="select_file">选择文件并修补</string>
+    <string name="select_file_gki_only">选择文件并修补（GKI 设备专属）</string>
     <string name="download_file">下载文件并修补</string>
+    <string name="download_file_gki_only">下载文件并修补（GKI 设备专属）</string>
     <string name="download_dialog_title">输入链接</string>
     <string name="download_dialog_msg">完整 OTA 镜像或 factory 镜像</string>
     <string name="download_no_boot_partition">镜像中未找到 boot、init_boot 或 vendor_boot 分区</string>

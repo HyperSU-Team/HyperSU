@@ -94,6 +94,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
@@ -117,7 +118,6 @@ import com.sukisu.ultra.ui.component.ObserveAsEvents
 import com.sukisu.ultra.ui.component.SearchAppBar
 import com.sukisu.ultra.ui.component.ScrollToTopOnChange
 import com.sukisu.ultra.ui.component.dialog.rememberConfirmDialog
-import com.sukisu.ultra.ui.component.dialog.rememberLoadingDialog
 import com.sukisu.ultra.ui.component.folk.FolkAlertDialog
 import com.sukisu.ultra.ui.component.folk.FolkButtonDefaults
 import com.sukisu.ultra.ui.component.folk.FolkScaffold
@@ -133,6 +133,8 @@ import com.sukisu.ultra.ui.theme.tokens.FolkType
 import com.sukisu.ultra.ui.util.ModuleBanner
 import com.sukisu.ultra.ui.util.reboot
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 
 /**
@@ -451,6 +453,7 @@ internal fun ModulePagerFolk(
                     updateInfoMap = uiState.updateInfo,
                     actions = actions,
                     onModuleAddShortcut = { module, type -> onModuleAddShortcut(module, type) },
+                    preparingUpdateModuleIds = uiState.preparingUpdateModuleIds,
                 )
             } else {
                 val latestModuleList = rememberUpdatedState(uiState.moduleList)
@@ -470,6 +473,7 @@ internal fun ModulePagerFolk(
                     updateInfoMap = uiState.updateInfo,
                     actions = actions,
                     onModuleAddShortcut = { module, type -> onModuleAddShortcut(module, type) },
+                    preparingUpdateModuleIds = uiState.preparingUpdateModuleIds,
                 )
             }
         }
@@ -577,9 +581,9 @@ private fun ModuleList(
     updateInfoMap: Map<String, ModuleUpdateInfo>,
     actions: ModuleActions,
     onModuleAddShortcut: (Module, ShortcutType) -> Unit,
+    /** 正在准备更新的模块 ID，对应的更新按钮显示转圈。 */
+    preparingUpdateModuleIds: Set<String> = emptySet(),
 ) {
-    val loadingDialog = rememberLoadingDialog()
-
     if (displayModules.isEmpty()) {
         FolkStateView(
             title = stringResource(R.string.module_empty),
@@ -600,7 +604,6 @@ private fun ModuleList(
         ),
     ) {
         items(displayModules, key = { it.id }, contentType = { "module" }) { module ->
-            val scope = rememberCoroutineScope()
             val moduleUpdateInfo = updateInfoMap[module.id] ?: ModuleUpdateInfo.Empty
 
             ModuleItem(
@@ -614,13 +617,11 @@ private fun ModuleList(
                     }
                 },
                 onCheckChanged = { actions.onToggleModule(module) },
-                onUpdate = {
-                    scope.launch {
-                        loadingDialog.withLoading {
-                            actions.onRequestUpdateConfirmation(module, moduleUpdateInfo)
-                        }
-                    }
-                },
+                // No loading dialog. The chip itself spins while the update is being prepared, so
+                // a dialog on top of it only said the same thing twice - and a dialog that appears
+                // and disappears for a fraction of a second reads as a flash, not as progress.
+                onUpdate = { actions.onRequestUpdateConfirmation(module, moduleUpdateInfo) },
+                isPreparingUpdate = module.id in preparingUpdateModuleIds,
                 onAddShortcut = { type -> onModuleAddShortcut(module, type) },
                 onOpenWebUi = {
                     if (module.hasWebUi) {
@@ -643,6 +644,8 @@ private fun ModuleItem(
     onAddShortcut: (ShortcutType) -> Unit,
     onOpenWebUi: () -> Unit,
     onExecuteAction: () -> Unit,
+    /** True while this module's update is being prepared; the update chip shows a spinner. */
+    isPreparingUpdate: Boolean = false,
 ) {
     val hasDescription = module.description.isNotBlank()
     val maxLinesLimit = LocalModuleDescriptionMaxLines.current
@@ -803,6 +806,7 @@ private fun ModuleItem(
                                 !iconOnlyActions && (!module.hasActionScript || !module.hasWebUi)
                             },
                             enabled = !module.remove,
+                            loading = isPreparingUpdate,
                         )
                         Spacer(Modifier.width(8.dp))
                     }
@@ -849,25 +853,33 @@ private fun BoxScope.ModuleBannerLayer(module: Module) {
     )
 
     val bytes by produceState(
-        initialValue = ModuleBanner.loadSync(context, module.id),
+        initialValue = ModuleBanner.loadSync(module.id),
         key1 = module.id,
         key2 = configKey,
     ) {
         value = ModuleBanner.load(context, module.id, reload = true)
     }
 
-    // BitmapPainter wants a Compose ImageBitmap; BitmapFactory hands back a platform Bitmap,
-    // so it has to be wrapped with asImageBitmap().
-    val bitmap = remember(bytes) {
-        bytes?.let {
-            runCatching { BitmapFactory.decodeByteArray(it, 0, it.size) }
-                .getOrNull()
-                ?.asImageBitmap()
+    // Decoded off the main thread.
+    //
+    // Both halves of this used to run during composition: loadSync read a file on the main thread
+    // for the initial value, and the decode below ran inside `remember`, also on the main thread.
+    // One card is cheap, but the list composes several at once and the result was the stutter that
+    // appeared as soon as banners were switched on. The state starts as null, so a card draws its
+    // banner a frame or two later instead of blocking the scroll.
+    val bitmap by produceState<ImageBitmap?>(initialValue = null, key1 = bytes) {
+        value = bytes?.let { data ->
+            withContext(Dispatchers.IO) {
+                runCatching { BitmapFactory.decodeByteArray(data, 0, data.size) }
+                    .getOrNull()
+                    ?.asImageBitmap()
+            }
         }
-    } ?: return
+    }
+    val image = bitmap ?: return
 
     Image(
-        painter = BitmapPainter(bitmap),
+        painter = BitmapPainter(image),
         contentDescription = null,
         contentScale = ContentScale.Crop,
         modifier = Modifier
@@ -899,6 +911,15 @@ private fun ModuleActionChip(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     iconModifier: Modifier = Modifier,
+    /**
+     * Shows a spinner in place of the icon and label.
+     *
+     * Used while the update is being prepared: the row previously kept its download icon and text
+     * while a dialog opened over it, so there was nothing to say the tap had been received. A bare
+     * spinner is the whole of what the button should be during that time - no icon, no label, no
+     * transition between them.
+     */
+    loading: Boolean = false,
 ) {
     val haptic = LocalHapticFeedback.current
     val interactionSource = remember { MutableInteractionSource() }
@@ -911,7 +932,7 @@ private fun ModuleActionChip(
                     Modifier.combinedClickable(
                         interactionSource = interactionSource,
                         indication = null,
-                        enabled = enabled,
+                        enabled = enabled && !loading,
                         onLongClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
                             onLongClick()
@@ -922,7 +943,7 @@ private fun ModuleActionChip(
                     Modifier.clickable(
                         interactionSource = interactionSource,
                         indication = null,
-                        enabled = enabled,
+                        enabled = enabled && !loading,
                         onClick = onClick,
                     )
                 }
@@ -935,19 +956,27 @@ private fun ModuleActionChip(
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                modifier = Modifier
-                    .size(20.dp)
-                    .then(iconModifier),
-                imageVector = icon,
-                contentDescription = null,
-            )
-            if (label != null) {
-                Text(
-                    modifier = Modifier.padding(start = 7.dp),
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
+            if (loading) {
+                androidx.compose.material3.CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
+            } else {
+                Icon(
+                    modifier = Modifier
+                        .size(20.dp)
+                        .then(iconModifier),
+                    imageVector = icon,
+                    contentDescription = null,
+                )
+                if (label != null) {
+                    Text(
+                        modifier = Modifier.padding(start = 7.dp),
+                        text = label,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
             }
         }
     }

@@ -344,6 +344,10 @@ class ModuleViewModel(
 
     fun requestUpdateConfirmation(module: Module, updateInfo: ModuleUpdateInfo) {
         val res = ksuApp.resources
+        // Marked before the dialog is built so the card can show a spinner on the very next frame.
+        _uiState.update {
+            it.copy(preparingUpdateModuleIds = it.preparingUpdateModuleIds + module.id)
+        }
         // The dialog is shown immediately, without the changelog, and the notes are filled in when
         // they arrive.
         //
@@ -364,7 +368,9 @@ class ModuleViewModel(
                     html = false,
                     confirm = res.getString(R.string.update),
                     dismiss = res.getString(android.R.string.cancel),
-                )
+                ),
+                // The spinner's job ends here: the dialog is up, so the card can go back to normal.
+                preparingUpdateModuleIds = it.preparingUpdateModuleIds - module.id,
             )
         }
 

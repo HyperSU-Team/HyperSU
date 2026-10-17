@@ -158,26 +158,6 @@ object BannerApiService {
         }
     }
 
-    /**
-     * 同步读缓存，给 `produceState` 的 initialValue 用 —— 初帧直接有图，避免先空一帧再跳出来。
-     * 过期的一律丢弃，返回 null 让异步路径重新取。
-     */
-    fun loadSync(context: Context, moduleId: String, source: String): ByteArray? {
-        if (source.isBlank()) return null
-        return try {
-            val file = getCachedBannerFile(context, moduleId, getSourceHash(source.trim()))
-            if (!file.exists()) return null
-            if (System.currentTimeMillis() - file.lastModified() > CACHE_TTL_MS) {
-                file.delete()
-                return null
-            }
-            file.readBytes()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to load cached banner synchronously: ${e.message}", e)
-            null
-        }
-    }
-
     private suspend fun cacheBanner(
         context: Context,
         moduleId: String,

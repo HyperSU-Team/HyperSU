@@ -119,9 +119,17 @@ fun FloatingBottomBar(
     selectedIndex: Int,
     onSelected: (index: Int) -> Unit,
     tabsCount: Int,
+    /**
+     * Maps a tab's position in the bar to the page it opens.
+     *
+     * The two differ whenever the bar shows fewer tabs than there are pages, which is the case
+     * once Superuser and Module are hidden on a device with no driver. Everything the bar does
+     * with geometry - the pill's travel, the drag - stays in tab positions; only the value handed
+     * back to the caller goes through this. Defaults to identity for the ordinary case.
+     */
+    pageForTab: (Int) -> Int = { it },
     content: @Composable RowScope.((Int) -> Unit) -> Unit,
-) {
-    val pillShape = remember { CircleShape }
+) {    val pillShape = remember { CircleShape }
     val accentColor = MaterialTheme.colorScheme.primary
     val tabContentColor = MaterialTheme.colorScheme.onSurface
     val containerColor = MaterialTheme.colorScheme.surfaceContainer
@@ -148,7 +156,14 @@ fun FloatingBottomBar(
         }
     }
 
-    var currentIndex by remember { mutableIntStateOf(selectedIndex) }
+    // The caller works in pages, the bar in tab positions. When the bar shows every page the two
+    // are the same number; when entries are dropped they are not, so the incoming page is mapped
+    // back to the tab that opens it before anything measures with it.
+    val tabForPage = remember(tabsCount, pageForTab) {
+        (0 until tabsCount).firstOrNull { pageForTab(it) == selectedIndex } ?: 0
+    }
+
+    var currentIndex by remember { mutableIntStateOf(tabForPage) }
     val onSelectedUpdated by rememberUpdatedState(onSelected)
 
     fun indexAt(positionX: Float): Int {
@@ -160,10 +175,10 @@ fun FloatingBottomBar(
             .coerceIn(0, tabsCount - 1)
     }
 
-    val dampedDragAnimation = remember(animationScope, tabsCount, density, isLtr) {
+    val dampedDragAnimation = remember(animationScope, tabsCount, density, isLtr, tabForPage) {
         DampedDragAnimation(
             animationScope = animationScope,
-            initialValue = selectedIndex.toFloat(),
+            initialValue = tabForPage.toFloat(),
             valueRange = 0f..(tabsCount - 1).toFloat(),
             visibilityThreshold = 0.001f,
             initialScale = 1f,
@@ -178,7 +193,8 @@ fun FloatingBottomBar(
                 val targetIndex = targetValue.roundToInt().coerceIn(0, tabsCount - 1)
                 if (currentIndex != targetIndex) {
                     currentIndex = targetIndex
-                    onSelectedUpdated(targetIndex)
+                    // The drag lands on a tab position, so the page it opens goes through the map.
+                    onSelectedUpdated(pageForTab(targetIndex))
                 }
                 updateValue(targetIndex.toFloat())
                 animationScope.launch {
@@ -206,17 +222,26 @@ fun FloatingBottomBar(
     }
 
     LaunchedEffect(selectedIndex) {
-        if (currentIndex != selectedIndex) {
-            currentIndex = selectedIndex
-            dampedDragAnimation.animateToValue(selectedIndex.toFloat())
+        if (currentIndex != tabForPage) {
+            currentIndex = tabForPage
+            dampedDragAnimation.animateToValue(tabForPage.toFloat())
         }
     }
 
-    fun activateTab(index: Int) {
+    /**
+     * Selects the tab that was tapped.
+     *
+     * [index] is the tab's position in the bar, which is what the drag animation and the travelling
+     * pill are measured in. [target] is the value handed back to the caller, and it is a separate
+     * argument because the two are not always the same number: the bar can show fewer tabs than
+     * there are pages, so the second visible tab may open page 3. Defaults to [index] for the
+     * ordinary case where they do match.
+     */
+    fun activateTab(index: Int, target: Int = index) {
         if (index !in 0 until tabsCount) return
         if (currentIndex != index) {
             currentIndex = index
-            onSelectedUpdated(index)
+            onSelectedUpdated(target)
         }
         dampedDragAnimation.animateToValue(index.toFloat())
     }

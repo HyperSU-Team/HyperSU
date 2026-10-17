@@ -91,10 +91,27 @@ fun InstallScreen(
     val downloadFileMsg = stringResource(id = R.string.download_dialog_msg)
 
     val horizonKernelSummary = stringResource(R.string.horizon_kernel_summary)
-    val installMethodOptions = remember(rootAvailable, isAbDevice, isGkiDevice, selectFileTip, selectFileTipNoGki, downloadFileMsg, horizonKernelSummary) {
+    val installMethodOptions = remember(
+        rootAvailable, isAbDevice, isGkiDevice, selectFileTip, selectFileTipNoGki,
+        downloadFileMsg, horizonKernelSummary,
+    ) {
         buildList {
-            add(InstallMethod.SelectFile(summary = if (isGkiDevice) selectFileTip else selectFileTipNoGki))
-            add(InstallMethod.DownloadFile(summary = downloadFileMsg))
+            // Both of these patch a stock boot image by writing the KernelSU LKM into its ramdisk,
+            // which only exists in the GKI boot layout. On a non-GKI kernel the resulting image
+            // does not boot, so the row says so up front rather than letting the user find out
+            // after flashing.
+            add(
+                InstallMethod.SelectFile(
+                    label = if (isGkiDevice) R.string.select_file else R.string.select_file_gki_only,
+                    summary = if (isGkiDevice) selectFileTip else selectFileTipNoGki,
+                )
+            )
+            add(
+                InstallMethod.DownloadFile(
+                    label = if (isGkiDevice) R.string.download_file else R.string.download_file_gki_only,
+                    summary = downloadFileMsg,
+                )
+            )
             if (rootAvailable && isGkiDevice) {
                 add(InstallMethod.DirectInstall)
                 if (isAbDevice) add(InstallMethod.DirectInstallToInactiveSlot)

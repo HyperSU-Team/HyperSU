@@ -54,5 +54,21 @@ enum class BottomBarDestination(
     companion object {
         /** Tab count of the main pager. */
         const val PAGE_COUNT = 4
+
+        /**
+         * The tabs that can actually do something on this device.
+         *
+         * Superuser and Module are only meaningful when a driver answers: the first would list no
+         * apps and the second no modules, and both open a root shell that cannot start, so on a
+         * device without HyperSU in the kernel they are two entries that lead to an empty screen.
+         * They are dropped from the bar instead, leaving Home and Settings.
+         *
+         * Both are judged from `Natives.isManager`, which asks the driver whether it recognises
+         * this manager. A kernel that has the driver but not this manager's signature answers
+         * false as well, which is correct here: the superuser and module lists are served by
+         * `ksud`, and without recognition it cannot run.
+         */
+        fun available(hasKernelSupport: Boolean): List<BottomBarDestination> =
+            if (hasKernelSupport) entries.toList() else listOf(Home, Settings)
     }
 }

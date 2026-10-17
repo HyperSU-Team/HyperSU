@@ -21,12 +21,25 @@ object ModuleBanner {
     private const val TAG = "ModuleBanner"
     private const val MODULES_ROOT = "/data/adb/modules"
 
+    /**
+     * 内存里最多留几张横幅。
+     *
+     * 横幅是整张图片的字节，一个模块几百 KB，装了三十个模块就是十几 MB 常驻 —— 这在低内存
+     * 设备上足以让列表在滚动时被系统回收。超过上限就把最久没用的丢掉，读不到只是重新解析一次，
+     * 不会出错。
+     */
+    private const val MAX_CACHED_MODULES = 16
+
     /** 模块目录里可能存在的横幅文件，顺序即优先级。 */
     private val BANNER_FILES = listOf("banner.png", "banner.jpg", "banner.jpeg", "banner.webp", "banner")
 
     private val folkStorage by lazy { ModuleBannerStorage(ksuApp, "module_banners") }
 
-    private val memory = mutableMapOf<String, ByteArray?>()
+    /** 已解析的横幅，键是模块 ID；按最近使用排序，超过上限丢弃最久没用的那个。 */
+    private val memory = object : LinkedHashMap<String, ByteArray?>(MAX_CACHED_MODULES, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, ByteArray?>?): Boolean =
+            size > MAX_CACHED_MODULES
+    }
 
     /** 丢弃某个模块的缓存（用户手动换了横幅之后调用）。 */
     fun invalidate(moduleId: String) {
@@ -55,25 +68,15 @@ object ModuleBanner {
      * 同步取一张横幅给 `produceState` 的 initialValue 用，让卡片首帧就有图，不先空一帧。
      *
      * 只碰 `filesDir` 下的本地文件（内存缓存 → API 磁盘缓存 → 指定过的横幅）——**刻意不含
-     * 第 3 步「读模块目录」**，那一步要过 root shell，放在主线程会让列表滚动掉帧。取不到
-     * 就返回 null，交给 [load] 在 IO 线程把三步走完。
+     * 第 3 步「读模块目录」**，那一步要过 root shell，放在主线程会让列表滚动掉帧。
+     *
+     * 返回 null 是**常态而非异常**：列表一次组合好几张卡片，如果每张都在组合期读一遍磁盘，
+     * 滚动就会掉帧。所以这里只读内存缓存，磁盘留给 [load] 在 IO 线程做 —— 卡片晚一两帧出现
+     * 横幅，比列表卡一下好。
      */
-    fun loadSync(context: Context, moduleId: String): ByteArray? {
+    fun loadSync(moduleId: String): ByteArray? {
         if (!BackgroundConfig.isBannerEnabled) return null
-        memory[moduleId]?.let { return it }
-
-        if (BackgroundConfig.isBannerApiModeEnabled) {
-            val source = BackgroundConfig.getEffectiveBannerApiSource()
-            if (source.isNotBlank()) {
-                BannerApiService.loadSync(context, moduleId, source)?.let { return it }
-            }
-        }
-
-        if (BackgroundConfig.isFolkBannerEnabled) {
-            folkStorage.read(moduleId)?.let { return it }
-        }
-
-        return null
+        return memory[moduleId]
     }
 
     private suspend fun resolve(context: Context, moduleId: String): ByteArray? {
