@@ -156,6 +156,15 @@ private val SHOW_MODULE_REPO = true
 private const val ModuleChipAnimationMillis = 120
 
 /**
+ * How long the update chip takes to appear or disappear.
+ *
+ * Shorter than the other chips on purpose: this one toggles whenever the update check answers, so
+ * it is seen far more often than the rest, and anything above about a tenth of a second reads as
+ * the module list hesitating instead of the chip arriving.
+ */
+private const val UpdateChipAnimationMillis = 60
+
+/**
  * The Module tab in the FolkPatch design.
  *
  * Each module is one surface: name, version and author, an expanding
@@ -778,8 +787,12 @@ private fun ModuleItem(
 
                 AnimatedVisibility(
                     visible = hasUpdate,
-                    enter = fadeIn(animationSpec = tween(ModuleChipAnimationMillis)),
-                    exit = fadeOut(animationSpec = tween(ModuleChipAnimationMillis)),
+                    // The update chip has its own, shorter timing. It appears and disappears on
+                    // every refresh as the update check answers, so it is the one chip the user
+                    // sees animate repeatedly - and at the shared speed it read as the list
+                    // stuttering rather than as a chip arriving.
+                    enter = fadeIn(animationSpec = tween(UpdateChipAnimationMillis)),
+                    exit = fadeOut(animationSpec = tween(UpdateChipAnimationMillis)),
                 ) {
                     Row {
                         ModuleActionChip(

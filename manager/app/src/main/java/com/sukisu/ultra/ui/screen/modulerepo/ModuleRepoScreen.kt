@@ -15,6 +15,7 @@ import com.sukisu.ultra.ui.navigation3.LocalNavigator
 import com.sukisu.ultra.ui.navigation3.Route
 import com.sukisu.ultra.ui.screen.flash.FlashIt
 import com.sukisu.ultra.ui.util.module.fetchModuleDetail
+import com.sukisu.ultra.ui.util.module.fetchModuleReadme
 import com.sukisu.ultra.ui.viewmodel.ModuleRepoViewModel
 import com.sukisu.ultra.ui.viewmodel.ModuleViewModel
 
@@ -75,7 +76,11 @@ fun ModuleRepoDetailScreen(module: RepoModuleArg) {
                 runCatching {
                     val detail = fetchModuleDetail(module.moduleId)
                     if (detail != null) {
-                        readmeHtml = detail.readmeHtml
+                        // The readme is a path in the detail document rather than its text, so it
+                        // is a second request. Failure here leaves the readme empty but the rest of
+                        // the detail intact, which is the right trade: the releases are what the
+                        // screen is for.
+                        readmeHtml = runCatching { fetchModuleReadme(module.moduleId) }.getOrNull()
                         if (detail.url.isNotEmpty() && detail.url != "null") {
                             webUrl = detail.url
                         }

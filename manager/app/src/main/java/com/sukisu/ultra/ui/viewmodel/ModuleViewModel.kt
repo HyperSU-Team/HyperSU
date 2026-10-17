@@ -343,9 +343,52 @@ class ModuleViewModel(
     }
 
     fun requestUpdateConfirmation(module: Module, updateInfo: ModuleUpdateInfo) {
+        val res = ksuApp.resources
+        // The dialog is shown immediately, without the changelog, and the notes are filled in when
+        // they arrive.
+        //
+        // It used to be built and then shown, which meant the network round trips that fetch the
+        // changelog - one to the registry, sometimes a second to the raw URL - all happened between
+        // the tap and anything appearing on screen. That is what made updating a module feel slow:
+        // the tap was waiting on the network, not on an animation.
+        _uiState.update {
+            it.copy(
+                confirmDialogState = ModuleConfirmDialogState(
+                    request = ModuleConfirmRequest.Update(
+                        module = module,
+                        downloadUrl = updateInfo.downloadUrl,
+                        fileName = "${module.name}-${updateInfo.version}.zip",
+                    ),
+                    title = res.getString(R.string.module_update),
+                    content = "",
+                    html = false,
+                    confirm = res.getString(R.string.update),
+                    dismiss = res.getString(android.R.string.cancel),
+                )
+            )
+        }
+
         viewModelScope.launch {
-            val dialogState = buildUpdateConfirmDialogState(module, updateInfo)
-            _uiState.update { it.copy(confirmDialogState = dialogState) }
+            val changelog = runCatching { fetchUpdateChangelog(module, updateInfo) }.getOrNull()
+            if (changelog.isNullOrBlank()) return@launch
+            // Only fills in the notes if the same dialog is still open, so a slow fetch cannot
+            // overwrite a dialog the user has since dismissed or replaced.
+            _uiState.update { state ->
+                val current = state.confirmDialogState
+                if (current?.request is ModuleConfirmRequest.Update &&
+                    (current.request as ModuleConfirmRequest.Update).module.id == module.id
+                ) {
+                    state.copy(
+                        confirmDialogState = current.copy(
+                            title = res.getString(R.string.module_changelog),
+                            content = changelog,
+                            html = true,
+                        )
+                    )
+                } else {
+                    state
+                }
+            }
         }
     }
 
@@ -429,64 +472,39 @@ class ModuleViewModel(
         }
     }
 
-    private suspend fun buildUpdateConfirmDialogState(
+    /**
+     * The notes to show for an update, as HTML or markdown.
+     *
+     * Kept separate from the dialog itself so the dialog can appear first and this can run after.
+     * The three sources are tried in order of how much they cost: the registry's own changelog for
+     * the release, the URL the module declares, and finally the release notes the registry holds
+     * for the module's newest tag.
+     */
+    private suspend fun fetchUpdateChangelog(
         module: Module,
         updateInfo: ModuleUpdateInfo,
-    ): ModuleConfirmDialogState {
-        val res = ksuApp.resources
+    ): String? = withContext(Dispatchers.IO) {
         val changelogUrl = updateInfo.changelog
 
-        var changelog = ""
-        var html = false
+        if (changelogUrl.startsWith("#") && changelogUrl.contains('@')) {
+            val parts = changelogUrl.substring(1).split('@', limit = 2)
+            if (parts.size == 2) {
+                fetchReleaseDescriptionHtml(parts[0], parts[1])?.let { return@withContext it }
+            }
+        }
 
         if (changelogUrl.isNotBlank()) {
-            withContext(Dispatchers.IO) {
-                if (changelogUrl.startsWith("#") && changelogUrl.contains('@')) {
-                    val parts = changelogUrl.substring(1).split('@', limit = 2)
-                    if (parts.size == 2) {
-                        fetchReleaseDescriptionHtml(parts[0], parts[1])?.let {
-                            changelog = it
-                            html = true
-                        }
-                    }
-                }
-
-                if (changelog.isBlank()) {
-                    changelog = runCatching {
-                        ksuApp.okhttpClient.newCall(
-                            Request.Builder().url(changelogUrl).build()
-                        ).execute().body.string()
-                    }.getOrDefault("")
-                }
-            }
+            runCatching {
+                ksuApp.okhttpClient.newCall(
+                    Request.Builder().url(changelogUrl).build()
+                ).execute().body.string()
+            }.getOrNull()?.takeIf { it.isNotBlank() }?.let { return@withContext it }
         }
 
-        if (changelog.isBlank()) {
-            withContext(Dispatchers.IO) {
-                runCatching {
-                    val latestTag = fetchModuleDetail(module.id)?.latestTag.orEmpty()
-                    if (latestTag.isNotBlank()) {
-                        fetchReleaseDescriptionHtml(module.id, latestTag)?.let {
-                            changelog = it
-                            html = true
-                        }
-                    }
-                }
-            }
-        }
-
-        return ModuleConfirmDialogState(
-            request = ModuleConfirmRequest.Update(
-                module = module,
-                downloadUrl = updateInfo.downloadUrl,
-                fileName = "${module.name}-${updateInfo.version}.zip",
-            ),
-            title = if (changelog.isNotBlank()) res.getString(R.string.module_changelog) else res.getString(R.string.module_update),
-            content = changelog.ifBlank { res.getString(R.string.module_start_downloading).format(module.name) },
-            markdown = changelog.isNotBlank() && !html,
-            html = html,
-            confirm = res.getString(R.string.module_update),
-        )
+        runCatching {
+            val latestTag = fetchModuleDetail(module.id)?.latestTag.orEmpty()
+            if (latestTag.isNotBlank()) fetchReleaseDescriptionHtml(module.id, latestTag) else null
+        }.getOrNull()
     }
 
     private suspend fun checkUpdate(m: Module): ModuleUpdateInfo {
