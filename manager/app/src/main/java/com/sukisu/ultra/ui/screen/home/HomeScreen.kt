@@ -62,6 +62,7 @@ fun HomePager(
     val actions = HomeActions(
         onInstallClick = { navigator.push(Route.Install()) },
         onOpenUrl = uriHandler::openUri,
+        onOpenDevice = { navigator.push(Route.Device) },
         onJailbreakClick = {
             loadingDialog.showLoading()
             context.startService(Intent(context, MagicaService::class.java))

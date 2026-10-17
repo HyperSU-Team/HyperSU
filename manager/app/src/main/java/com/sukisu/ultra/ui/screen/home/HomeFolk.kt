@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Layers
+import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material.icons.outlined.SystemUpdate
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -815,6 +816,14 @@ private fun HomeSupportLinks(actions: HomeActions) {
     val learnMoreUrl = stringResource(R.string.home_learn_kernelsu_url)
 
     FolkSettingsGroup {
+        item {
+            FolkNavigationPreference(
+                title = stringResource(R.string.settings_device),
+                summary = stringResource(R.string.settings_device_summary),
+                icon = Icons.Outlined.PhoneAndroid,
+                onClick = actions.onOpenDevice,
+            )
+        }
         item {
             FolkNavigationPreference(
                 title = stringResource(R.string.home_support_title),
