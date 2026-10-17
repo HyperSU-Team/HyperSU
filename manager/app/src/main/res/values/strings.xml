@@ -452,7 +452,6 @@
     <string name="horizon_unknown_error">Unknown error</string>
     <string name="flash_failed_message">Flash failed</string>
     <string name="kernel_version_log">Kernel version: %1$s</string>
-    <string name="tool_version_log">Using the patching tool: %1$s</string>
     <string name="tools">Tools</string>
     <string name="root_required">Requires root privileges</string>
     <string name="kpm_patch_options">KPM Patch</string>

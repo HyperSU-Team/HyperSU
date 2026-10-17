@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -137,12 +138,22 @@ import kotlinx.coroutines.launch
 /**
  * Whether the module repository entry point is offered.
  *
- * Off for now: the repository it opens is backed by modules.kernelsu.org, which is offline and
- * answers 404 for both the list and the per-module detail pages, so the screen could only show a
- * fetch error. The route, view model and screens are all still in place, so this is the only
- * switch to flip once a working index exists.
+ * On. It was switched off while the index behind it answered 404, which left the screen showing
+ * nothing but a fetch error; the route, view model and screens were kept in place for exactly this
+ * turn back on. A repository that cannot be reached now reports that itself, on its own screen,
+ * which is better than the entry silently not existing.
  */
-private val SHOW_MODULE_REPO = false
+private val SHOW_MODULE_REPO = true
+
+/**
+ * How long the module card's action chips take to fade in and out.
+ *
+ * The default is a third of a second, which is slow enough to read as a stutter when a card is
+ * updated and its chips change: the update chip disappears, the uninstall chip slides over, and
+ * for that moment the row looks like it is still settling. This is short enough to read as one
+ * change rather than as an animation.
+ */
+private const val ModuleChipAnimationMillis = 120
 
 /**
  * The Module tab in the FolkPatch design.
@@ -736,8 +747,8 @@ private fun ModuleItem(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 AnimatedVisibility(
                     visible = actionButtonsEnabled,
-                    enter = fadeIn(),
-                    exit = fadeOut(),
+                    enter = fadeIn(animationSpec = tween(ModuleChipAnimationMillis)),
+                    exit = fadeOut(animationSpec = tween(ModuleChipAnimationMillis)),
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         if (module.hasActionScript) {
@@ -767,8 +778,8 @@ private fun ModuleItem(
 
                 AnimatedVisibility(
                     visible = hasUpdate,
-                    enter = fadeIn(),
-                    exit = fadeOut(),
+                    enter = fadeIn(animationSpec = tween(ModuleChipAnimationMillis)),
+                    exit = fadeOut(animationSpec = tween(ModuleChipAnimationMillis)),
                 ) {
                     Row {
                         ModuleActionChip(

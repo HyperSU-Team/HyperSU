@@ -89,10 +89,12 @@ fun ExpandableDescriptionText(
     LaunchedEffect(expanded) {
         val target = if (expanded) 1f else 0f
         if (progress.targetValue != target) {
+            // Quick enough to feel like the text is simply there, rather than like a panel that
+            // has to finish opening before the card can be read.
             val spec = if (expanded) {
-                tween<Float>(durationMillis = 280, easing = FastOutSlowInEasing)
+                tween<Float>(durationMillis = 150, easing = FastOutSlowInEasing)
             } else {
-                tween<Float>(durationMillis = 320, easing = EaseInOutCubic)
+                tween<Float>(durationMillis = 170, easing = EaseInOutCubic)
             }
             progress.animateTo(target, animationSpec = spec)
         }

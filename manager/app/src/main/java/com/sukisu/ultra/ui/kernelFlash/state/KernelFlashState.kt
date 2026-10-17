@@ -463,7 +463,10 @@ class HorizonKernelWorker(
         }
         val toolPath = "${context.filesDir.absolutePath}/mkbootfs"
         AssetsUtil.exportFiles(context, "$toolName-mkbootfs", toolPath)
-        state.addLog("${context.getString(R.string.kernel_version_log, version)} ${context.getString(R.string.tool_version_log, toolName)}")
+        // Only the kernel version is logged. The tool name ("5_10" / "5_15+") is an internal detail
+        // of which mkbootfs variant was unpacked - it is not a patch tool, and printing it next to
+        // the kernel version read as one, which is what made the line confusing.
+        state.addLog(context.getString(R.string.kernel_version_log, version))
         runCommand(false,
             $$"sed -i '/chmod -R 755 tools bin;/i cp -f $$toolPath $AKHOME/tools;' $$binaryPath"
         )

@@ -28,15 +28,15 @@ data class ManagerUpdate(
  * The releases API is used rather than the repository's tags because a release is the thing that
  * carries an APK, and being able to install it is the point.
  *
- * Two tagging schemes are understood, because this build's version code comes from the commit
- * count rather than from its tag, so the two cannot be compared the same way:
+ * Deciding what "newer" means is the whole difficulty here, because this build's version name is
+ * not a release version: `manager/build.gradle.kts` takes it from `git describe --tags --always`,
+ * which yields a tag only when the build sits exactly on one and a bare commit hash otherwise. So
+ * the version name cannot be compared against a release tag - a build from `main` reports
+ * `f7955fb53`, which matches no semantic version at all, and every release then looked "not
+ * newer", which is why the check never found anything.
  *
- * - a numeric tag (`v37304`) is compared as a version code, which is exact;
- * - a semantic one (`v4.2.0`) is compared against this build's version name, which is the tag it
- *   was built from, so that comparison is only meaningful for a build made from a tag.
- *
- * A tag fitting neither is skipped rather than guessed at: offering the wrong download is worse
- * than offering none.
+ * The comparison therefore uses the version code, which is built from the commit count and is
+ * always numeric, and falls back to the semantic tag only when the local name really is one.
  */
 object ManagerUpdateChecker {
 
@@ -50,8 +50,18 @@ object ManagerUpdateChecker {
     private val SEMANTIC_TAG = Regex("""^v?(\d+)\.(\d+)\.(\d+)$""")
 
     /**
+     * The version code embedded in an APK asset name, e.g. `HyperSU_v4.2.0_37360-release.apk`.
+     *
+     * The release tag alone cannot decide this: `v4.2.0` is a marketing version, and the same tag
+     * is reused for every build cut from that line, so two APKs can carry it while only one of
+     * them is newer. The build number in the asset name is the value the version code is derived
+     * from, which makes it directly comparable.
+     */
+    private val ASSET_BUILD_NUMBER = Regex("""_(\d{4,})""")
+
+    /**
      * @return the update when the newest release is newer than this build, null when it is not or
-     *         the tags cannot be compared, and a failed [Result] when GitHub could not be asked.
+     *         the versions cannot be compared, and a failed [Result] when GitHub could not be asked.
      */
     suspend fun check(): Result<ManagerUpdate?> = withContext(Dispatchers.IO) {
         // The block yields the update or null, never a Result: wrapping one here nests it and
@@ -69,11 +79,14 @@ object ManagerUpdateChecker {
 
                 val json = JSONObject(response.body?.string().orEmpty())
                 val tag = json.optString("tag_name").trim()
-                if (!isNewer(tag)) return@runCatching null
+                if (tag.isEmpty()) return@runCatching null
+
+                val assets = assetsOf(json)
+                if (!isNewer(tag, assets)) return@runCatching null
 
                 ManagerUpdate(
                     versionName = tag.removePrefix("v"),
-                    apkUrl = apkAssetOf(json),
+                    apkUrl = apkAssetOf(assets),
                     pageUrl = json.optString("html_url"),
                     notes = json.optString("body"),
                 )
@@ -81,8 +94,27 @@ object ManagerUpdateChecker {
         }.onFailure { Log.w(TAG, "update check failed", it) }
     }
 
-    /** Whether [tag] names a version later than this build. */
-    private fun isNewer(tag: String): Boolean {
+    /** The release's asset objects, or an empty list when it carries none. */
+    private fun assetsOf(release: JSONObject): List<JSONObject> {
+        val array = release.optJSONArray("assets") ?: return emptyList()
+        return (0 until array.length()).mapNotNull { array.optJSONObject(it) }
+    }
+
+    /**
+     * Whether [tag] (with [assets]) names a version later than this build.
+     *
+     * The build number in an APK asset name is preferred because it is the same number the local
+     * version code is derived from, so the two compare directly. Only when no asset carries one is
+     * the tag itself used, and then only if this build's own name is a comparable version.
+     */
+    private fun isNewer(tag: String, assets: List<JSONObject>): Boolean {
+        val remoteCode = assets.firstNotNullOfOrNull { asset ->
+            ASSET_BUILD_NUMBER.find(asset.optString("name"))?.groupValues?.get(1)?.toLongOrNull()
+        }
+        if (remoteCode != null) {
+            return remoteCode > BuildConfig.VERSION_CODE
+        }
+
         NUMERIC_TAG.matchEntire(tag)?.groupValues?.get(1)?.toLongOrNull()?.let { code ->
             return code > BuildConfig.VERSION_CODE
         }
@@ -96,15 +128,8 @@ object ManagerUpdateChecker {
     }
 
     /** The first `.apk` asset, if the release carries one. */
-    private fun apkAssetOf(release: JSONObject): String? {
-        val assets = release.optJSONArray("assets") ?: return null
-        for (i in 0 until assets.length()) {
-            val asset = assets.optJSONObject(i) ?: continue
-            val name = asset.optString("name")
-            if (name.endsWith(".apk", ignoreCase = true)) {
-                return asset.optString("browser_download_url").takeIf { it.isNotEmpty() }
-            }
-        }
-        return null
-    }
+    private fun apkAssetOf(assets: List<JSONObject>): String? =
+        assets.firstOrNull { it.optString("name").endsWith(".apk", ignoreCase = true) }
+            ?.optString("browser_download_url")
+            ?.takeIf { it.isNotEmpty() }
 }

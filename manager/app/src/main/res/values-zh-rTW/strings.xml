@@ -253,7 +253,6 @@
     <string name="horizon_unknown_error">未知錯誤</string>
     <string name="flash_failed_message">刷入失敗</string>
     <string name="kernel_version_log">內核版本：%1$s</string>
-    <string name="tool_version_log">使用的修補工具：%1$s</string>
     <string name="tools">工具</string>
     <string name="root_required">需要root權限</string>
     <string name="kpm_patch_options">KPM 補丁</string>
