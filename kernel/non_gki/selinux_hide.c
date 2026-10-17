@@ -461,7 +461,16 @@ extern void ksu_register_setprocattr_lsm_hook();
 
 static int ksu_selinux_hide_enable()
 {
-    int ret;
+    // `__maybe_unused` rather than a plain declaration.
+    //
+    // Every use of `ret` is in the `#ifndef KSU_COMPAT_HAS_SUSFS_FEATURE_SELINUX_HIDE` block below.
+    // That macro is defined by the SUSFS patch, not by this tree, so a kernel built with SUSFS
+    // compiles that block out - and `ret` then has no use at all, which `-Werror` rejects as an
+    // unused variable. The attribute covers exactly that case without changing the non-SUSFS build,
+    // and the declaration stays at the top of the function because C89 requires declarations to
+    // precede the first statement.
+    int ret __maybe_unused;
+
     pr_info("selinux_hide: init selinux hide\n");
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0) || defined(KSU_COMPAT_HAS_SELINUX_POLICY_STRUCT)
     if (!backup_sepolicy) {
