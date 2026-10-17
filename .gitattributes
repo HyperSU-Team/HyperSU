@@ -1,1 +1,6 @@
 *.bat eol=crlf
+
+# The module install banner is compiled into ksud with include_str!, so its bytes are exactly the
+# output the user sees in the flash log. Pinned to LF so a checkout on Windows cannot turn it into
+# CRLF and leave a stray carriage return at the end of every banner line.
+userspace/ksud/src/banner eol=lf
