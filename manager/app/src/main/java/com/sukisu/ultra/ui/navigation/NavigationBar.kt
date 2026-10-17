@@ -136,10 +136,10 @@ fun FolkBottomBar(
                     // The tab's position in the bar and the page it opens are not the same number
                     // once entries are dropped: with Superuser and Module hidden, Settings is the
                     // second tab but still page 3. Selection goes by `pageIndex`; `activateTab`
-                    // takes both, because the pill travels in tab positions.
+                    // takes the tab position and maps it back to the page itself.
                     FloatingBottomBarItem(
                         selected = destination.pageIndex == selectedIndex,
-                        onClick = { activateTab(index, destination.pageIndex) },
+                        onClick = { activateTab(index) },
                         modifier = Modifier.defaultMinSize(minWidth = 76.dp),
                     ) {
                         val navBadge = badgeFor(index, badge)

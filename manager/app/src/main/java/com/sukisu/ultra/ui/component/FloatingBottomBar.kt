@@ -229,19 +229,20 @@ fun FloatingBottomBar(
     }
 
     /**
-     * Selects the tab that was tapped.
+     * Selects the tab at [index].
      *
      * [index] is the tab's position in the bar, which is what the drag animation and the travelling
-     * pill are measured in. [target] is the value handed back to the caller, and it is a separate
-     * argument because the two are not always the same number: the bar can show fewer tabs than
-     * there are pages, so the second visible tab may open page 3. Defaults to [index] for the
-     * ordinary case where they do match.
+     * pill are measured in. The page it opens goes through [pageForTab], because the two are not
+     * the same number when the bar shows fewer tabs than there are pages.
+     *
+     * The signature stays `(Int) -> Unit` on purpose: this function is handed to `content` and to
+     * `movableContentOf`, both of which take a single-argument callback.
      */
-    fun activateTab(index: Int, target: Int = index) {
+    fun activateTab(index: Int) {
         if (index !in 0 until tabsCount) return
         if (currentIndex != index) {
             currentIndex = index
-            onSelectedUpdated(target)
+            onSelectedUpdated(pageForTab(index))
         }
         dampedDragAnimation.animateToValue(index.toFloat())
     }
