@@ -4,19 +4,6 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.os.Build
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,23 +11,19 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.sukisu.ultra.R
-import com.sukisu.ultra.ui.component.folk.FolkButtonDefaults
-import com.sukisu.ultra.ui.component.folk.FolkPreference
-import com.sukisu.ultra.ui.component.folk.FolkSettingsScaffold
-import com.sukisu.ultra.ui.component.folk.FolkSettingsSectionGroup
+import com.sukisu.ultra.ui.component.hyperos.HyperCenteredCard
+import com.sukisu.ultra.ui.component.hyperos.HyperHero
+import com.sukisu.ultra.ui.component.hyperos.HyperOsPage
+import com.sukisu.ultra.ui.component.hyperos.HyperPillButton
+import com.sukisu.ultra.ui.component.hyperos.HyperRow
+import com.sukisu.ultra.ui.component.hyperos.HyperSection
+import com.sukisu.ultra.ui.component.hyperos.HyperStackedRow
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
 import com.sukisu.ultra.ui.util.getSuperuserCount
 import com.sukisu.ultra.ui.util.rememberSuSFSStatus
@@ -50,12 +33,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * The device page, shaped like HyperCeiler's about page: the app mark and version as a centred
- * header, then the device's own name and system version, then grouped label/value rows.
+ * The device page in the HyperOS reading of the about page: mark, name and version as the
+ * opening card, the device's own name and system version centred under it, then the grouped
+ * label/value cards.
  *
- * Every row is a title with its value underneath rather than a value pushed to the right edge -
- * that is what the HyperOS settings rows this mirrors do, and it keeps a kernel string or a
- * build fingerprint from squeezing the label into a column of single characters.
+ * A value that fits on the right edge stays there; a kernel string or a full build version is
+ * stacked under its label instead, because squeezing it to the edge truncates exactly the part
+ * someone copies the page for.
  */
 @Composable
 fun DeviceScreen() {
@@ -159,94 +143,69 @@ fun DeviceScreen() {
         add(context.getString(R.string.device_row_superuser) to superuserCount.toString())
     }
 
-    FolkSettingsScaffold(
+    HyperOsPage(
         title = stringResource(R.string.device_info_title),
         onBack = { navigator.pop() },
     ) {
-        item {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
-                    .padding(top = 40.dp, bottom = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(88.dp)
-                        .clip(RoundedCornerShape(22.dp))
-                        .background(Color.White),
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_launcher_foreground),
-                        contentDescription = null,
-                        contentScale = ContentScale.Fit,
-                    )
-                }
-                Text(
-                    modifier = Modifier.padding(top = 14.dp),
-                    text = props.marketName,
-                    fontWeight = FontWeight.SemiBold,
-                    style = MaterialTheme.typography.headlineSmall,
-                )
-                Text(
-                    text = props.systemVersion,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+        HyperHero(
+            icon = painterResource(id = R.drawable.ic_launcher_foreground),
+            name = context.getString(R.string.app_name),
+            version = state.systemInfo.managerVersion,
+        )
+
+        HyperSection {
+            HyperCenteredCard(title = props.marketName, subtitle = props.systemVersion)
         }
 
-        item {
-            DeviceSection(stringResource(R.string.device_section_device), deviceRows)
-            DeviceSection(stringResource(R.string.device_section_kernel), kernelRows)
-            DeviceSection(stringResource(R.string.device_section_manager), managerRows)
-            DeviceSection(stringResource(R.string.device_section_stats), statsRows)
+        DeviceRowsSection(stringResource(R.string.device_section_device), deviceRows)
+        DeviceRowsSection(stringResource(R.string.device_section_kernel), kernelRows)
+        DeviceRowsSection(stringResource(R.string.device_section_manager), managerRows)
+        DeviceRowsSection(stringResource(R.string.device_section_stats), statsRows)
 
-            Spacer(Modifier.height(8.dp))
-            Button(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                colors = FolkButtonDefaults.filledColors(),
-                onClick = {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
-                        as? ClipboardManager
-                    clipboard?.setPrimaryClip(
-                        ClipData.newPlainText(
-                            context.getString(R.string.device_info_title),
-                            buildCopyText(
-                                listOf(
-                                    context.getString(R.string.device_section_device) to deviceRows,
-                                    context.getString(R.string.device_section_kernel) to kernelRows,
-                                    context.getString(R.string.device_section_manager) to managerRows,
-                                    context.getString(R.string.device_section_stats) to statsRows,
-                                ),
+        HyperPillButton(
+            text = context.getString(
+                if (copied) R.string.device_copied else R.string.device_copy_all,
+            ),
+            onClick = {
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
+                    as? ClipboardManager
+                clipboard?.setPrimaryClip(
+                    ClipData.newPlainText(
+                        context.getString(R.string.device_info_title),
+                        buildCopyText(
+                            listOf(
+                                context.getString(R.string.device_section_device) to deviceRows,
+                                context.getString(R.string.device_section_kernel) to kernelRows,
+                                context.getString(R.string.device_section_manager) to managerRows,
+                                context.getString(R.string.device_section_stats) to statsRows,
                             ),
                         ),
-                    )
-                    copied = true
-                },
-            ) {
-                Text(
-                    text = context.getString(
-                        if (copied) R.string.device_copied else R.string.device_copy_all,
                     ),
                 )
-            }
-            Spacer(Modifier.height(24.dp))
-        }
+                copied = true
+            },
+        )
     }
 }
 
 @Composable
-private fun DeviceSection(title: String, rows: List<Pair<String, String>>) {
+private fun DeviceRowsSection(title: String, rows: List<Pair<String, String>>) {
     if (rows.isEmpty()) return
-    FolkSettingsSectionGroup(title = title) {
-        rows.forEach { row ->
-            item(key = row.first) {
-                FolkPreference(title = row.first, summary = row.second)
+    HyperSection(title = title) {
+        rows.forEachIndexed { index, row ->
+            val divider = index != rows.lastIndex
+            if (row.second.length > 30 || row.second.count { it == ' ' } > 3) {
+                HyperStackedRow(
+                    label = row.first,
+                    value = row.second,
+                    showDivider = divider,
+                )
+            } else {
+                HyperRow(
+                    label = row.first,
+                    value = row.second,
+                    showDivider = divider,
+                )
             }
         }
     }
