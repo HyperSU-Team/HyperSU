@@ -540,6 +540,14 @@
     <string name="seccomp_status_unknown">未知</string>
     <string name="settings_selinux_hide">隱藏 SELinux 修改</string>
     <string name="settings_selinux_hide_failed">錯誤： %d</string>
+    <string name="settings_mount_hide">隱藏可疑掛載</string>
+    <string name="settings_mount_hide_summary">從隔離程序與應用程式程序的 /proc 掛載視圖中過濾 KernelSU 與模組的掛載記錄</string>
+    <string name="settings_mount_hide_reboot_required">重新啟動後生效</string>
+    <string name="settings_mount_hide_failed">錯誤：%d</string>
+    <string name="module_preinit_no_space">preinit 未生效：/metadata 空間不足</string>
+    <string name="module_preinit_error">preinit 未生效：preinit 目錄無效</string>
+    <string name="module_preinit_bootloop">多次啟動失敗，preinit 已停用</string>
+    <string name="module_preinit_unsupported">preinit 未生效：目前核心不支援</string>
     <string name="settings_selinux_hide_reboot_required">重啟生效</string>
     <string name="settings_selinux_hide_summary">阻止應用檢測 SELinux 修改</string>
     <string name="settings_show_fullstatus">顯示完整狀態</string>

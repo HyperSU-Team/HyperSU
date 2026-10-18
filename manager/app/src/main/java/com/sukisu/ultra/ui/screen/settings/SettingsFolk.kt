@@ -355,6 +355,22 @@ fun SettingPagerFolk(
                         }
 
                         item {
+                            val mountHideSummary = when (uiState.mountHideStatus) {
+                                "unsupported" -> stringResource(R.string.feature_status_unsupported_summary)
+                                "managed" -> stringResource(R.string.feature_status_managed_summary)
+                                else -> stringResource(R.string.settings_mount_hide_summary)
+                            }
+                            FolkSwitchPreference(
+                                title = stringResource(R.string.settings_mount_hide),
+                                summary = mountHideSummary,
+                                icon = Icons.Filled.Policy,
+                                enabled = uiState.mountHideStatus == "supported",
+                                checked = uiState.isMountHideEnabled,
+                                onCheckedChange = actions.onSetMountHideEnabled,
+                            )
+                        }
+
+                        item {
                             val sulogSummary = when (uiState.sulogStatus) {
                                 "unsupported" -> stringResource(R.string.feature_status_unsupported_summary)
                                 "managed" -> stringResource(R.string.feature_status_managed_summary)

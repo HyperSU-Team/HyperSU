@@ -781,6 +781,17 @@ private fun ModuleItem(
                 }
             }
 
+            // A preinit directory the kernel could not stage is invisible otherwise: the module
+            // looks installed and enabled, and its boot-time actions simply never run.
+            module.preinitWarning()?.let { message ->
+                StatusTag(
+                    label = stringResource(message),
+                    modifier = Modifier.padding(bottom = 4.dp),
+                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    backgroundColor = MaterialTheme.colorScheme.errorContainer,
+                )
+            }
+
             HorizontalDivider(thickness = Dp.Hairline)
 
             Spacer(Modifier.height(4.dp))
