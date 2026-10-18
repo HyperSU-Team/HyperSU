@@ -363,7 +363,7 @@ fun SettingPagerFolk(
                             FolkSwitchPreference(
                                 title = stringResource(R.string.settings_mount_hide),
                                 summary = mountHideSummary,
-                                icon = Icons.Filled.Policy,
+                                icon = Icons.Filled.Fence,
                                 enabled = uiState.mountHideStatus == "supported",
                                 checked = uiState.isMountHideEnabled,
                                 onCheckedChange = actions.onSetMountHideEnabled,
