@@ -88,7 +88,11 @@ object ManagerUpdateChecker {
                     versionName = tag.removePrefix("v"),
                     apkUrl = apkAssetOf(assets),
                     pageUrl = json.optString("html_url"),
-                    notes = json.optString("body"),
+                    // `optString` turns a JSON null into the four-character string "null", which
+                    // is what a release with no body written yet actually contains - and the
+                    // dialog then displayed "null" as the release notes. `opt` returns the null
+                    // itself, so a missing body reads as empty.
+                    notes = (json.opt("body") as? String).orEmpty().trim(),
                 )
             }
         }.onFailure { Log.w(TAG, "update check failed", it) }
