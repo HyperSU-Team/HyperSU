@@ -307,6 +307,18 @@ ifeq ($(shell grep -q "struct selinux_policy" $(srctree)/security/selinux/ss/ser
 ccflags-y += -DKSU_COMPAT_HAS_SELINUX_POLICY_STRUCT
 endif
 
+# compat/selinux_hide.c has three layouts to deal with: selinux_policy (5.10+),
+# selinux_state carrying an embedded ss (pre-5.10), and an even older one with no
+# selinux_state at all. It selects between them on KSU_COMPAT_USE_SELINUX_STATE,
+# which no other probe provides, so derive it here: it is the middle case, and
+# getting it wrong leaves fake_state and the backup variables undeclared.
+ifeq ($(shell grep -q "struct selinux_state " $(srctree)/security/selinux/include/security.h; echo $$?),0)
+ifeq ($(shell grep -q "struct selinux_policy" $(srctree)/security/selinux/ss/services.h; echo $$?),0)
+else
+ccflags-y += -DKSU_COMPAT_USE_SELINUX_STATE
+endif
+endif
+
 ifeq ($(shell grep -q "struct mutex status_lock" $(srctree)/security/selinux/include/security.h; echo $$?),0)
 ccflags-y += -DKSU_COMPAT_SELINUX_STATUS_VAR_IN_SELINUX_STATE
 endif

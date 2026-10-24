@@ -116,6 +116,36 @@ static void (*context_struct_compute_av_fn)(struct policydb *policydb, struct co
 #elif defined(KSU_COMPAT_USE_SELINUX_STATE)
 // remove static in susfs
 __maybe_static struct selinux_state fake_state;
+
+/*
+ * Kernels with selinux_state but without selinux_policy (before 5.10) keep the
+ * policy database and the SID table inside selinux_state.ss instead of behind a
+ * single selinux_policy pointer, so the backup is two pieces rather than one.
+ *
+ * They are taken apart and put back by the same enable/disable pair that uses
+ * backup_sepolicy on newer kernels, which is why the two sets of variables are
+ * mutually exclusive and only one pair exists in any given build.
+ *
+ * On these kernels selinux_ss.sidtab is a pointer, so "backing it up" means
+ * holding on to the pointer rather than copying the structure - which is why
+ * this stays a plain pointer and is never kfree()d.
+ */
+__maybe_static struct policydb *backup_policydb = NULL;
+__maybe_static struct sidtab *backup_sidtab = NULL;
+
+/*
+ * Counterpart of ksu_destroy_sepolicy() for the pre-5.10 layout: free the
+ * policy database that was duplicated into fake_state.ss.
+ */
+static void ksu_destroy_policydb(struct policydb *db)
+{
+    if (!db) {
+        return;
+    }
+
+    policydb_destroy(db);
+    kfree(db);
+}
 #else
 static int dump_masked_av_helper(void *k, void *d, void *args);
 static int context_struct_to_string(struct context *context, char **scontext, u32 *scontext_len);
@@ -660,6 +690,13 @@ static void ksu_selinux_hide_disable()
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0) && !defined(KSU_COMPAT_SIDTAB_AS_REFERENCE)
     backup_sidtab = kzalloc(sizeof(*backup_sidtab), GFP_KERNEL);
     memcpy(backup_sidtab, &fake_state.ss->sidtab, sizeof(struct sidtab));
+#else
+    /*
+     * selinux_ss.sidtab is a pointer here, so the backup is just the pointer we
+     * are about to replace. fake_state.ss owns it for the lifetime of the fake
+     * state and it is never freed separately.
+     */
+    backup_sidtab = fake_state.ss->sidtab;
 #endif
 
 #endif
@@ -780,10 +817,12 @@ void ksu_selinux_hide_drop_backup_if_unused()
 #elif defined(KSU_COMPAT_USE_SELINUX_STATE)
     if (!ksu_selinux_hide_running && backup_policydb && backup_sidtab) {
         pr_info("selinux_hide is not enabled - drop backup_policydb\n");
-        sidtab_destroy(backup_sidtab);
-        kfree(backup_sidtab);
+        /*
+         * backup_sidtab is the pointer borrowed from fake_state.ss, not a copy:
+         * destroying it here would free memory that fake_state.ss still owns and
+         * is released with the fake state. Only the duplicated policydb is ours.
+         */
         ksu_destroy_policydb(backup_policydb);
-        kfree(backup_policydb);
         backup_policydb = NULL;
         backup_sidtab = NULL;
     }
