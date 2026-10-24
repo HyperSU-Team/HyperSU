@@ -13,7 +13,14 @@
 #include <linux/syscalls.h>
 #include <linux/task_work.h>
 #include <linux/version.h>
+/*
+ * The MS_* mount flags live in <uapi/linux/fs.h> before 5.0 and in
+ * <uapi/linux/mount.h> after it. <linux/fs.h> above already pulls in the former,
+ * so the extra header is only needed - and only exists - on newer kernels.
+ */
+#ifdef KSU_COMPAT_HAS_UAPI_MOUNT_H
 #include <uapi/linux/mount.h>
+#endif
 
 #include "arch.h"
 #include "klog.h" // IWYU pragma: keep

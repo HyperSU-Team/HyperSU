@@ -2,7 +2,14 @@
 #include <linux/compat.h>
 #include <linux/cred.h>
 #include <linux/gfp.h>
+/*
+ * <linux/minmax.h> was split out of <linux/kernel.h> in 5.9. On older kernels
+ * min()/max()/min_t() come from kernel.h, which is pulled in below via
+ * <linux/slab.h>, so the dedicated header must not be required.
+ */
+#ifdef KSU_COMPAT_HAS_MINMAX_H
 #include <linux/minmax.h>
+#endif
 #include <linux/overflow.h>
 #include <linux/sched/signal.h>
 #include <linux/slab.h>

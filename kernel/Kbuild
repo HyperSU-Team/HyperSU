@@ -432,6 +432,21 @@ ifeq ($(shell grep -q "SECCOMP_ARCH_NATIVE_NR" $(srctree)/kernel/seccomp.c; echo
 ccflags-y += -DKSU_COMPAT_HAS_SECCOMP_ACTION_CACHE
 endif
 
+# <uapi/linux/mount.h> was split out of <uapi/linux/fs.h> in 5.0. On older
+# kernels the MS_* flags come from fs.h, which every consumer here already
+# includes, so the separate header must not be required.
+ifeq ($(wildcard $(srctree)/include/uapi/linux/mount.h),)
+else
+ccflags-y += -DKSU_COMPAT_HAS_UAPI_MOUNT_H
+endif
+
+# <linux/minmax.h> was split out of <linux/kernel.h> in 5.9. Consumers that
+# only need min()/max()/min_t() get them from kernel.h on older kernels.
+ifeq ($(wildcard $(srctree)/include/linux/minmax.h),)
+else
+ccflags-y += -DKSU_COMPAT_HAS_MINMAX_H
+endif
+
 ifeq ($(shell grep -q "selinux_cred" $(srctree)/security/selinux/include/objsec.h; echo $$?),0)
 ccflags-y += -DKSU_HAS_SELINUX_CRED
 endif
