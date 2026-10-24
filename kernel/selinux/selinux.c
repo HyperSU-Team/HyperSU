@@ -234,3 +234,106 @@ void escape_to_root_for_adb_root(void)
     }
     commit_creds(cred);
 }
+
+#ifdef CONFIG_KSU_SUSFS
+/*
+ * SIDs the SUSFS kernel code compares against.
+ *
+ * fs/susfs.c declares these as extern and uses them to recognise the su,
+ * zygote, init and priv_app domains without doing a string comparison on the
+ * hot path, and fs/susfs.c itself is not the only caller: the policy-update
+ * paths in rules.c refresh them after a new policy is installed, because a
+ * reload can renumber SIDs.
+ */
+#define SUSFS_INIT_DOMAIN "u:r:init:s0"
+#define SUSFS_ZYGOTE_DOMAIN "u:r:zygote:s0"
+#define SUSFS_ZYGOTE_NEXT_DOMAIN "u:r:zygote_next:s0"
+#define SUSFS_PRIV_APP_DOMAIN "u:r:priv_app:s0:c512,c768"
+
+u32 susfs_ksu_sid __read_mostly = 0;
+u32 susfs_init_sid __read_mostly = 0;
+u32 susfs_zygote_sid __read_mostly = 0;
+u32 susfs_zygote_next_sid __read_mostly = 0;
+u32 susfs_priv_app_sid __read_mostly = 0;
+
+static void susfs_set_sid(const char *secctx_name, u32 *out_sid)
+{
+    int err;
+
+    if (!secctx_name || !out_sid) {
+        pr_err("secctx_name || out_sid is NULL\n");
+        return;
+    }
+
+    err = security_secctx_to_secid(secctx_name, strlen(secctx_name), out_sid);
+    if (err) {
+        pr_err("failed setting sid for '%s', err: %d\n", secctx_name, err);
+        return;
+    }
+    pr_info("sid '%u' is set for secctx_name '%s'\n", *out_sid, secctx_name);
+}
+
+void susfs_set_batch_sid(void)
+{
+    susfs_set_sid(SUSFS_ZYGOTE_DOMAIN, &susfs_zygote_sid);
+    susfs_set_sid(SUSFS_ZYGOTE_NEXT_DOMAIN, &susfs_zygote_next_sid);
+    susfs_set_sid(KERNEL_SU_CONTEXT, &susfs_ksu_sid);
+    susfs_set_sid(SUSFS_INIT_DOMAIN, &susfs_init_sid);
+    susfs_set_sid(SUSFS_PRIV_APP_DOMAIN, &susfs_priv_app_sid);
+}
+
+bool susfs_is_sid_equal(const struct cred *cred, u32 sid2)
+{
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 18, 0)
+    const struct task_security_struct *tsec = selinux_cred(cred);
+#else
+    const struct cred_security_struct *tsec = selinux_cred(cred);
+#endif
+
+    if (!tsec)
+        return false;
+    return tsec->sid == sid2;
+}
+
+u32 susfs_get_sid_from_name(const char *secctx_name)
+{
+    u32 out_sid = 0;
+    int err;
+
+    if (!secctx_name) {
+        pr_err("secctx_name is NULL\n");
+        return 0;
+    }
+    err = security_secctx_to_secid(secctx_name, strlen(secctx_name), &out_sid);
+    if (err) {
+        pr_err("failed getting sid from secctx_name: %s, err: %d\n", secctx_name, err);
+        return 0;
+    }
+    return out_sid;
+}
+
+u32 susfs_get_current_sid(void)
+{
+    return current_sid();
+}
+
+bool susfs_is_current_zygote_domain(void)
+{
+    return unlikely(current_sid() == susfs_zygote_sid);
+}
+
+bool susfs_is_current_zygote_next_domain(void)
+{
+    return unlikely(current_sid() == susfs_zygote_next_sid);
+}
+
+bool susfs_is_current_ksu_domain(void)
+{
+    return unlikely(current_sid() == susfs_ksu_sid);
+}
+
+bool susfs_is_current_init_domain(void)
+{
+    return unlikely(current_sid() == susfs_init_sid);
+}
+#endif // #ifdef CONFIG_KSU_SUSFS

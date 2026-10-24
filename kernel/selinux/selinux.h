@@ -42,4 +42,26 @@ void escape_to_root_for_adb_root();
 
 extern u32 ksu_file_sid;
 
+#ifdef CONFIG_KSU_SUSFS
+/*
+ * Shared with the SUSFS kernel code in fs/susfs.c, which declares the same
+ * functions extern. The SIDs are refreshed by susfs_set_batch_sid() after every
+ * policy update, since a reload can renumber them.
+ */
+extern u32 susfs_ksu_sid;
+extern u32 susfs_init_sid;
+extern u32 susfs_zygote_sid;
+extern u32 susfs_zygote_next_sid;
+extern u32 susfs_priv_app_sid;
+
+void susfs_set_batch_sid(void);
+bool susfs_is_sid_equal(const struct cred *cred, u32 sid2);
+u32 susfs_get_sid_from_name(const char *secctx_name);
+u32 susfs_get_current_sid(void);
+bool susfs_is_current_zygote_domain(void);
+bool susfs_is_current_zygote_next_domain(void);
+bool susfs_is_current_ksu_domain(void);
+bool susfs_is_current_init_domain(void);
+#endif // #ifdef CONFIG_KSU_SUSFS
+
 #endif
