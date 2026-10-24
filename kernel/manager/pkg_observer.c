@@ -11,11 +11,7 @@
 #include <linux/version.h>
 #include "klog.h" // IWYU pragma: keep
 #include "manager/throne_tracker.h"
-
-// Older kernels use a boolean task_work notification argument.
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0) && !defined(TWA_RESUME)
-#define TWA_RESUME true
-#endif
+#include "infra/kernel_compat.h" // TWA_RESUME on kernels before 5.8
 
 #define MASK_SYSTEM (FS_CREATE | FS_MOVE | FS_EVENT_ON_CHILD)
 

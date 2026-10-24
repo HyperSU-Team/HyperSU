@@ -159,7 +159,13 @@ static inline void ksu_kvfree(void *buf)
 #endif
 
 // for supercalls.c fd install tw
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 7, 0)
+//
+// task_work_add() took a bool "notify" before 5.8 and an enum
+// task_work_notify_mode after it (5ef64cc0cfe7). The bool maps exactly onto
+// TWA_RESUME: both mean "set TIF_NOTIFY_RESUME and kick the task", as opposed to
+// TWA_SIGNAL which also forces a signal. So 1 is the right value here, not a
+// stand-in that happens to compile.
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0)
 #ifndef TWA_RESUME
 #define TWA_RESUME 1
 #endif

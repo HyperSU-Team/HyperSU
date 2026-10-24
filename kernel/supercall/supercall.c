@@ -15,6 +15,7 @@
 #include "supercall/internal.h"
 #include "arch.h"
 #include "util.h"
+#include "infra/kernel_compat.h" // TWA_RESUME on kernels before 5.8
 #include "klog.h" // IWYU pragma: keep
 
 #define KSU_DRIVER_PERMISSION_SU_SESSION (1UL << 0)

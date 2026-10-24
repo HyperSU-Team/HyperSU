@@ -1,5 +1,5 @@
-#ifndef __KSU_H_KERNEL_COMPAT
-#define __KSU_H_KERNEL_COMPAT
+#ifndef __KSU_H_KERNEL_COMPAT_TOPLEVEL
+#define __KSU_H_KERNEL_COMPAT_TOPLEVEL
 
 #include <linux/fs.h>
 #include <linux/version.h>
@@ -21,4 +21,4 @@ static long ksu_copy_from_user_retry(void *to, const void __user *from,
     return copy_from_user(to, from, count);
 }
 
-#endif
+#endif // __KSU_H_KERNEL_COMPAT_TOPLEVEL

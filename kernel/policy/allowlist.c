@@ -10,6 +10,7 @@
 #include <linux/kernel.h>
 #include <linux/list.h>
 #include <linux/printk.h>
+#include <linux/sched/task.h>
 #include <linux/slab.h>
 #include <linux/types.h>
 #include <linux/version.h>
@@ -24,6 +25,7 @@
 #include "policy/allowlist.h"
 #include "manager/manager_identity.h"
 #include "infra/su_mount_ns.h"
+#include "infra/kernel_compat.h" // TWA_RESUME on kernels before 5.8
 #include "feature/shell_su_adb_only.h"
 
 #define FILE_MAGIC 0x7f4b5355 // ' KSU', u32
