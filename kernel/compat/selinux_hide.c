@@ -461,7 +461,16 @@ extern void ksu_register_setprocattr_lsm_hook();
 
 static int ksu_selinux_hide_enable()
 {
-    int ret;
+    // `__maybe_unused` rather than a plain declaration.
+    //
+    // Every use of `ret` is in the `#ifndef KSU_COMPAT_HAS_SUSFS_FEATURE_SELINUX_HIDE` block below.
+    // That macro is defined by the SUSFS patch, not by this tree, so a kernel built with SUSFS
+    // compiles that block out - and `ret` then has no use at all, which `-Werror` rejects as an
+    // unused variable. The attribute covers exactly that case without changing the non-SUSFS build,
+    // and the declaration stays at the top of the function because C89 requires declarations to
+    // precede the first statement.
+    int ret __maybe_unused;
+
     pr_info("selinux_hide: init selinux hide\n");
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0) || defined(KSU_COMPAT_HAS_SELINUX_POLICY_STRUCT)
     if (!backup_sepolicy) {
@@ -2156,27 +2165,8 @@ allow:
  *
  * When the kernel already carries the SUSFS selinux_hide hooks (detected as
  * KSU_COMPAT_HAS_SUSFS_FEATURE_SELINUX_HIDE), security/selinux/{hooks,selinuxfs}.c
- * dispatch into the KernelSU side instead of patching SELinux slots at runtime:
- *
- *   hooks.c      LSM_HOOK_INIT(setprocattr, handle_selinux_setprocattr)
- *                  -> my_setprocattr()
- *   selinuxfs.c  write_op[SEL_CONTEXT] = handle_sel_write_context
- *                  -> my_write_context()
- *                write_op[SEL_ACCESS]  = handle_sel_write_access
- *                  -> my_write_access()
- *
- * The bodies below are the same logic the self-patching path in this file uses,
- * exposed under the names the kernel declares as extern. They are only built
- * when the kernel provides those hooks; otherwise the dispatch happens inside
- * this file and the symbols would be unused.
- */
-#ifdef KSU_COMPAT_HAS_SUSFS_FEATURE_SELINUX_HIDE
-
-/*
- * Kernel-side entry points.
- *
- * The kernel declares these as extern and dispatches into them from
- * security/selinux/{hooks,selinuxfs}.c:
+ * dispatch into this file instead of patching SELinux slots at runtime. The
+ * kernel declares these as extern:
  *
  *   hooks.c      handle_selinux_setprocattr() -> my_setprocattr()
  *   selinuxfs.c  handle_sel_write_context()   -> my_write_context()
@@ -2187,6 +2177,7 @@ allow:
  * only perform the hidden-policy operation itself. They must not call back into
  * selinux_setprocattr(): it is static in hooks.c and therefore unreachable.
  */
+#ifdef KSU_COMPAT_HAS_SUSFS_FEATURE_SELINUX_HIDE
 
 /*
  * SID of the task's ptrace parent. hooks.c has its own static copy; modules
