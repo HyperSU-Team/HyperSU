@@ -128,16 +128,19 @@ long __nocfi ksu_hook_execveat(int orig_nr, const struct pt_regs *regs)
 
 long __nocfi ksu_hook_setresuid(int orig_nr, const struct pt_regs *regs)
 {
-    uid_t old_uid = current_uid().val;
-    long ret = ksu_syscall_table[orig_nr](regs);
-
-    if (ret < 0)
-        return ret;
-
     /*
-     * The syscall has already run, so read the new identity back from current
-     * and pass it in both remaining slots - the same shape zygote produces.
+     * Deliberately does not call ksu_handle_setresuid().
+     *
+     * On a kernel carrying the SUSFS patch, SYSCALL_DEFINE3(setresuid) already
+     * calls it before __sys_setresuid() runs, and that call site sees the
+     * requested uids alongside the still-current identity - which is the
+     * information the handler needs. Calling it again from here, after the
+     * syscall has completed, would run the whole transition twice: two driver
+     * fds installed for the manager, two umount passes, and an old uid read from
+     * a task that has already changed identity.
+     *
+     * The hook stays registered because the syscall table entry still has to be
+     * routed through ksu_syscall_table, but it does no KSU work of its own.
      */
-    ksu_handle_setresuid(old_uid, current_uid().val, current_uid().val);
-    return ret;
+    return ksu_syscall_table[orig_nr](regs);
 }
