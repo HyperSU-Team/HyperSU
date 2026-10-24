@@ -9,6 +9,19 @@ struct selinux_policy *ksu_dup_sepolicy(struct selinux_policy *old_pol);
 
 void ksu_destroy_sepolicy(struct selinux_policy *orig);
 
+/*
+ * Pre-5.10 counterparts of the pair above, for kernels that keep the policy
+ * database in selinux_state.ss rather than behind a selinux_policy pointer.
+ *
+ * ksu_dup_policydb() serialises old_db into new_db, which the caller allocates,
+ * and returns the serialised length or a negative errno.
+ * ksu_destroy_policydb() releases the contents of db but not db itself, since
+ * the caller owns that allocation and frees it separately.
+ */
+int ksu_dup_policydb(struct policydb *old_db, struct policydb *new_db);
+
+void ksu_destroy_policydb(struct policydb *db);
+
 // Operation on types
 bool ksu_type(struct policydb *db, const char *name, const char *attr);
 bool ksu_attribute(struct policydb *db, const char *name);
