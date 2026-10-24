@@ -31,18 +31,40 @@
 #define SU_PATH "/system/bin/su"
 #define SH_PATH "/system/bin/sh"
 
-bool ksu_su_compat_enabled __read_mostly = true;
+/*
+ * The SUSFS kernel patch declares this as
+ *
+ *     extern struct static_key_true ksu_su_compat_enabled;
+ *
+ * and tests it with static_branch_likely() from fs/exec.c, fs/open.c and
+ * fs/stat.c. It has to be the real static key and not a bool: a bool would link
+ * fine and then the kernel would read a jump-table entry out of a one-byte
+ * object. So the key is the definition, and the rest of the tree asks
+ * ksu_su_compat_is_enabled() instead of reading the variable directly.
+ */
+struct static_key_true ksu_su_compat_enabled = STATIC_KEY_TRUE_INIT;
+
+bool ksu_su_compat_is_enabled(void)
+{
+    return static_branch_likely(&ksu_su_compat_enabled);
+}
 
 static int su_compat_feature_get(u64 *value)
 {
-    *value = ksu_su_compat_enabled ? 1 : 0;
+    *value = ksu_su_compat_is_enabled() ? 1 : 0;
     return 0;
 }
 
 static int su_compat_feature_set(u64 value)
 {
     bool enable = value != 0;
-    ksu_su_compat_enabled = enable;
+
+    if (enable) {
+        static_branch_enable(&ksu_su_compat_enabled);
+    } else {
+        static_branch_disable(&ksu_su_compat_enabled);
+    }
+
     pr_info("su_compat: set to %d\n", enable);
     return 0;
 }
@@ -253,7 +275,19 @@ long ksu_handle_execve_sucompat(const char __user **filename_user, int orig_nr, 
                                              PT_REGS_PARM3(regs), false, orig_nr, regs);
 }
 
-long ksu_handle_execveat_sucompat(const char __user **filename_user, int orig_nr, struct pt_regs *regs)
+/*
+ * Named ksu_sucompat_execveat rather than ksu_handle_execveat_sucompat, because
+ * the SUSFS kernel patch declares a symbol of that name in fs/exec.c with a
+ * completely different signature:
+ *
+ *     int ksu_handle_execveat_sucompat(int *fd, struct filename **filename_ptr,
+ *                                      void *argv, void *envp, int *flags);
+ *
+ * One of the two has to give, and the kernel call site is the one that cannot
+ * change, so the adapter for it lives in compat/susfs_hooks.c under the kernel's
+ * name. This is the syscall-table entry point and only this tree calls it.
+ */
+long ksu_sucompat_execveat(const char __user **filename_user, int orig_nr, struct pt_regs *regs)
 {
     return ksu_handle_execve_sucompat_common(filename_user, (const char __user *const __user *)PT_REGS_PARM3(regs),
                                              PT_REGS_SYSCALL_PARM4(regs), true, orig_nr, regs);

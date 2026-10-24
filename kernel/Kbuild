@@ -42,6 +42,13 @@ kernelsu-objs += policy/feature.o
 kernelsu-objs += runtime/boot_event.o
 kernelsu-objs += runtime/ksud_integration.o
 
+# Adapter for the ksu_* symbols the SUSFS patch calls from core kernel files
+# (fs/read_write.c, fs/stat.c, fs/exec.c, fs/open.c, kernel/sys.c,
+# kernel/reboot.c). Those call sites are compiled into the kernel, so the
+# definitions must exist in every build that carries the patch, not only on
+# legacy ones. The file is empty unless CONFIG_KSU_SUSFS is set.
+kernelsu-objs += compat/susfs_hooks.o
+
 kernelsu-objs += selinux/selinux.o
 kernelsu-objs += selinux/rules.o
 kernelsu-objs += selinux/sepolicy.o

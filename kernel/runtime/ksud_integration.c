@@ -11,6 +11,7 @@
 #include <linux/fs.h>
 #include <linux/version.h>
 #include <linux/input-event-codes.h>
+#include <linux/jump_label.h>
 #include <linux/kprobes.h>
 #include <linux/printk.h>
 #include <linux/types.h>
@@ -475,7 +476,43 @@ static void ksu_install_rc_hook(struct file *file)
     file->f_op = &fops_proxy;
 }
 
-static void ksu_handle_sys_read(unsigned int fd, char __user **buf_ptr, size_t *count_ptr)
+/*
+ * Gate for the read/fstat hooks. The SUSFS patch injects
+ *
+ *     if (static_branch_unlikely(&ksu_is_init_rc_hook_enabled))
+ *             ksu_handle_sys_read(fd);
+ *
+ * straight into SYSCALL_DEFINE3(read) and the matching check into
+ * vfs_statx_fd(), so the symbol has to exist and be a static_key_true whether or
+ * not this build reaches init.rc through its own syscall hooks. It stays enabled
+ * and is only cleared once init.rc has been handled, mirroring what
+ * stop_init_rc_hook() does for the syscall-table path.
+ */
+struct static_key_true ksu_is_init_rc_hook_enabled = STATIC_KEY_TRUE_INIT;
+
+/*
+ * Called from the injected read() path with nothing but the fd, because that is
+ * all the kernel hook carries. The syscall-table path calls the three-argument
+ * form below and passes the user buffer pointers it already has.
+ */
+int ksu_handle_sys_read(unsigned int fd)
+{
+    struct file *file;
+
+    if (!static_branch_unlikely(&ksu_is_init_rc_hook_enabled)) {
+        return 0;
+    }
+
+    file = fget(fd);
+    if (!file) {
+        return 0;
+    }
+    ksu_install_rc_hook(file);
+    fput(file);
+    return 0;
+}
+
+static void ksu_handle_sys_read_regs(unsigned int fd, char __user **buf_ptr, size_t *count_ptr)
 {
     struct file *file = fget(fd);
     if (!file) {
@@ -582,7 +619,7 @@ static long ksu_sys_read(const struct pt_regs *regs)
     char __user **buf_ptr = (char __user **)&PT_REGS_PARM2(regs);
     size_t *count_ptr = (size_t *)&PT_REGS_PARM3(regs);
 
-    ksu_handle_sys_read(fd, buf_ptr, count_ptr);
+    ksu_handle_sys_read_regs(fd, buf_ptr, count_ptr);
     return orig_sys_read(regs);
 }
 
@@ -648,6 +685,14 @@ static void stop_init_rc_hook()
 {
     ksu_syscall_table_unhook(__NR_read);
     ksu_syscall_table_unhook(__NR_fstat);
+
+    /*
+     * Also close the injected kernel-side hook. Its call site checks the same
+     * branch, so clearing it here is what makes the two paths shut down
+     * together instead of only the syscall-table one.
+     */
+    static_branch_disable(&ksu_is_init_rc_hook_enabled);
+
     pr_info("unregister init_rc syscall hook\n");
 }
 

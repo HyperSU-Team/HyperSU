@@ -22,8 +22,27 @@
 #include "feature/kernel_umount.h"
 #include "feature/mount_hide.h"
 
-int ksu_handle_setresuid(uid_t old_uid, uid_t new_uid)
+/*
+ * Signature must match the SUSFS kernel patch, which declares
+ *
+ *     extern int ksu_handle_setresuid(uid_t ruid, uid_t euid, uid_t suid);
+ *
+ * in kernel/sys.c and calls it from SYSCALL_DEFINE3(setresuid) before the real
+ * setresuid runs. The three arguments are the ones the syscall received.
+ *
+ * Only two of them matter here: the identity being left behind and the one being
+ * taken on. Android's zygote calls setresuid(3) with the same uid in all three
+ * slots, and the su path does the same, so ruid is the old identity and euid is
+ * the new one - which is exactly what the two-argument form used to be handed by
+ * the syscall-table hook.
+ */
+int ksu_handle_setresuid(uid_t ruid, uid_t euid, uid_t suid)
 {
+    uid_t old_uid = ruid;
+    uid_t new_uid = euid;
+
+    (void)suid;
+
     // we rely on the fact that zygote always call setresuid(3) with same uids
 
     pr_info("handle_setresuid from %d to %d\n", old_uid, new_uid);
