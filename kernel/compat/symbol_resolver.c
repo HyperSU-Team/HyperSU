@@ -1,8 +1,10 @@
 // Legacy-kernel (non-GKI, < 5.10) compatibility layer, ported from ReSukiSU.
 #include "kernel_includes.h"
 
+#include <linux/bsearch.h> // bsearch(), used by the batch lookup
 #include <linux/kallsyms.h>
 #include <linux/module.h>
+#include <linux/sort.h> // sort(), used to order the batch table
 #include <linux/string.h>
 #include <linux/version.h>
 
