@@ -1,6 +1,20 @@
 #ifndef __KSU_H_KERNEL_COMPAT
 #define __KSU_H_KERNEL_COMPAT
 
+/*
+ * This header defines inline functions and macros in terms of kernel helpers,
+ * so it has to include what those helpers need rather than rely on the
+ * including translation unit happening to have pulled them in first. The
+ * uaccess block below is the reason: it uses access_ok(), strncpy_from_user(),
+ * get_fs()/set_fs() and strncpy_from_user_nofault(), all declared in
+ * <linux/uaccess.h>, and a file that included only this header got implicit
+ * declarations instead.
+ */
+#include <linux/fs.h>
+#include <linux/types.h>
+#include <linux/uaccess.h>
+#include <linux/version.h>
+
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)) ||              \
     (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0)) && (LINUX_VERSION_CODE < KERNEL_VERSION(4, 15, 0))
 #ifdef HISI_SELINUX_EBITMAP_RO
