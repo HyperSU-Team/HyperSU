@@ -1,3 +1,17 @@
+/*
+ * Fallbacks for VFS helpers that only exist from 5.9 on. This file defines
+ * functions in terms of kernel internals - d_path(), do_mount(), ksys_umount(),
+ * the get_fs()/set_fs() pair - so it has to include what declares them rather
+ * than depend on the build happening to add them elsewhere.
+ */
+#include <linux/dcache.h>   // d_path()
+#include <linux/fs.h>       // do_mount(), struct super_block
+#include <linux/path.h>     // path_put(), struct path
+#include <linux/printk.h>   // pr_info()
+#include <linux/syscalls.h> // ksys_umount(), sys_umount()
+#include <linux/uaccess.h>  // get_fs(), set_fs(), KERNEL_DS
+#include <linux/version.h>
+
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 9, 0)
 __weak int path_mount(const char *dev_name, struct path *path, const char *type_page, unsigned long flags,
                       void *data_page)
