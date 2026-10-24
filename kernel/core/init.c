@@ -258,8 +258,21 @@ module_exit(kernelsu_exit);
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("weishu");
 MODULE_DESCRIPTION("Android KernelSU");
+/*
+ * The symbol namespace machinery this declares only exists from 5.4 on. On an
+ * older kernel there is no namespace to import into and no loader section that
+ * would read the declaration, so the correct behaviour is to emit nothing -
+ * not to expand it to an empty statement, which is what the version test below
+ * alone did before MODULE_IMPORT_NS itself was probed for.
+ *
+ * The argument gained quotes in 6.13 (1c1e6ee4a1f8), so the two forms are not
+ * interchangeable: passing a bare token to the new macro stringifies to the
+ * literal text, and passing a string to the old one fails to compile.
+ */
+#ifdef KSU_COMPAT_HAS_MODULE_IMPORT_NS
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 13, 0)
 MODULE_IMPORT_NS("VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver");
 #else
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
 #endif
+#endif // #ifdef KSU_COMPAT_HAS_MODULE_IMPORT_NS

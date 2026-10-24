@@ -398,6 +398,16 @@ ifeq ($(shell grep -q "selinux_inode" $(srctree)/security/selinux/include/objsec
 ccflags-y += -DKSU_HAS_SELINUX_INODE
 endif
 
+# MODULE_IMPORT_NS() arrived in 5.4 (8651ec01daedad). Before that it does not
+# exist at all, and core/init.c used to reach the else branch of a bare
+# `>= 6.13` test, so the token parsed as an implicit-int function declaration
+# and -Werror stopped the build. Emitting MODULE_INFO(import_ns, ...) on such a
+# kernel would be no better: nothing consumes that section, and the quoted form
+# is a 6.13 change to the macro's own argument handling.
+ifeq ($(shell grep -q "define MODULE_IMPORT_NS" $(srctree)/include/linux/module.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_MODULE_IMPORT_NS
+endif
+
 ifeq ($(shell grep -q "selinux_cred" $(srctree)/security/selinux/include/objsec.h; echo $$?),0)
 ccflags-y += -DKSU_HAS_SELINUX_CRED
 endif
