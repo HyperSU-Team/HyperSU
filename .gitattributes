@@ -1,5 +1,9 @@
 *.bat eol=crlf
 
+# Shell scripts run on Linux (kernel build hosts, CI). Pinned to LF so a checkout on Windows
+# cannot turn them into CRLF, which makes the interpreter fail on '#!/bin/sh\r'.
+*.sh eol=lf
+
 # The module install banner is compiled into ksud with include_str!, so its bytes are exactly the
 # output the user sees in the flash log. Pinned to LF so a checkout on Windows cannot turn it into
 # CRLF and leave a stray carriage return at the end of every banner line.

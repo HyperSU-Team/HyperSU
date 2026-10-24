@@ -53,6 +53,43 @@ kernelsu-objs += supercall/dispatch.o
 kernelsu-objs += supercall/perm.o
 kernelsu-objs += supercall/supercall.o
 
+# ---------------------------------------------------------------------------
+# Legacy kernel (Linux < 5.10) support
+#
+# The compat/ sources replace the native SELinux-hide implementation on kernels
+# that predate the GKI facilities it relies on. They are linked into the same
+# module as the rest of the sources, not built as a separate object directory:
+# they call into module-internal symbols (ksu_lsm_hook, ksu_patch_text,
+# ksu_register_feature_handler, ...), which a separate module could not resolve.
+#
+# Selection is by kernel version; GKI kernels keep the native object set and are
+# unaffected. See the capability probes further down for the feature switches.
+#
+# The object swap itself happens after every kernelsu-objs line below, because
+# the native selinux_hide.o is added further down.
+# ---------------------------------------------------------------------------
+KSU_IS_NON_GKI := $(shell test $(VERSION) -lt 5 -o \( $(VERSION) -eq 5 -a $(PATCHLEVEL) -lt 10 \); echo $$?)
+
+ifeq ($(KSU_IS_NON_GKI),0)
+ccflags-y += -DKSU_NON_GKI
+
+kernelsu-objs += compat/selinux_hide.o
+kernelsu-objs += compat/rules.o
+kernelsu-objs += compat/sepolicy.o
+kernelsu-objs += compat/symbol_resolver.o
+ifeq ($(CONFIG_ARM64),y)
+kernelsu-objs += compat/patch_memory_arm64.o
+endif
+# Provides path_mount()/path_umount()/ext4_unregister_sysfs() shims for kernels
+# that predate them (path_mount arrived in 5.9). feature/kernel_umount.c and
+# infra/su_mount_ns.c call those symbols unconditionally.
+kernelsu-objs += infra/kernel_compat.o
+
+$(info -- $(REPO_NAME): legacy kernel $(KERNEL_VERSION) detected, using compat/ sources)
+else
+$(info -- $(REPO_NAME): GKI kernel $(KERNEL_VERSION) detected, using native sources)
+endif
+
 kernelsu-objs += feature/adb_root.o
 
 kernelsu-objs += feature/selinux_hide.o
@@ -61,6 +98,24 @@ kernelsu-objs += feature/shell_su_adb_only.o
 kernelsu-objs += feature/uts_spoof.o
 
 kernelsu-objs += feature/cpu_spoof.o
+
+# Resolve the native/compat overlap now that every kernelsu-objs line has been
+# evaluated. Both implementations define the same symbols (ksu_selinux_hide_*,
+# my_write_context, my_setprocattr, ksu_patch_text, apply_kernelsu_rules, ...),
+# so exactly one set may be linked.
+#
+# compat/{rules,sepolicy,symbol_resolver}.c are the legacy-kernel ports of
+# selinux/{rules,sepolicy}.c and infra/symbol_resolver.c. They carry the
+# pre-5.10 SELinux internal layout handling that the native versions do not
+# have (the native ones only branch on 6.4), so they replace, not supplement,
+# their counterparts.
+ifeq ($(KSU_IS_NON_GKI),0)
+kernelsu-objs := $(filter-out feature/selinux_hide.o,$(kernelsu-objs))
+kernelsu-objs := $(filter-out hook/arm64/patch_memory.o,$(kernelsu-objs))
+kernelsu-objs := $(filter-out selinux/rules.o,$(kernelsu-objs))
+kernelsu-objs := $(filter-out selinux/sepolicy.o,$(kernelsu-objs))
+kernelsu-objs := $(filter-out infra/symbol_resolver.o,$(kernelsu-objs))
+endif
 
 ifdef KBUILD_EXTMOD
 ifeq ($(CONFIG_KSU_DISABLE_MANAGER),y)
@@ -228,6 +283,139 @@ ccflags-y += -DKSU_COMPAT_HAS_PROC_OPS
 endif
 
 ccflags-y += -DKSU_NEW_DCACHE_FLUSH=$(KSU_NEW_DCACHE_FLUSH)
+
+# ---------------------------------------------------------------------------
+# Capability probes
+#
+# These detect kernel internals the sources must adapt to. They run for GKI and
+# legacy kernels alike: the probes only define feature macros, and each consumer
+# picks the branch it needs. The object set is decided earlier, by KSU_IS_NON_GKI.
+# ---------------------------------------------------------------------------
+ifeq ($(shell grep -q " current_sid(void)" $(srctree)/security/selinux/include/objsec.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_CURRENT_SID
+endif
+
+ifeq ($(shell grep -q "struct selinux_state " $(srctree)/security/selinux/include/security.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_SELINUX_STATE
+endif
+
+ifeq ($(shell grep -q "policy_mutex" $(srctree)/security/selinux/include/security.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_POLICY_MUTEX
+endif
+
+ifeq ($(shell grep -q "struct selinux_policy" $(srctree)/security/selinux/ss/services.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_SELINUX_POLICY_STRUCT
+endif
+
+ifeq ($(shell grep -q "struct mutex status_lock" $(srctree)/security/selinux/include/security.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_SELINUX_STATUS_VAR_IN_SELINUX_STATE
+endif
+
+ifeq ($(shell grep -q "struct hashtab table" $(srctree)/security/selinux/ss/symtab.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_NON_POINTER_SYMTAB_STRUCT
+endif
+
+ifeq ($(shell grep -q "symtab_search" $(srctree)/security/selinux/ss/symtab.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_SYMTAB_SEARCH
+endif
+
+ifeq ($(shell grep -q "hashtab_key_params" $(srctree)/security/selinux/ss/hashtab.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_HASHTAB_KEY_PARAMS
+endif
+
+ifeq ($(shell grep -q "filename_trans_key" $(srctree)/security/selinux/ss/policydb.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_FILENAME_TRANS_KEY
+endif
+
+ifneq ($(shell grep -q "flex_array" $(srctree)/security/selinux/ss/policydb.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_MODERN_POLICYDB
+endif
+
+ifeq ($(shell grep -q "struct sidtab .sidtab" $(srctree)/security/selinux/ss/services.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_SIDTAB_AS_REFERENCE
+endif
+
+ifeq ($(shell grep -q "hlist_head" $(srctree)/include/linux/lsm_hooks.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HLIST_FOR_SECURITY_HOOK_LIST
+endif
+
+ifeq ($(shell grep -F -q "int (*setprocattr)(const char *name, void *value, size_t size);" $(srctree)/include/linux/lsm_hooks.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_SETPROCATTR_USE_NEW_PROTOTYPE
+endif
+
+ifeq ($(shell grep -F -q "char *lsm_names" $(srctree)/security/security.c; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_REQUIRE_PROVIDE_LSM_NAME
+endif
+
+ifeq ($(shell grep -q "POLICYDB_CONFIG_ANDROID_NETLINK_ROUTE" $(srctree)/security/selinux/ss/policydb.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_POLICYDB_CONFIG_ANDROID_NETLINK_ROUTE
+endif
+
+ifeq ($(shell grep -q "POLICYDB_CONFIG_ANDROID_NETLINK_GETNEIGH" $(srctree)/security/selinux/ss/policydb.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_POLICYDB_CONFIG_ANDROID_NETLINK_GETNEIGH
+endif
+
+ifneq ($(shell grep -q "type_attr_map_array" $(srctree)/security/selinux/ss/policydb.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_TYPE_ATTR_MAP_ARRAY_NOT_FOUND
+endif
+
+ifneq ($(shell grep -q "sym_name" $(srctree)/security/selinux/ss/policydb.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_SYM_NAME_NOT_FOUND
+endif
+
+# Newer SUSFS patches provide their own SELinux hide hook. When present, the
+# compat/ sources export their state instead of patching SELinux slots, so the
+# kernel side (security/selinux/{hooks,selinuxfs}.c) can dispatch into them.
+ifeq ($(shell grep -q "ksu_selinux_hide_running" $(srctree)/security/selinux/hooks.c; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_SUSFS_FEATURE_SELINUX_HIDE
+$(info -- $(REPO_NAME): kernel provides SUSFS selinux_hide hook, reusing it)
+endif
+
+ifeq ($(shell grep -q "strncpy_from_user_nofault" $(srctree)/include/linux/uaccess.h; echo $$?),0)
+ccflags-y += -DKSU_HAS_STRNCPY_FROM_USER_NOFAULT
+endif
+
+ifeq ($(shell grep -q "atomic_t\s\+filter_count" $(srctree)/include/linux/seccomp.h; echo $$?),0)
+ccflags-y += -DKSU_OPTIONAL_SECCOMP_FILTER_CNT
+endif
+
+# some old kernels backport this, check if put_seccomp_filter still exists
+ifneq ($(shell grep -wq "put_seccomp_filter" $(srctree)/kernel/seccomp.c $(srctree)/include/linux/seccomp.h; echo $$?),0)
+ifeq ($(shell grep -wq "seccomp_filter_release" $(srctree)/kernel/seccomp.c $(srctree)/include/linux/seccomp.h; echo $$?),0)
+ccflags-y += -DKSU_OPTIONAL_SECCOMP_FILTER_RELEASE
+endif
+endif
+
+ifeq ($(shell grep -q "^DEFINE_RWLOCK(policy_rwlock);" $(srctree)/security/selinux/ss/services.c; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_EXPORTED_POLICY_RWLOCK
+endif
+
+ifeq ($(shell grep -q "cpus_ptr;" $(srctree)/include/linux/sched.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_BACKPORTED_CPUS_PTR
+endif
+
+ifeq ($(shell grep -q "selinux_inode" $(srctree)/security/selinux/include/objsec.h; echo $$?),0)
+ccflags-y += -DKSU_HAS_SELINUX_INODE
+endif
+
+ifeq ($(shell grep -q "selinux_cred" $(srctree)/security/selinux/include/objsec.h; echo $$?),0)
+ccflags-y += -DKSU_HAS_SELINUX_CRED
+endif
+
+ifeq ($(shell grep -q "struct type_datum \*\*type_val_to_struct;" $(srctree)/security/selinux/ss/policydb.h; echo $$?),0)
+ccflags-y += -DKSU_TYPE_VAL_TO_STRUCT
+endif
+
+# half-assed-backport from 5.1
+ifeq ($(shell grep -q "struct type_datum \*\*type_val_to_struct_array;" $(srctree)/security/selinux/ss/policydb.h; echo $$?),0)
+ccflags-y += -DKSU_TYPE_VAL_TO_STRUCT_ARRAY
+endif
+
+# https://github.com/torvalds/linux/commit/11276d5306b8e5b438a36bbff855fe792d7eaa61
+ifeq ($(shell grep -q "DEFINE_STATIC_KEY_TRUE" $(srctree)/include/linux/jump_label.h 2>/dev/null; echo $$?),0)
+$(info -- $(REPO_NAME)/compat: modern static_key_interface found)
+ccflags-y += -DKSU_HAS_MODERN_STATIC_KEY_INTERFACE
+endif
 
 ccflags-y += -Wno-strict-prototypes -Wno-int-conversion -Wno-gcc-compat -Wno-missing-prototypes
 ccflags-y += -Wno-declaration-after-statement -Wno-unused-function
