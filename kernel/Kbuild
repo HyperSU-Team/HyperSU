@@ -447,6 +447,13 @@ else
 ccflags-y += -DKSU_COMPAT_HAS_MINMAX_H
 endif
 
+# fsnotify split struct fsnotify_ops into per-object-type operations in 5.9
+# (a5a18f2f2f0b), adding handle_inode_event() and changing the name argument
+# from a NUL-terminated string to a struct qstr.
+ifeq ($(shell grep -q "handle_inode_event" $(srctree)/include/linux/fsnotify_backend.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_FSNOTIFY_HANDLE_INODE_EVENT
+endif
+
 ifeq ($(shell grep -q "selinux_cred" $(srctree)/security/selinux/include/objsec.h; echo $$?),0)
 ccflags-y += -DKSU_HAS_SELINUX_CRED
 endif
