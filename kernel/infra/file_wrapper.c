@@ -85,6 +85,7 @@ static ssize_t ksu_wrapper_write_iter(struct kiocb *iocb, struct iov_iter *iovi)
     return orig->f_op->write_iter(iocb, iovi);
 }
 
+#ifdef KSU_COMPAT_HAS_IOPOLL
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0)
 static int ksu_wrapper_iopoll(struct kiocb *kiocb, struct io_comp_batch *icb, unsigned int v)
 {
@@ -102,6 +103,7 @@ static int ksu_wrapper_iopoll(struct kiocb *kiocb, bool spin)
     return orig->f_op->iopoll(kiocb, spin);
 }
 #endif
+#endif // #ifdef KSU_COMPAT_HAS_IOPOLL
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
 static int ksu_wrapper_iterate(struct file *fp, struct dir_context *dc)
@@ -303,6 +305,7 @@ static ssize_t ksu_wrapper_copy_file_range(struct file *file_in, loff_t pos_in, 
     return orig->f_op->copy_file_range(file_in, pos_in, orig, pos_out, len, flags);
 }
 
+#ifdef KSU_COMPAT_HAS_REMAP_FILE_RANGE
 // no REMAP_FILE_DEDUP: use file_in
 // https://cs.android.com/android/kernel/superproject/+/common-android-mainline:common/fs/read_write.c;l=1598-1599;drc=398da7defe218d3e51b0f3bdff75147e28125b60
 // https://cs.android.com/android/kernel/superproject/+/common-android-mainline:common/fs/remap_range.c;l=403-404;drc=398da7defe218d3e51b0f3bdff75147e28125b60
@@ -321,6 +324,33 @@ static loff_t ksu_wrapper_remap_file_range(struct file *file_in, loff_t pos_in, 
         return orig->f_op->remap_file_range(orig, pos_in, file_out, pos_out, len, remap_flags);
     }
 }
+#else
+/*
+ * Before 4.20 the VFS had two separate slots instead of remap_file_range(), and
+ * no REMAP_FILE_DEDUP to tell them apart: the flag only exists because the two
+ * operations were merged. Mirror each slot with the direction the old VFS used.
+ *
+ * vfs_clone_file_range() passes the source as file_in and the destination as
+ * file_out; vfs_dedupe_file_range() compares two ranges and treats both sides
+ * alike. Either way the wrapped file sits on the side the caller named, so the
+ * original's slot is called with the same argument order the wrapper received.
+ */
+static int ksu_wrapper_clone_file_range(struct file *file_in, loff_t pos_in, struct file *file_out, loff_t pos_out,
+                                        u64 len)
+{
+    struct ksu_file_wrapper *data = file_in->private_data;
+    struct file *orig = data->orig;
+    return orig->f_op->clone_file_range(orig, pos_in, file_out, pos_out, len);
+}
+
+static int ksu_wrapper_dedupe_file_range(struct file *file_in, loff_t pos_in, struct file *file_out, loff_t pos_out,
+                                         u64 len)
+{
+    struct ksu_file_wrapper *data = file_in->private_data;
+    struct file *orig = data->orig;
+    return orig->f_op->dedupe_file_range(orig, pos_in, file_out, pos_out, len);
+}
+#endif // #ifdef KSU_COMPAT_HAS_REMAP_FILE_RANGE
 
 static int ksu_wrapper_fadvise(struct file *fp, loff_t off1, loff_t off2, int flags)
 {
@@ -361,7 +391,9 @@ static struct ksu_file_wrapper *ksu_create_file_wrapper(struct file *fp)
     p->ops.write = fp->f_op->write ? ksu_wrapper_write : NULL;
     p->ops.read_iter = fp->f_op->read_iter ? ksu_wrapper_read_iter : NULL;
     p->ops.write_iter = fp->f_op->write_iter ? ksu_wrapper_write_iter : NULL;
+#ifdef KSU_COMPAT_HAS_IOPOLL
     p->ops.iopoll = fp->f_op->iopoll ? ksu_wrapper_iopoll : NULL;
+#endif
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 6, 0)
     p->ops.iterate = fp->f_op->iterate ? ksu_wrapper_iterate : NULL;
 #endif
@@ -392,7 +424,12 @@ static struct ksu_file_wrapper *ksu_create_file_wrapper(struct file *fp)
     p->ops.fallocate = fp->f_op->fallocate ? ksu_wrapper_fallocate : NULL;
     p->ops.show_fdinfo = fp->f_op->show_fdinfo ? ksu_wrapper_show_fdinfo : NULL;
     p->ops.copy_file_range = fp->f_op->copy_file_range ? ksu_wrapper_copy_file_range : NULL;
+#ifdef KSU_COMPAT_HAS_REMAP_FILE_RANGE
     p->ops.remap_file_range = fp->f_op->remap_file_range ? ksu_wrapper_remap_file_range : NULL;
+#else
+    p->ops.clone_file_range = fp->f_op->clone_file_range ? ksu_wrapper_clone_file_range : NULL;
+    p->ops.dedupe_file_range = fp->f_op->dedupe_file_range ? ksu_wrapper_dedupe_file_range : NULL;
+#endif
     p->ops.fadvise = fp->f_op->fadvise ? ksu_wrapper_fadvise : NULL;
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 6, 0)

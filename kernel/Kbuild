@@ -408,6 +408,22 @@ ifeq ($(shell grep -q "define MODULE_IMPORT_NS" $(srctree)/include/linux/module.
 ccflags-y += -DKSU_COMPAT_HAS_MODULE_IMPORT_NS
 endif
 
+# struct file_operations members that infra/file_wrapper.c mirrors. It has to
+# copy every slot the original file may use, but the slots themselves are not
+# stable across the range of kernels this tree builds on, and a version test
+# alone cannot decide: 4.19 has neither, and vendor trees backport members out
+# of order. Probe the struct instead.
+ifeq ($(shell grep -q "(\*iopoll)" $(srctree)/include/linux/fs.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_IOPOLL
+endif
+
+# remap_file_range replaced clone_file_range/dedupe_file_range in 4.20. Before
+# that the two old slots are what the VFS calls, so the wrapper has to mirror
+# them separately and there is no REMAP_FILE_DEDUP flag to branch on.
+ifeq ($(shell grep -q "(\*remap_file_range)" $(srctree)/include/linux/fs.h; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_REMAP_FILE_RANGE
+endif
+
 ifeq ($(shell grep -q "selinux_cred" $(srctree)/security/selinux/include/objsec.h; echo $$?),0)
 ccflags-y += -DKSU_HAS_SELINUX_CRED
 endif
