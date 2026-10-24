@@ -688,9 +688,20 @@ static void ksu_selinux_hide_disable()
     ksu_selinux_hide_unhook();
 }
 
+/*
+ * Report the state that is actually in effect, not the value that was last
+ * written.
+ *
+ * These two are not the same: ksu_selinux_hide_enabled records the request, and
+ * it is set before ksu_selinux_hide_enable() runs, so a failed enable leaves the
+ * request at 1 while ksu_selinux_hide_running stays 0 and nothing is hidden.
+ * Answering with the request makes the manager show the feature as on - and the
+ * environment check then reports the untouched policy as suspicious, with no
+ * indication of why.
+ */
 static int selinux_hide_feature_get(u64 *value)
 {
-    *value = ksu_selinux_hide_enabled ? 1 : 0;
+    *value = ksu_selinux_hide_running ? 1 : 0;
     return 0;
 }
 
@@ -700,19 +711,28 @@ static int selinux_hide_feature_set(u64 value)
     int ret = 0;
     pr_info("selinux_hide: set to %d\n", enable);
     mutex_lock(&selinux_hide_mutex);
-    ksu_selinux_hide_enabled = enable;
     if (enable) {
         if (!ksu_selinux_hide_running) {
             ret = ksu_selinux_hide_enable();
-            if (!ret) {
-                ksu_selinux_hide_running = true;
+            if (ret) {
+                /*
+                 * Leave both flags alone on failure. Recording the request
+                 * anyway would make the feature read as enabled while nothing
+                 * is hidden - see selinux_hide_feature_get().
+                 */
+                pr_err("selinux_hide: enable failed: %d\n", ret);
+                mutex_unlock(&selinux_hide_mutex);
+                return ret;
             }
+            ksu_selinux_hide_running = true;
         }
+        ksu_selinux_hide_enabled = true;
     } else {
         if (ksu_selinux_hide_running) {
             ksu_selinux_hide_disable();
             ksu_selinux_hide_running = false;
         }
+        ksu_selinux_hide_enabled = false;
     }
     mutex_unlock(&selinux_hide_mutex);
     return ret;
