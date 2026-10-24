@@ -424,6 +424,14 @@ ifeq ($(shell grep -q "(\*remap_file_range)" $(srctree)/include/linux/fs.h; echo
 ccflags-y += -DKSU_COMPAT_HAS_REMAP_FILE_RANGE
 endif
 
+# The seccomp action cache arrived in 5.9 (0eebfedec05d). Before that
+# seccomp_run_filters() always walks the whole filter chain and
+# struct seccomp_filter has no bitmap to short-circuit with, so
+# infra/seccomp_cache.c has nothing to write to and compiles to no-ops.
+ifeq ($(shell grep -q "SECCOMP_ARCH_NATIVE_NR" $(srctree)/kernel/seccomp.c; echo $$?),0)
+ccflags-y += -DKSU_COMPAT_HAS_SECCOMP_ACTION_CACHE
+endif
+
 ifeq ($(shell grep -q "selinux_cred" $(srctree)/security/selinux/include/objsec.h; echo $$?),0)
 ccflags-y += -DKSU_HAS_SELINUX_CRED
 endif
