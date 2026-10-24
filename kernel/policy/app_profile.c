@@ -66,7 +66,23 @@ void setup_groups(struct root_profile *profile, struct cred *cred)
     put_group_info(group_info);
 }
 
+/*
+ * seccomp_filter_release() arrived in 5.9 (3a15fb6ed92a) together with the
+ * "seccomp filter is a task_work" rework. Before that the equivalent call is
+ * put_seccomp_filter(), which releases tsk->seccomp.filter directly instead of
+ * first clearing it.
+ *
+ * The difference is safe here because the task passed in is a private copy made
+ * with memcpy() and freed immediately afterwards: it owns the only reference to
+ * the filter, and current->seccomp.filter has already been cleared by the
+ * caller, so nothing can observe the stale pointer.
+ */
+#ifdef KSU_OPTIONAL_SECCOMP_FILTER_RELEASE
 void seccomp_filter_release(struct task_struct *tsk);
+#define ksu_seccomp_filter_release(tsk) seccomp_filter_release(tsk)
+#else
+#define ksu_seccomp_filter_release(tsk) put_seccomp_filter(tsk)
+#endif
 
 // https://cs.android.com/android/_/android/kernel/common/+/5346453405bf12d7ed6003f45dd47b71744fe1be
 // Some 15-6.6 kernel have this backport while others don't have, e.g. Pixel 10
@@ -103,7 +119,9 @@ static void disable_seccomp(void)
 
     current->seccomp.mode = 0;
     current->seccomp.filter = NULL;
+#ifdef KSU_OPTIONAL_SECCOMP_FILTER_CNT
     atomic_set(&current->seccomp.filter_count, 0);
+#endif
     spin_unlock_irq(&current->sighand->siglock);
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0)
@@ -120,7 +138,7 @@ static void disable_seccomp(void)
     fake->sighand = NULL;
 #endif
 
-    seccomp_filter_release(fake);
+    ksu_seccomp_filter_release(fake);
     kfree(fake);
 }
 
