@@ -44,6 +44,26 @@
 #define QCOM_CPU_PART_KRYO_4XX_GOLD 0x804
 #endif
 
+/*
+ * The vDSO clock mode became a real enum in 5.2, when vdso_clock_mode moved from
+ * struct clocksource into vdso_data and arm64 gained VDSO_CLOCKMODE_ARCHTIMER.
+ *
+ * Before that, arm64 derived the same value from a single bool:
+ *
+ *     __arm64_get_clock_mode(tk)
+ *         return !tk->tkr_mono.clock->archdata.vdso_direct;
+ *
+ * so clock_mode is 0 when the vDSO reads the arch timer directly and 1 when it
+ * has to fall back to a syscall. That is the same meaning VDSO_CLOCKMODE_ARCHTIMER
+ * (0) and VDSO_CLOCKMODE_NONE (1) carry later, and the numbers line up, so the
+ * pre-5.2 path can write the literal 0 under a name that says what it means.
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
+#define KSU_VDSO_CLOCKMODE_DIRECT VDSO_CLOCKMODE_ARCHTIMER
+#else
+#define KSU_VDSO_CLOCKMODE_DIRECT 0
+#endif
+
 #ifndef CS_HRES_COARSE
 #define CS_HRES_COARSE 0
 #endif
@@ -52,9 +72,13 @@
 #define CS_RAW 1
 #endif
 
-#ifndef VDSO_CLOCKMODE_ARCHTIMER
-#define VDSO_CLOCKMODE_ARCHTIMER 1
-#endif
+/*
+ * Deliberately not defined here as a fallback. VDSO_CLOCKMODE_ARCHTIMER is 0 on
+ * kernels that have it - it is the first entry of enum vdso_clock_mode - and a
+ * guessed value would silently invert the meaning of the whole clock-mode fixup
+ * rather than fail to compile. KSU_VDSO_CLOCKMODE_DIRECT below is the one place
+ * that decides what to write, and it is only evaluated where the constant exists.
+ */
 
 #ifndef ARM64_WORKAROUND_1418040
 #define ARM64_WORKAROUND_1418040 37
@@ -144,8 +168,8 @@ int ksu_set_spoof_cpu(const struct ksu_set_spoof_cpu_cmd *cmd)
                     struct vdso_data *vdso = *vdso_data_ptr;
                     pr_info("ksu: set_spoof_cpu found 'vdso_data' (current CS_HRES_COARSE clock_mode: %d)\n",
                             vdso[CS_HRES_COARSE].clock_mode);
-                    vdso[CS_HRES_COARSE].clock_mode = VDSO_CLOCKMODE_ARCHTIMER;
-                    vdso[CS_RAW].clock_mode = VDSO_CLOCKMODE_ARCHTIMER;
+                    vdso[CS_HRES_COARSE].clock_mode = KSU_VDSO_CLOCKMODE_DIRECT;
+                    vdso[CS_RAW].clock_mode = KSU_VDSO_CLOCKMODE_DIRECT;
                     pr_info("ksu: set_spoof_cpu updated 'vdso_data' clock_mode to %d\n",
                             vdso[CS_HRES_COARSE].clock_mode);
                 } else {
@@ -159,27 +183,43 @@ int ksu_set_spoof_cpu(const struct ksu_set_spoof_cpu_cmd *cmd)
                         (struct clocksource **)find_kernel_symbol_exact("curr_clocksource");
                     if (curr_cs_ptr && *curr_cs_ptr) {
                         struct clocksource *cs = *curr_cs_ptr;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
                         pr_info("ksu: set_spoof_cpu found active clocksource '%s' (current vdso_clock_mode: %d)\n",
                                 cs->name ? cs->name : "unknown", cs->vdso_clock_mode);
-                        cs->vdso_clock_mode = VDSO_CLOCKMODE_ARCHTIMER;
+                        cs->vdso_clock_mode = KSU_VDSO_CLOCKMODE_DIRECT;
                         pr_info("ksu: set_spoof_cpu updated clocksource '%s' vdso_clock_mode to %d\n",
                                 cs->name ? cs->name : "unknown", cs->vdso_clock_mode);
+#else
+                        /*
+                         * struct clocksource has no vdso_clock_mode yet; the
+                         * equivalent is archdata.vdso_direct, which
+                         * __arm64_get_clock_mode() negates to produce the same
+                         * 0-or-1 clock_mode value handled above.
+                         */
+                        pr_info("ksu: set_spoof_cpu found active clocksource '%s' (current vdso_direct: %d)\n",
+                                cs->name ? cs->name : "unknown", cs->archdata.vdso_direct);
+                        cs->archdata.vdso_direct = true;
+                        pr_info("ksu: set_spoof_cpu updated clocksource '%s' vdso_direct to %d\n",
+                                cs->name ? cs->name : "unknown", cs->archdata.vdso_direct);
+#endif
                     } else {
                         pr_warn("ksu: set_spoof_cpu failed to resolve 'curr_clocksource'\n");
                     }
                 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 2, 0)
                 /* Overwrite fallback default clock mode variable */
                 {
                     enum vdso_clock_mode *vd_default = (enum vdso_clock_mode *)find_kernel_symbol_exact("vdso_default");
                     if (vd_default) {
                         pr_info("ksu: set_spoof_cpu found 'vdso_default' (current value: %d)\n", *vd_default);
-                        *vd_default = VDSO_CLOCKMODE_ARCHTIMER;
+                        *vd_default = KSU_VDSO_CLOCKMODE_DIRECT;
                         pr_info("ksu: set_spoof_cpu updated 'vdso_default' to %d\n", *vd_default);
                     } else {
                         pr_warn("ksu: set_spoof_cpu failed to resolve 'vdso_default'\n");
                     }
                 }
+#endif
 
                 /* Resolve and clear capability bitmap (handles cpu_hwcaps / system_cpucaps fallback) */
                 {
