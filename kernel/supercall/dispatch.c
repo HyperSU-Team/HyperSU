@@ -2,6 +2,9 @@
 #include <linux/cred.h>
 #include <linux/kallsyms.h>
 #include <linux/mm.h>
+#include <linux/pid.h>          // change_pid()
+#include <linux/sched/signal.h> // task_pgrp(), task_session()
+#include <linux/sched/task.h>   // tasklist_lock, init_task
 #include <linux/string.h>
 #include <linux/slab.h>
 #include <linux/vmalloc.h>
