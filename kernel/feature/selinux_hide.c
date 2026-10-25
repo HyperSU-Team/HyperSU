@@ -366,10 +366,9 @@ static sel_open_handle_status_fn orig_sel_open_handle_status, *sel_open_handle_s
 static int my_sel_open_handle_status(struct inode *inode, struct file *filp)
 {
     if (likely(current_uid().val >= 10000 && ksu_selinux_hide_enabled)) {
-        void *data;
-        mutex_lock(&selinux_state.status_lock);
-        data = fake_status;
-        mutex_unlock(&selinux_state.status_lock);
+        // No lock: `fake_status` is assigned only while this hook is being installed, and the
+        // installation is what makes the hook reachable in the first place.
+        void *data = fake_status;
         if (data) {
             filp->private_data = data;
             return 0;
