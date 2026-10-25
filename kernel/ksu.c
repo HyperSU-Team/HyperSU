@@ -28,6 +28,7 @@
 #include "infra/event_queue.h"
 #include "feature/adb_root.h"
 #include "feature/kernel_umount.h"
+#include "feature/mount_hide.h"
 #include "feature/sucompat.h"
 #include "feature/sulog.h"
 #include "feature/selinux_hide.h"
@@ -72,6 +73,7 @@
 #include "feature/adb_root.c"
 #endif
 #include "feature/kernel_umount.c"
+#include "feature/mount_hide.c"
 #include "feature/sucompat.c"
 #include "feature/sulog.c"
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 10, 0)
@@ -147,6 +149,8 @@ int __init kernelsu_init(void)
 
     ksu_kernel_umount_init();
 
+    ksu_mount_hide_init();
+
     ksu_allowlist_init();
 
     ksu_throne_tracker_init();
@@ -164,3 +168,4 @@ MODULE_LICENSE("GPL");
 MODULE_AUTHOR("weishu");
 MODULE_DESCRIPTION("Android KernelSU");
 */
+
