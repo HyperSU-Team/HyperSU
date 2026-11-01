@@ -64,7 +64,10 @@ pub enum SuSFSSubCommands {
     /// - For ReZygisk without TreatWheel module, it is recommended to set to 1 in post-fs-data.sh to prevent
     ///   zygote from caching the sus mounts in memory, and revert to 0 in boot-completed.sh stage, or keep it enabled
     ///   if you want to keep them hidden from /proc/self/[mounts|mountinfo|mountstat] for non-su processes.
-    #[command(name = "hide_sus_mnts_for_non_su_procs", alias = "hide-sus-mnts-for-non-su-procs")]
+    #[command(
+        name = "hide_sus_mnts_for_non_su_procs",
+        alias = "hide-sus-mnts-for-non-su-procs"
+    )]
     HideSusMntsForNonSuProcs {
         /// 0: DO NOT hide sus mounts for non-su processes
         /// 1: hide all sus mounts for non-su processes
@@ -103,7 +106,10 @@ pub enum SuSFSSubCommands {
     ///
     /// * Important Notes *
     /// - Effective for all processes with uid >= 10000
-    #[command(name = "update_sus_kstat_full_clone", alias = "update-sus-kstat-full-clone")]
+    #[command(
+        name = "update_sus_kstat_full_clone",
+        alias = "update-sus-kstat-full-clone"
+    )]
     UpdateSusKstatFullClone {
         /// Path of file or directory
         path: String,
@@ -157,7 +163,10 @@ pub enum SuSFSSubCommands {
     },
 
     /// Spoof the output of /proc/cmdline (non-gki) or /proc/bootconfig (gki) from a text file.
-    #[command(name = "set_cmdline_or_bootconfig", alias = "set-cmdline-or-bootconfig")]
+    #[command(
+        name = "set_cmdline_or_bootconfig",
+        alias = "set-cmdline-or-bootconfig"
+    )]
     SetCmdlineOrBootconfig {
         /// Path to fake cmdline file or fake bootconfig file
         path: String,

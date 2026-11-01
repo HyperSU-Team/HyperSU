@@ -5,7 +5,10 @@ use clap::{Subcommand, ValueEnum};
 use num_enum::TryFromPrimitive;
 use serde::Serialize;
 
-use crate::android::susfs::{config::model::{Config, SusPathItem}, enums::UidScheme};
+use crate::android::susfs::{
+    config::model::{Config, SusPathItem},
+    enums::UidScheme,
+};
 
 #[derive(Debug, Subcommand)]
 pub enum ConfigCommand {
@@ -409,10 +412,24 @@ fn legacy_config_get(config: &Config, key: &str) -> String {
         "hide_sus_mounts_for_all_procs" => config.hide_sus_mnts_for_non_su_procs.to_string(),
         "enable_avc_log_spoofing" => config.avc_log_spoofing.to_string(),
         "cmdline_or_bootconfig_path" => config.cmdline_or_bootconfig.clone(),
-        "sus_paths" => join_paths(config.sus_path.iter().filter(|p| !p.is_loop).map(|p| p.path.as_str())),
-        "sus_loop_paths" => join_paths(config.sus_path.iter().filter(|p| p.is_loop).map(|p| p.path.as_str())),
+        "sus_paths" => join_paths(
+            config
+                .sus_path
+                .iter()
+                .filter(|p| !p.is_loop)
+                .map(|p| p.path.as_str()),
+        ),
+        "sus_loop_paths" => join_paths(
+            config
+                .sus_path
+                .iter()
+                .filter(|p| p.is_loop)
+                .map(|p| p.path.as_str()),
+        ),
         "sus_maps" => join_paths(config.sus_map.iter().map(|p| p.as_str())),
-        "auto_start_enabled" | "execute_in_post_fs_data" | "enable_cleanup_residue"
+        "auto_start_enabled"
+        | "execute_in_post_fs_data"
+        | "enable_cleanup_residue"
         | "enable_hide_bl" => "false".to_string(),
         _ => String::new(),
     }
@@ -438,13 +455,19 @@ fn legacy_config_set(config: &mut Config, key: &str, value: &str) -> Result<()> 
         "sus_paths" => {
             config.sus_path.retain(|p| p.is_loop);
             for path in split_list(value) {
-                config.sus_path.insert(SusPathItem { path: path.to_string(), is_loop: false });
+                config.sus_path.insert(SusPathItem {
+                    path: path.to_string(),
+                    is_loop: false,
+                });
             }
         }
         "sus_loop_paths" => {
             config.sus_path.retain(|p| !p.is_loop);
             for path in split_list(value) {
-                config.sus_path.insert(SusPathItem { path: path.to_string(), is_loop: true });
+                config.sus_path.insert(SusPathItem {
+                    path: path.to_string(),
+                    is_loop: true,
+                });
             }
         }
         "sus_maps" => {
@@ -456,4 +479,3 @@ fn legacy_config_set(config: &mut Config, key: &str, value: &str) -> Result<()> 
     }
     Ok(())
 }
-
