@@ -1,13 +1,13 @@
 # HyperSU
-<img align='right' src='SukiSU-mini.svg' width='220px' alt="логотип HyperSU">
+<img align='right' src='HyperSU-mini.svg' width='220px' alt="логотип HyperSU">
 
 
 [English](../README.md) | [简体中文](./zh/README.md) | [日本語](./ja/README.md) | [Türkçe](./tr/README.md) | **Русский**
 
 Решение для получения root-прав на уровне ядра для устройств Android. Форк [`Baka-SU/BakaSU`](https://github.com/Baka-SU/BakaSU), который, в свою очередь, является форком [`SukiSU-Ultra/SukiSU-Ultra`](https://github.com/SukiSU-Ultra/SukiSU-Ultra), а тот — форком [`tiann/KernelSU`](https://github.com/tiann/KernelSU), с добавлением интересных изменений.
 
-[![Latest release](https://img.shields.io/github/v/release/SukiSU-Ultra/SukiSU-Ultra?label=Release&logo=github)](https://github.com/tiann/KernelSU/releases/latest)
-[![Channel](https://img.shields.io/badge/Follow-Telegram-blue.svg?logo=telegram)](https://t.me/Sukiksu)
+[![Latest release](https://img.shields.io/github/v/release/HyperSU-Team/HyperSU?label=Release&logo=github)](https://github.com/HyperSU-Team/HyperSU/releases/latest)
+[![Upstream Telegram](https://img.shields.io/badge/Telegram-SukiSU%20(upstream)-blue.svg?logo=telegram)](https://t.me/Sukiksu)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-orange.svg?logo=gnu)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 [![GitHub License](https://img.shields.io/github/license/tiann/KernelSU?logo=gnu)](/LICENSE)
 
@@ -38,11 +38,11 @@
 
 ## Перевод
 
-Если вы хотите предложить перевод для менеджера, пожалуйста, воспользуйтесь [Crowdin](https://crowdin.com/project/SukiSU-Ultra).
+Если вы хотите предложить перевод для менеджера HyperSU, отправьте Pull Request в [HyperSU-Team/HyperSU](https://github.com/HyperSU-Team/HyperSU). Проект [Crowdin](https://crowdin.com/project/SukiSU-Ultra) принадлежит SukiSU Ultra, верхнему по отношению к BakaSU проекту, и предназначен только для его перевода.
 
 ## Устранение неполадок
 
-1. Если устройство зависает при удалении менеджера (sukisu) 
+1. Если устройство зависает при удалении менеджера (HyperSU) 
    Удалите com.sony.playmemories.mobile
 
 ## Спонсоры

@@ -1,5 +1,5 @@
 # HyperSU
-<img align='right' src='SukiSU-mini.svg' width='250px' alt="HyperSU logo">
+<img align='right' src='HyperSU-mini.svg' width='250px' alt="HyperSU logo">
 
 
 [English](../README.md) | [简体中文](../zh/README.md) | [日本語](../ja/README.md) | **Türkçe**
