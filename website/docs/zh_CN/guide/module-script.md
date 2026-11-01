@@ -1,6 +1,6 @@
 # 一次性脚本
 
-一次性脚本是一个由 KernelSU 管理器**运行一次**、而不是安装的 ZIP。它的打包方式与模块相同，但不会在设备上留下任何东西：管理器把 ZIP 解压到私有目录，询问它声明的参数，展示 `action.sh` 的源码，然后在 root shell 中运行它。它适合解锁隐藏设置、导出日志之类的任务；需要在开机时运行或修改系统分区的功能应当做成[模块](module.md)。
+一次性脚本是一个由 KernelSU 管理器**运行一次**、而不是安装的 ZIP。它的打包方式与模块相同，但不会在设备上留下任何东西：管理器把 ZIP 解压到私有目录，询问它声明的参数，展示 `action.sh` 的源码，然后在 root shell 中运行它。它适合解锁隐藏设置、导出日志之类的任务；需要在开机时运行或修改系统分区的功能应当做成[模块](https://kernelsu.org/guide/module.html)。
 
 ## 包结构
 
@@ -13,7 +13,7 @@
 └── other files      # 脚本通过 $MODPATH 读取的数据
 ```
 
-`module.prop` 的字段与[模块](module.md#module-prop)相同，另外增加 `oneshot`：
+`module.prop` 的字段与[模块](https://kernelsu.org/guide/module.html)相同，另外增加 `oneshot`：
 
 ```txt
 id=example_script
@@ -53,7 +53,7 @@ cd <dir> && <env> /data/adb/ksu/bin/busybox sh ./action.sh </dev/null
 | `ASH_STANDALONE` | `1` |
 | `KSU` | `true` |
 | `KSU_VER`、`KSU_VER_CODE`、`KSU_KERNEL_VER_CODE` | KernelSU 版本，与模块相同 |
-| `KSU_LATE_LOAD` | 仅在 [late-load 模式](module.md#late-load-mode)下为 `1` |
+| `KSU_LATE_LOAD` | 仅在 [late-load 模式](https://kernelsu.org/guide/module.html)下为 `1` |
 | `KSU_MODULE` | 脚本 ID |
 | `KSU_ONESHOT` | `1`，用于区分一次性运行和已安装模块的 Action 按钮 |
 | `MODPATH` | 解压目录；从这里读取你的数据文件 |

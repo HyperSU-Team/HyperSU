@@ -21,7 +21,7 @@ HyperSU можно интегрировать как в ядра _GKI_, так �
    <!-- - backslashxx's syscall manual hook: https://github.com/backslashxx/KernelSU/issues/5 (v1.5 version is not available at the moment, if you want to use it, please use v1.4 version, or standard KernelSU hooks)-->
 
    - Требует: `CONFIG_KSU_MANUAL_HOOK=y`.
-   - Инструкция: [`guide/how-to-integrate.md`](guide/how-to-integrate.md).
+   - Инструкция: [`how-to-integrate.md`](how-to-integrate.md).
    - Ручная правка исходников: [https://github.com/~](https://github.com/tiann/KernelSU/blob/main/website/docs/guide/how-to-integrate-for-non-gki.md#manually-modify-the-kernel-source).
 
 3. **Tracepoint Hook:**

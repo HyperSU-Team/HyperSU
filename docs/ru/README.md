@@ -2,7 +2,7 @@
 <img align='right' src='HyperSU-mini.svg' width='220px' alt="логотип HyperSU">
 
 
-[English](../README.md) | [简体中文](./zh/README.md) | [日本語](./ja/README.md) | [Türkçe](./tr/README.md) | **Русский**
+[English](../README.md) | [简体中文](../zh/README.md) | [日本語](../ja/README.md) | [Türkçe](../tr/README.md) | **Русский**
 
 Решение для получения root-прав на уровне ядра для устройств Android. Форк [`Baka-SU/BakaSU`](https://github.com/Baka-SU/BakaSU), который, в свою очередь, является форком [`SukiSU-Ultra/SukiSU-Ultra`](https://github.com/SukiSU-Ultra/SukiSU-Ultra), а тот — форком [`tiann/KernelSU`](https://github.com/tiann/KernelSU), с добавлением интересных изменений.
 
@@ -63,7 +63,7 @@
 ## Лицензия
 
 - Файлы в директории «kernel» находятся под лицензией [GPL-2.0-only](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
-- Изображения файлов `ic_launcher(?!.*alt.*).*` с аниме-персонажами лицензированы особым образом: рисунок [怡子曰曰](https://space.bilibili.com/10545509), авторское право принадлежит [明风 OuO](https://space.bilibili.com/274939213), векторизованные иконки предоставлены этим проектом. Подробнее см. [`LICENSE_icon_English`](./LICENSE_icon_English) и [`LICENSE_icon_SC`](./LICENSE_icon_SC).
+- Изображения файлов `ic_launcher(?!.*alt.*).*` с аниме-персонажами лицензированы особым образом: рисунок [怡子曰曰](https://space.bilibili.com/10545509), авторское право принадлежит [明风 OuO](https://space.bilibili.com/274939213), векторизованные иконки предоставлены этим проектом. Подробнее см. [`LICENSE_icon_English`](../../LICENSE_icon_English) и [`LICENSE_icon_SC`](../../LICENSE_icon_SC).
 - За исключением вышеуказанных файлов и директорий, все остальные части находятся под лицензией [GPL-3.0 or later](https://www.gnu.org/licenses/gpl-3.0.html)
 
 ## Благодарности

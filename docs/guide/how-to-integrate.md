@@ -21,7 +21,7 @@ Prerequisites: open source bootable kernel.
    <!-- - backslashxx's syscall manual hook: https://github.com/backslashxx/KernelSU/issues/5 (v1.5 version is not available at the moment, if you want to use it, please use v1.4 version, or standard KernelSU hooks)-->
 
    - Requires `CONFIG_KSU_MANUAL_HOOK=y`
-   - Requires [`guide/how-to-integrate.md`](guide/how-to-integrate.md)
+   - Requires [`how-to-integrate.md`](how-to-integrate.md)
    - Requires [https://github.com/~](https://github.com/tiann/KernelSU/blob/main/website/docs/guide/how-to-integrate-for-non-gki.md#manually-modify-the-kernel-source)
 
 3. **Tracepoint Hook:**

@@ -1,6 +1,6 @@
 # One-shot scripts
 
-A one-shot script is a ZIP that the KernelSU manager **runs once** instead of installing. It is packaged like a module, but nothing stays on the device: the manager extracts the ZIP to a private directory, asks for the parameters it declares, shows the `action.sh` source and runs it in a root shell. Use it for tasks such as unlocking a hidden setting or exporting a log; anything that must run at boot or modify the system partitions should be a [module](module.md).
+A one-shot script is a ZIP that the KernelSU manager **runs once** instead of installing. It is packaged like a module, but nothing stays on the device: the manager extracts the ZIP to a private directory, asks for the parameters it declares, shows the `action.sh` source and runs it in a root shell. Use it for tasks such as unlocking a hidden setting or exporting a log; anything that must run at boot or modify the system partitions should be a [module](https://kernelsu.org/guide/module.html).
 
 ## Package layout
 
@@ -13,7 +13,7 @@ A one-shot script is a ZIP that the KernelSU manager **runs once** instead of in
 └── other files      # data the script reads via $MODPATH
 ```
 
-`module.prop` uses the same fields as a [module](module.md#module-prop) and adds `oneshot`:
+`module.prop` uses the same fields as a [module](https://kernelsu.org/guide/module.html) and adds `oneshot`:
 
 ```txt
 id=example_script
@@ -53,7 +53,7 @@ The output is shown like the Action output and can be saved. The extracted direc
 | `ASH_STANDALONE` | `1` |
 | `KSU` | `true` |
 | `KSU_VER`, `KSU_VER_CODE`, `KSU_KERNEL_VER_CODE` | KernelSU versions, as for modules |
-| `KSU_LATE_LOAD` | `1` in [late-load mode](module.md#late-load-mode) only |
+| `KSU_LATE_LOAD` | `1` in [late-load mode](https://kernelsu.org/guide/module.html) only |
 | `KSU_MODULE` | the script ID |
 | `KSU_ONESHOT` | `1`, to tell a one-shot run from the Action button of an installed module |
 | `MODPATH` | the extraction directory; read your data files from here |

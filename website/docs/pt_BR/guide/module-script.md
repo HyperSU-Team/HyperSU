@@ -1,6 +1,6 @@
 # Scripts de execução única
 
-Um script de execução única (one-shot) é um ZIP que o gerenciador do KernelSU **executa uma vez** em vez de instalar. Ele é empacotado como um módulo, mas nada permanece no dispositivo: o gerenciador extrai o ZIP para um diretório privado, solicita os parâmetros que ele declara, mostra o código-fonte do `action.sh` e o executa em um shell root. Use-o para tarefas como desbloquear uma configuração oculta ou exportar um log; qualquer coisa que precise ser executada na inicialização ou modificar as partições do sistema deve ser um [módulo](module.md).
+Um script de execução única (one-shot) é um ZIP que o gerenciador do KernelSU **executa uma vez** em vez de instalar. Ele é empacotado como um módulo, mas nada permanece no dispositivo: o gerenciador extrai o ZIP para um diretório privado, solicita os parâmetros que ele declara, mostra o código-fonte do `action.sh` e o executa em um shell root. Use-o para tarefas como desbloquear uma configuração oculta ou exportar um log; qualquer coisa que precise ser executada na inicialização ou modificar as partições do sistema deve ser um [módulo](https://kernelsu.org/guide/module.html).
 
 ## Estrutura do pacote
 
@@ -13,7 +13,7 @@ Um script de execução única (one-shot) é um ZIP que o gerenciador do KernelS
 └── other files      # data the script reads via $MODPATH
 ```
 
-O `module.prop` usa os mesmos campos de um [módulo](module.md#module-prop) e adiciona `oneshot`:
+O `module.prop` usa os mesmos campos de um [módulo](https://kernelsu.org/guide/module.html) e adiciona `oneshot`:
 
 ```txt
 id=example_script
@@ -53,7 +53,7 @@ A saída é exibida como a saída da Ação e pode ser salva. O diretório extra
 | `ASH_STANDALONE` | `1` |
 | `KSU` | `true` |
 | `KSU_VER`, `KSU_VER_CODE`, `KSU_KERNEL_VER_CODE` | Versões do KernelSU, como para módulos |
-| `KSU_LATE_LOAD` | `1` apenas no [modo late-load](module.md#late-load-mode) |
+| `KSU_LATE_LOAD` | `1` apenas no [modo late-load](https://kernelsu.org/guide/module.html) |
 | `KSU_MODULE` | o ID do script |
 | `KSU_ONESHOT` | `1`, para distinguir uma execução única do botão Ação de um módulo instalado |
 | `MODPATH` | o diretório de extração; leia seus arquivos de dados a partir daqui |

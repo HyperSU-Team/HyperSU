@@ -1,6 +1,6 @@
 # ワンショットスクリプト
 
-ワンショットスクリプトは、KernelSU マネージャーがインストールする代わりに**一度だけ実行する** ZIP です。モジュールと同じ形式でパッケージされますが、デバイスには何も残りません。マネージャーは ZIP をプライベートディレクトリに展開し、宣言されたパラメーターの入力を求め、`action.sh` のソースを表示してから root シェルで実行します。隠し設定の解除やログのエクスポートといった作業に使用してください。起動時に実行する必要があるものや、システムパーティションを変更するものは[モジュール](module.md)にすべきです。
+ワンショットスクリプトは、KernelSU マネージャーがインストールする代わりに**一度だけ実行する** ZIP です。モジュールと同じ形式でパッケージされますが、デバイスには何も残りません。マネージャーは ZIP をプライベートディレクトリに展開し、宣言されたパラメーターの入力を求め、`action.sh` のソースを表示してから root シェルで実行します。隠し設定の解除やログのエクスポートといった作業に使用してください。起動時に実行する必要があるものや、システムパーティションを変更するものは[モジュール](https://kernelsu.org/guide/module.html)にすべきです。
 
 ## パッケージ構成
 
@@ -13,7 +13,7 @@
 └── other files      # data the script reads via $MODPATH
 ```
 
-`module.prop` は[モジュール](module.md#module-prop)と同じフィールドを使用し、`oneshot` を追加します：
+`module.prop` は[モジュール](https://kernelsu.org/guide/module.html)と同じフィールドを使用し、`oneshot` を追加します：
 
 ```txt
 id=example_script
@@ -53,7 +53,7 @@ cd <dir> && <env> /data/adb/ksu/bin/busybox sh ./action.sh </dev/null
 | `ASH_STANDALONE` | `1` |
 | `KSU` | `true` |
 | `KSU_VER`, `KSU_VER_CODE`, `KSU_KERNEL_VER_CODE` | KernelSU のバージョン（モジュールと同じ） |
-| `KSU_LATE_LOAD` | [late-load モード](module.md#late-load-mode)の場合のみ `1` |
+| `KSU_LATE_LOAD` | [late-load モード](https://kernelsu.org/guide/module.html)の場合のみ `1` |
 | `KSU_MODULE` | スクリプト ID |
 | `KSU_ONESHOT` | `1`。ワンショット実行とインストール済みモジュールのアクションボタンを区別するためのもの |
 | `MODPATH` | 展開先ディレクトリ。データファイルはここから読み込みます |

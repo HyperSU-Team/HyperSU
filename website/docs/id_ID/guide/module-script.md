@@ -1,6 +1,6 @@
 # Skrip sekali jalan
 
-Skrip sekali jalan (one-shot) adalah ZIP yang **dijalankan sekali** oleh manager KernelSU alih-alih dipasang. Skrip ini dikemas seperti modul, tetapi tidak ada yang tertinggal di perangkat: manager mengekstrak ZIP ke direktori privat, meminta parameter yang dideklarasikannya, menampilkan kode sumber `action.sh`, lalu menjalankannya di shell root. Gunakan untuk tugas seperti membuka pengaturan tersembunyi atau mengekspor log; apa pun yang harus berjalan saat boot atau memodifikasi partisi sistem sebaiknya dibuat sebagai [modul](module.md).
+Skrip sekali jalan (one-shot) adalah ZIP yang **dijalankan sekali** oleh manager KernelSU alih-alih dipasang. Skrip ini dikemas seperti modul, tetapi tidak ada yang tertinggal di perangkat: manager mengekstrak ZIP ke direktori privat, meminta parameter yang dideklarasikannya, menampilkan kode sumber `action.sh`, lalu menjalankannya di shell root. Gunakan untuk tugas seperti membuka pengaturan tersembunyi atau mengekspor log; apa pun yang harus berjalan saat boot atau memodifikasi partisi sistem sebaiknya dibuat sebagai [modul](https://kernelsu.org/guide/module.html).
 
 ## Struktur paket
 
@@ -13,7 +13,7 @@ Skrip sekali jalan (one-shot) adalah ZIP yang **dijalankan sekali** oleh manager
 └── other files      # data the script reads via $MODPATH
 ```
 
-`module.prop` menggunakan field yang sama seperti [modul](module.md#module-prop) dan menambahkan `oneshot`:
+`module.prop` menggunakan field yang sama seperti [modul](https://kernelsu.org/guide/module.html) dan menambahkan `oneshot`:
 
 ```txt
 id=example_script
@@ -53,7 +53,7 @@ Output ditampilkan seperti output Action dan dapat disimpan. Direktori hasil eks
 | `ASH_STANDALONE` | `1` |
 | `KSU` | `true` |
 | `KSU_VER`, `KSU_VER_CODE`, `KSU_KERNEL_VER_CODE` | Versi KernelSU, sama seperti untuk modul |
-| `KSU_LATE_LOAD` | `1` hanya dalam [mode late-load](module.md#late-load-mode) |
+| `KSU_LATE_LOAD` | `1` hanya dalam [mode late-load](https://kernelsu.org/guide/module.html) |
 | `KSU_MODULE` | ID skrip |
 | `KSU_ONESHOT` | `1`, untuk membedakan eksekusi sekali jalan dari tombol Action modul yang terpasang |
 | `MODPATH` | direktori ekstraksi; baca file data Anda dari sini |

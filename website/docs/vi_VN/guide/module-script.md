@@ -1,6 +1,6 @@
 # Script chạy một lần
 
-Script chạy một lần (one-shot script) là một tệp ZIP mà trình quản lý KernelSU **chạy một lần** thay vì cài đặt. Nó được đóng gói giống như một module, nhưng không có gì được giữ lại trên thiết bị: trình quản lý giải nén ZIP vào một thư mục riêng, hỏi các tham số mà nó khai báo, hiển thị mã nguồn `action.sh` và chạy nó trong root shell. Hãy dùng nó cho các tác vụ như mở khóa một cài đặt ẩn hoặc xuất log; mọi thứ cần chạy khi khởi động hoặc sửa đổi các phân vùng hệ thống nên là một [module](module.md).
+Script chạy một lần (one-shot script) là một tệp ZIP mà trình quản lý KernelSU **chạy một lần** thay vì cài đặt. Nó được đóng gói giống như một module, nhưng không có gì được giữ lại trên thiết bị: trình quản lý giải nén ZIP vào một thư mục riêng, hỏi các tham số mà nó khai báo, hiển thị mã nguồn `action.sh` và chạy nó trong root shell. Hãy dùng nó cho các tác vụ như mở khóa một cài đặt ẩn hoặc xuất log; mọi thứ cần chạy khi khởi động hoặc sửa đổi các phân vùng hệ thống nên là một [module](https://kernelsu.org/guide/module.html).
 
 ## Cấu trúc gói
 
@@ -13,7 +13,7 @@ Script chạy một lần (one-shot script) là một tệp ZIP mà trình quả
 └── other files      # data the script reads via $MODPATH
 ```
 
-`module.prop` sử dụng các trường giống như một [module](module.md#module-prop) và bổ sung `oneshot`:
+`module.prop` sử dụng các trường giống như một [module](https://kernelsu.org/guide/module.html) và bổ sung `oneshot`:
 
 ```txt
 id=example_script
@@ -53,7 +53,7 @@ cd <dir> && <env> /data/adb/ksu/bin/busybox sh ./action.sh </dev/null
 | `ASH_STANDALONE` | `1` |
 | `KSU` | `true` |
 | `KSU_VER`, `KSU_VER_CODE`, `KSU_KERNEL_VER_CODE` | các phiên bản KernelSU, giống như với module |
-| `KSU_LATE_LOAD` | `1` chỉ trong [chế độ late-load](module.md#late-load-mode) |
+| `KSU_LATE_LOAD` | `1` chỉ trong [chế độ late-load](https://kernelsu.org/guide/module.html) |
 | `KSU_MODULE` | ID của script |
 | `KSU_ONESHOT` | `1`, để phân biệt lần chạy one-shot với nút Action của một module đã cài đặt |
 | `MODPATH` | thư mục giải nén; hãy đọc các tệp dữ liệu của bạn từ đây |
