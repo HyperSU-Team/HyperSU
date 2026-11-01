@@ -1,7 +1,7 @@
 # Compatibility Status
 
 ::: info KernelSU
-KernelSU (versions prior to v0.9.5) officially supports Android GKI 2.0 devices (kernel 5.10+)
+KernelSU officially supports Android GKI 2.0 devices (kernel 5.10+)
 :::
 
 ::: warning Legacy Kernel Support

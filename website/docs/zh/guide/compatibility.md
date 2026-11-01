@@ -1,7 +1,7 @@
 # 兼容性状态
 
 ::: info KernelSU
-KernelSU（v0.9.5 之前的版本）官方支持 Android GKI 2.0 设备（内核 5.10+）
+KernelSU 官方支持 Android GKI 2.0 设备（内核 5.10+）
 :::
 
 ::: warning 传统内核支持

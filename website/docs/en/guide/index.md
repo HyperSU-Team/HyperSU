@@ -52,10 +52,10 @@ Ready to get started with HyperSU? Follow our step-by-step guide:
 
 Before installing HyperSU, ensure your device meets these requirements:
 
-- **Android Version**: Android 8.0 (API 26) or higher
+- **Kernel**: 5.10 or newer on a GKI 2.0 device for the prebuilt route; 4.4+ — and 3.x with additional backports — if you build the kernel yourself
 - **Bootloader**: Unlocked bootloader
-- **Recovery**: Custom recovery (TWRP recommended)
-- **Storage**: At least 100MB free space
+- **Manager**: The HyperSU manager app, from the GitHub releases
+- **Recovery**: A custom recovery such as TWRP, only if you take the recovery flashing route
 - **Knowledge**: Basic understanding of Android modding
 
 ## Safety Notice

@@ -8,7 +8,7 @@ Before you begin, ensure you have the following:
 
 - [ ] A compatible device. Check the [Compatibility Guide](./compatibility.md) for details.
 - [ ] Unlocked bootloader.
-- [ ] Custom recovery installed, such as TWRP.
+- [ ] A custom recovery such as TWRP, only for the recovery flashing route.
 - [ ] Basic knowledge of flashing custom ROMs and kernels.
 - [ ] Your device's kernel source or a compatible pre-built kernel.
 

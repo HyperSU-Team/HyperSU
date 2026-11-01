@@ -26,7 +26,7 @@ Also, we provide pre-built kernels for your OnePlus device to use:
 
 - [ShirkNeko/Action_OnePlus_MKSU_SUSFS](https://github.com/ShirkNeko/Action_OnePlus_MKSU_SUSFS) (add ZRAM compression algorithm patch, susfs, KPM.)
 
-Using the link above, Fork into GitHub Action, fill in the build parameters, compile, and finally flush in the zip with the AnyKernel3 suffix.
+Using the link above, Fork into GitHub Action, fill in the build parameters, compile, and finally flash the zip with the AnyKernel3 suffix.
 
 > [!Note]
 >

@@ -26,7 +26,7 @@
 
 - [ShirkNeko/Action_OnePlus_MKSU_SUSFS](https://github.com/ShirkNeko/Action_OnePlus_MKSU_SUSFS)（添加 ZRAM 压缩算法补丁、susfs 和 KPM。）
 
-使用上面的链接，Fork 到 GitHub Action，填写构建参数，进行编译，最后将 zip 文件以 AnyKernel3 后缀上传到 GitHub Action。
+使用上面的链接，Fork 到 GitHub Action，填写构建参数，进行编译，最后刷入后缀为 AnyKernel3 的 zip 文件。
 
 > [!Note]
 >
