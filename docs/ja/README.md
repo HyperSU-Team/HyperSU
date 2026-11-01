@@ -15,24 +15,16 @@
 
 ## 追加する方法
 
-メインブランチを使用 (非 GKI のデバイスのビルドは非対応) (susfs を手動で統合が必要)
+メインブランチを使用 (GKI / 非 GKI デバイスに対応)
 
 ```
-curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s main
+curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash
 ```
 
-非 GKI のデバイスに対応するブランチを使用 (susfs を手動で統合が必要)
+Built-in カーネル用のブランチを使用
 
 ```
 curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s builtin
-```
-
-## 統合された susfs の使い方
-
-1. susfs-main または他の susfs-\* ブランチを直接で使用、susfs の統合は不要 (非 GKI デバイスのビルドに対応)
-
-```
-curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s susfs-main
 ```
 
 ## フックの方式

@@ -54,7 +54,7 @@ KernelSU использует механизм kprobe для создания х
 Команда для добавления SukiSU (писать в корневой папке исходников ядра):
 
 ```sh
-curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s main
+curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash
 ```
 
 ## Ручная модификация исходного кода ядра
@@ -72,26 +72,14 @@ curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kern
 
 Команды для добавления SukiSU в дерево исходников вашего ядра:
 
-### GKI ядро
+### GKI / non-GKI ядро
 
 ```sh
-curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s main
+curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash
 ```
 
 ### Встроенное ядро (Built-in)
 
 ```sh
-curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s builtin
+curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s builtin
 ```
-
-### GKI / Built-in ядро с поддержкой susfs (экспериментально)
-
-```sh
-curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-{{branch}}
-```
-
-Доступные ветки (Branch):
-
-- `main` (susfs-main)
-- `test` (susfs-test)
-- конкретная версия (например: susfs-1.5.7, проверить доступные варианты можно в разделе [branches](https://github.com/SukiSU-Ultra/SukiSU-Ultra/branches))

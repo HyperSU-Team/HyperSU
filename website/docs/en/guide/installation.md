@@ -63,17 +63,13 @@ This method is for advanced users who are building a kernel from source.
 
 #### Integration Scripts:
 
-- **Main Branch (GKI)**:
+- **Main Branch (GKI and non-GKI)**:
   ```sh [bash]
-  curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s main
+  curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash
   ```
-- **Non-GKI Branch**:
+- **Built-in kernel**:
   ```sh [bash]
-  curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s builtin
-  ```
-- **SUSFS-Dev Branch (Recommended)**:
-  ```sh [bash]
-  curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-main
+  curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s builtin
   ```
 
 ::: warning Required Kernel Configs

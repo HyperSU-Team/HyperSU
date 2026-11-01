@@ -54,7 +54,7 @@ KernelSU 使用 kprobe 机制来做内核的相关 hook，如果 _kprobe_ 可以
 替换 KernelSU 添加到内核源代码树的步骤的执行命令为：
 
 ```sh
-curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s main
+curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash
 ```
 
 ## 手动修改内核源代码
@@ -72,26 +72,14 @@ curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kern
 
 将 KernelSU（SukiSU）添加到内核源代码树的步骤的运行命令将被替换为：
 
-### GKI 内核
+### GKI / non-GKI 内核
 
 ```sh [bash]
-curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s main
+curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash
 ```
 
 ### Built-in 内核
 
 ```sh [bash]
-curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s builtin
+curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s builtin
 ```
-
-### 带有 susfs 的 GKI / Built-in 内核（实验）
-
-```sh [bash]
-curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-{{branch}}
-```
-
-分支:
-
-- `main` (susfs-main)
-- `test` (susfs-test)
-- 版本号 (例如： susfs-1.5.7, 你需要在 [分支](https://github.com/SukiSU-Ultra/SukiSU-Ultra/branches) 里找到它)

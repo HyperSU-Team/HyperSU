@@ -54,7 +54,7 @@ Please refer to this document [https://github.com/~](https://github.com/tiann/Ke
 The execution command for the step that adds KernelSU to your kernel source tree is replaced with:
 
 ```sh
-curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s main
+curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash
 ```
 
 ## Manually modify the kernel source
@@ -72,26 +72,14 @@ There is another way to integrate but still work in the process.
 
 Run command for the step that adds KernelSU(SukiSU) to your kernel source tree is replaced with:
 
-### GKI kernel
+### GKI / non-GKI kernel
 
 ```sh
-curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s main
+curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash
 ```
 
 ### Built-in kernel
 
 ```sh
-curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s builtin
+curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s builtin
 ```
-
-### GKI / Built-in kernel with susfs (experiment)
-
-```sh
-curl -LSs "https://raw.githubusercontent.com/SukiSU-Ultra/SukiSU-Ultra/main/kernel/setup.sh" | bash -s susfs-{{branch}}
-```
-
-Branch:
-
-- `main` (susfs-main)
-- `test` (susfs-test)
-- version (for example: susfs-1.5.7, you should check the [branches](https://github.com/SukiSU-Ultra/SukiSU-Ultra/branches))

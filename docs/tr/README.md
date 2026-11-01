@@ -16,24 +16,16 @@
 
 Çekirdek kaynak kodunun kök dizininde aşağıdaki komutları çalıştırın:
 
-Ana dalı kullanın (GKI olmayan cihazlar için desteklenmez)
+Ana dalı kullanın (GKI ve GKI olmayan cihazlar için)
 
 ```
-curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s main
+curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash
 ```
 
-GKI olmayan cihazları destekleyen dalı kullanın
+Built-in çekirdek için dalı kullanın
 
 ```
 curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s builtin
-```
-
-## susfs Nasıl Entegre Edilir
-
-1. Doğrudan susfs-main veya susfs-\* dalını kullanın, susfs entegrasyonuna gerek yok
-
-```
-curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s susfs-main
 ```
 
 ## Kanca Yöntemleri
