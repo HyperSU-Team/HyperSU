@@ -92,9 +92,9 @@ KSU_LOCAL_VERSION := $(shell cd $(KSU_SRC); $(GIT_BIN) rev-list --count HEAD)
 # the same count (manager/build.gradle.kts: major * 10000 + commitCount - end), so the kernel and
 # the manager report the same version for the same tree.
 #
-# BakaSU's formula was 30000 + count + 700, which for this repository's commit count lands near
-# 30xxx - below every version this project has shipped, so the manager would read the kernel as
-# far older than it is.
+# The upstream formula this replaced was 30000 + count + 700, which for this repository's commit
+# count lands near 30xxx - below every version this project has shipped, so the manager would read
+# the kernel as far older than it is.
 VERSION_BASE   := 40000
 VERSION_OFFSET := 2815
 KSU_VERSION := $(if $(KSU_LOCAL_VERSION),$(shell expr $(VERSION_BASE) + $(KSU_LOCAL_VERSION) - $(VERSION_OFFSET)),$(VERSION_BASE))
