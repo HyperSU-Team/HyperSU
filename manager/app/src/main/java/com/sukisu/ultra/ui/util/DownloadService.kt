@@ -256,18 +256,29 @@ class DownloadService : Service() {
             .setSmallIcon(android.R.drawable.stat_sys_download_done)
             .setAutoCancel(true)
 
-        // Add "Install" action button
-        val installIntent = Intent(this, MainActivity::class.java).apply {
-            action = ACTION_INSTALL_MODULE
-            putExtra(EXTRA_MODULE_URI, uri.toString())
-            putExtra(EXTRA_DOWNLOAD_ID, id)
-            putExtra(EXTRA_TOKEN, SettingsRepositoryImpl().intentToken)
-            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+        // An APK belongs to the system package installer; anything else is a
+        // module zip, which the manager installs itself. Sending an APK through
+        // the module action is why "Install" on the notification did nothing.
+        val isApk = fileName.endsWith(".apk", ignoreCase = true)
+        val actionIntent: Intent = if (isApk) {
+            Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, APK_MIME_TYPE)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+        } else {
+            Intent(this, MainActivity::class.java).apply {
+                action = ACTION_INSTALL_MODULE
+                putExtra(EXTRA_MODULE_URI, uri.toString())
+                putExtra(EXTRA_DOWNLOAD_ID, id)
+                putExtra(EXTRA_TOKEN, SettingsRepositoryImpl().intentToken)
+                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
         }
         val installPendingIntent = PendingIntent.getActivity(
             this,
             id,
-            installIntent,
+            actionIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         builder.addAction(

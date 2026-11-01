@@ -1066,8 +1066,15 @@ fn has_zygisk_library(path: &Path) -> bool {
 }
 
 /// Whether the module id names a Zygisk implementation rather than a client.
+///
+/// An exact list, not a substring match: a client module is free to put
+/// "zygisk" in its own id (HMA-OSS Zygisk, Zygisk - FuseHide), and those were
+/// being reported as providers.
 fn is_zygisk_provider(module_id: &str) -> bool {
-    module_id.to_ascii_lowercase().contains("zygisk")
+    matches!(
+        module_id.to_ascii_lowercase().as_str(),
+        "zygisksu" | "rezygisk" | "neozygisk" | "zygisk_next" | "zygisknext"
+    )
 }
 
 /// Whether any Zygisk daemon is currently running.

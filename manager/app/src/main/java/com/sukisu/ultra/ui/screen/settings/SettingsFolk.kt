@@ -63,6 +63,7 @@ import com.sukisu.ultra.ui.util.LocaleHelper
 import com.sukisu.ultra.ui.util.ManagerUpdate
 import com.sukisu.ultra.ui.util.ManagerUpdateChecker
 import com.sukisu.ultra.ui.util.download
+import com.sukisu.ultra.ui.util.installApk
 import kotlinx.coroutines.launch
 
 /**
@@ -106,7 +107,9 @@ fun SettingPagerFolk(
                     scope.launch {
                         loadingDialog.show()
                         runCatching {
-                            download(url, "HyperSU-${available.versionName}.apk")
+                            download(url, "HyperSU-${available.versionName}.apk") { uri ->
+                                installApk(context, uri)
+                            }
                         }.onFailure {
                             snackBarHost.showSnackbar(
                                 context.getString(R.string.settings_manager_update_failed),

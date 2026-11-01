@@ -98,23 +98,22 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.3 - fixes on top of v4.2.2.
+            HyperSU v4.2.4 - fixes on top of v4.2.3.
 
-            ## Zygisk detection
+            ## Zygisk implementation list
 
-            The home screen always said "Zygisk implementation: not installed", even with Zygisk Next installed and running: the manager reads that line from `ksud module list`, and the ksud in this tree never emitted the fields it looks at.
+            The line listed client modules too: any module id containing "zygisk" was treated as a provider, so HMA-OSS Zygisk and Zygisk - FuseHide appeared next to the real implementation.
 
-            - `ksud module list` now reports `zygisk`, `zygisk_provider` and `zygisk_running` for every module.
-            - A provider (Zygisk Next, ReZygisk, NeoZygisk) is recognised by its module id; a client module by the `zygisk/*.so` it ships, which also lights up the ZYGISK tag on the module card.
-            - The running state comes from scanning `/proc/*/comm` for a Zygisk daemon, so an enabled but stopped provider reports "reboot required" instead of a false positive.
+            - A provider is now matched by its exact id (`zygisksu`, `rezygisk`, `neozygisk`, `zygisk_next`), and a client module only gets the ZYGISK tag on its card.
+            - Client modules keep working as before; they are simply not implementations.
 
-            ## Also in this line, from v4.2.2
+            ## Manager update
 
-            - Removed the "hide suspicious mounts" switch: the kernel has no handler for feature 16 after the base moved to BakaSU.
-            - Added the shell / ADB only su switch (`KSU_FEATURE_SHELL_SU_ADB_ONLY`).
-            - The SuSFS entry is detected again: `susfs status`, `susfs version`, `susfs features`, kebab-case command aliases, and a legacy `config get|set` view over the typed configuration.
+            - After the release APK downloads, the system package installer opens instead of nothing happening.
+            - The completion notification's "Install" action now opens the installer for an APK; it used to hand the file to the module installer, which is why tapping it did nothing.
+            - Declare `REQUEST_INSTALL_PACKAGES`.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.2...v4.2.3
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.3...v4.2.4
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
