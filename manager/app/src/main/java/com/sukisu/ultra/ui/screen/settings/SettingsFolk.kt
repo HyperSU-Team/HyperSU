@@ -355,18 +355,18 @@ fun SettingPagerFolk(
                         }
 
                         item {
-                            val mountHideSummary = when (uiState.mountHideStatus) {
+                            val shellSuSummary = when (uiState.shellSuAdbOnlyStatus) {
                                 "unsupported" -> stringResource(R.string.feature_status_unsupported_summary)
                                 "managed" -> stringResource(R.string.feature_status_managed_summary)
-                                else -> stringResource(R.string.settings_mount_hide_summary)
+                                else -> stringResource(R.string.settings_shell_su_adb_only_summary)
                             }
                             FolkSwitchPreference(
-                                title = stringResource(R.string.settings_mount_hide),
-                                summary = mountHideSummary,
-                                icon = Icons.Filled.Fence,
-                                enabled = uiState.mountHideStatus == "supported",
-                                checked = uiState.isMountHideEnabled,
-                                onCheckedChange = actions.onSetMountHideEnabled,
+                                title = stringResource(R.string.settings_shell_su_adb_only),
+                                summary = shellSuSummary,
+                                icon = Icons.Filled.AdminPanelSettings,
+                                enabled = uiState.shellSuAdbOnlyStatus == "supported",
+                                checked = uiState.isShellSuAdbOnlyEnabled,
+                                onCheckedChange = actions.onSetShellSuAdbOnly,
                             )
                         }
 

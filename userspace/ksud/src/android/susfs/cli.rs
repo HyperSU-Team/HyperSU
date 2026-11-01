@@ -35,7 +35,7 @@ pub enum SuSFSSubCommands {
     ///
     /// * Important Notes *
     /// - Only effective for umounted process with uid >= 10000.
-    #[command(name = "add_sus_path")]
+    #[command(name = "add_sus_path", alias = "add-sus-path")]
     AddSusPath {
         /// Path of file or directory
         path: String,
@@ -51,7 +51,7 @@ pub enum SuSFSSubCommands {
     ///
     /// * Important Notes *
     /// - Only effective for umounted process with uid >= 10000.
-    #[command(name = "add_sus_path_loop")]
+    #[command(name = "add_sus_path_loop", alias = "add-sus-path-loop")]
     AddSusPathLoop {
         /// Path of file or directory
         path: String,
@@ -64,7 +64,7 @@ pub enum SuSFSSubCommands {
     /// - For ReZygisk without TreatWheel module, it is recommended to set to 1 in post-fs-data.sh to prevent
     ///   zygote from caching the sus mounts in memory, and revert to 0 in boot-completed.sh stage, or keep it enabled
     ///   if you want to keep them hidden from /proc/self/[mounts|mountinfo|mountstat] for non-su processes.
-    #[command(name = "hide_sus_mnts_for_non_su_procs")]
+    #[command(name = "hide_sus_mnts_for_non_su_procs", alias = "hide-sus-mnts-for-non-su-procs")]
     HideSusMntsForNonSuProcs {
         /// 0: DO NOT hide sus mounts for non-su processes
         /// 1: hide all sus mounts for non-su processes
@@ -79,7 +79,7 @@ pub enum SuSFSSubCommands {
     ///
     /// * Important Notes *
     /// - Effective for all processes with uid >= 10000
-    #[command(name = "add_sus_kstat")]
+    #[command(name = "add_sus_kstat", alias = "add-sus-kstat")]
     AddSusKstat {
         /// Path of file or directory
         path: String,
@@ -91,7 +91,7 @@ pub enum SuSFSSubCommands {
     ///
     /// * Important Notes *
     /// - Effective for all processes with uid >= 10000
-    #[command(name = "update_sus_kstat")]
+    #[command(name = "update_sus_kstat", alias = "update-sus-kstat")]
     UpdateSusKstat {
         /// Path of file or directory
         path: String,
@@ -103,7 +103,7 @@ pub enum SuSFSSubCommands {
     ///
     /// * Important Notes *
     /// - Effective for all processes with uid >= 10000
-    #[command(name = "update_sus_kstat_full_clone")]
+    #[command(name = "update_sus_kstat_full_clone", alias = "update-sus-kstat-full-clone")]
     UpdateSusKstatFullClone {
         /// Path of file or directory
         path: String,
@@ -113,7 +113,7 @@ pub enum SuSFSSubCommands {
     ///
     /// * Important Notes *
     /// - Effective for all processes with uid >= 10000.
-    #[command(name = "add_sus_kstat_statically")]
+    #[command(name = "add_sus_kstat_statically", alias = "add-sus-kstat-statically")]
     AddSusKstatStatically {
         /// Path of file or directory
         path: String,
@@ -144,11 +144,11 @@ pub enum SuSFSSubCommands {
     },
 
     /// Spoof uname for all processes.
-    #[command(name = "set_uname")]
+    #[command(name = "set_uname", alias = "set-uname")]
     SetUname { release: String, version: String },
 
     /// SUSFS log in kernel.
-    #[command(name = "enable_log")]
+    #[command(name = "enable_log", alias = "enable-log")]
     EnableLog {
         /// 0: Disable
         /// 1: Enable
@@ -157,7 +157,7 @@ pub enum SuSFSSubCommands {
     },
 
     /// Spoof the output of /proc/cmdline (non-gki) or /proc/bootconfig (gki) from a text file.
-    #[command(name = "set_cmdline_or_bootconfig")]
+    #[command(name = "set_cmdline_or_bootconfig", alias = "set-cmdline-or-bootconfig")]
     SetCmdlineOrBootconfig {
         /// Path to fake cmdline file or fake bootconfig file
         path: String,
@@ -169,7 +169,7 @@ pub enum SuSFSSubCommands {
     /// - Both target_pathname and redirected_pathname must be existed before they can be added to open_redirect.
     /// - Users have to take care of the selinux permission of both target_pathname and redirected_pathname by themselves.
     /// - Only effective for current process that matches the pre-defined uid scheme.
-    #[command(name = "add_open_redirect")]
+    #[command(name = "add_open_redirect", alias = "add-open-redirect")]
     AddOpenRedirect {
         target_path: String,
         redirected_path: String,
@@ -188,7 +188,7 @@ pub enum SuSFSSubCommands {
     /// - It does NOT hide any inline hooks or plt hooks cause by the injected library itself.
     /// - It may not be able to evade detections by apps that implement a good injection detection.
     /// - Only effective for umounted process with uid >= 10000.
-    #[command(name = "add_sus_map")]
+    #[command(name = "add_sus_map", alias = "add-sus-map")]
     AddSusMap {
         /// Path to actual library
         path: String,
@@ -200,7 +200,7 @@ pub enum SuSFSSubCommands {
     /// - It is set to '0' by default in kernel.
     /// - Enabling this may sometimes make developers hard to identify the cause when they are debugging with
     ///   some permission or selinux issues, so users are advised to disable this when doing so.
-    #[command(name = "enable_avc_log_spoofing")]
+    #[command(name = "enable_avc_log_spoofing", alias = "enable-avc-log-spoofing")]
     EnableAvcLogSpoofing {
         /// 0: Disable
         /// 1: Enable
@@ -214,8 +214,17 @@ pub enum SuSFSSubCommands {
         info_type: ShowType,
     },
 
+    /// Print true when the running kernel supports SUSFS, false otherwise.
+    Status,
+
+    /// Print the kernel-side SUSFS version (alias of `show version`).
+    Version,
+
+    /// Print the kernel-side enabled SUSFS features (alias of `show enabled_features`).
+    Features,
+
     /// Read boot slot kernel uname and build-time
-    #[command(name = "slot_info")]
+    #[command(name = "slot_info", alias = "slot-info")]
     SlotInfo {
         /// Path to boot image (optional)
         /// Defaults to /dev/block/by-name/[boot_a|boot_b|boot]
@@ -354,6 +363,16 @@ pub fn run_main(args: SusfsArgs) -> Result<()> {
                 println!("{variant}");
             }
         },
+        SuSFSSubCommands::Status => {
+            let supported = api::version().map(|v| v != "Unsupported").unwrap_or(false);
+            println!("{supported}");
+        }
+        SuSFSSubCommands::Version => {
+            println!("{}", api::version()?);
+        }
+        SuSFSSubCommands::Features => {
+            println!("{}", api::enabled_features()?);
+        }
         SuSFSSubCommands::SlotInfo { boot_image } => {
             if let Some(path) = boot_image {
                 slot_info::analyze_boot_image(&path)?;

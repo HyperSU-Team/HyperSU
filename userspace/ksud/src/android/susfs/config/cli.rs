@@ -5,7 +5,7 @@ use clap::{Subcommand, ValueEnum};
 use num_enum::TryFromPrimitive;
 use serde::Serialize;
 
-use crate::android::susfs::{config::model::Config, enums::UidScheme};
+use crate::android::susfs::{config::model::{Config, SusPathItem}, enums::UidScheme};
 
 #[derive(Debug, Subcommand)]
 pub enum ConfigCommand {
@@ -22,6 +22,18 @@ pub enum ConfigCommand {
     Restore {
         /// Path to a JSON backup. Omit to restore the default configuration.
         path: Option<PathBuf>,
+    },
+    /// Print one persisted setting by its legacy key name.
+    Get {
+        /// Legacy key name used by the manager.
+        key: String,
+    },
+    /// Persist one setting by its legacy key name.
+    Set {
+        /// Legacy key name used by the manager.
+        key: String,
+        /// New value. Booleans are `true`/`false`, lists are `;`-separated.
+        value: String,
     },
     #[command(name = "cmdline_or_bootconfig")]
     CmdlineOrBootconfig {
@@ -184,6 +196,16 @@ pub fn run(command: ConfigCommand) -> Result<()> {
             // A restored config may change `enabled`; bring the ksu_susfs hard
             // link back in sync with the new state.
             crate::assets::reconcile_susfs_link()
+        }
+        ConfigCommand::Get { key } => {
+            // Raw value, not JSON: the manager compares it against plain strings.
+            println!("{}", legacy_config_get(&Config::read_or_default(), &key));
+            Ok(())
+        }
+        ConfigCommand::Set { key, value } => {
+            let mut config = Config::read_or_default();
+            legacy_config_set(&mut config, &key, &value)?;
+            config.save()
         }
         ConfigCommand::CmdlineOrBootconfig { command } => run_string(command),
         ConfigCommand::AvcLogSpoofing { command } => {
@@ -372,3 +394,66 @@ fn run_path(command: PathConfigCommand) -> Result<()> {
         PathConfigCommand::List => print_json(&Config::read_or_default().sus_map),
     }
 }
+
+/// Legacy key/value view over the typed configuration.
+///
+/// The manager was written against SukiSU's flat key store, so it asks for a
+/// handful of names the typed model does not use. Translate the ones that have
+/// an equivalent here and answer with a default for the rest; the manager treats
+/// an unknown boolean as `false` and an unknown list as empty.
+fn legacy_config_get(config: &Config, key: &str) -> String {
+    match key {
+        "uname_value" => config.uname.release.clone(),
+        "build_time_value" => config.uname.version.clone(),
+        "enable_log" => config.logging.to_string(),
+        "hide_sus_mounts_for_all_procs" => config.hide_sus_mnts_for_non_su_procs.to_string(),
+        "enable_avc_log_spoofing" => config.avc_log_spoofing.to_string(),
+        "cmdline_or_bootconfig_path" => config.cmdline_or_bootconfig.clone(),
+        "sus_paths" => join_paths(config.sus_path.iter().filter(|p| !p.is_loop).map(|p| p.path.as_str())),
+        "sus_loop_paths" => join_paths(config.sus_path.iter().filter(|p| p.is_loop).map(|p| p.path.as_str())),
+        "sus_maps" => join_paths(config.sus_map.iter().map(|p| p.as_str())),
+        "auto_start_enabled" | "execute_in_post_fs_data" | "enable_cleanup_residue"
+        | "enable_hide_bl" => "false".to_string(),
+        _ => String::new(),
+    }
+}
+
+fn join_paths<'a>(items: impl Iterator<Item = &'a str>) -> String {
+    items.collect::<Vec<_>>().join(";")
+}
+
+fn split_list(value: &str) -> impl Iterator<Item = &str> {
+    value.split(';').map(str::trim).filter(|s| !s.is_empty())
+}
+
+fn legacy_config_set(config: &mut Config, key: &str, value: &str) -> Result<()> {
+    let enabled = matches!(value, "true" | "1");
+    match key {
+        "uname_value" => config.uname.release = value.to_string(),
+        "build_time_value" => config.uname.version = value.to_string(),
+        "enable_log" => config.logging = enabled,
+        "hide_sus_mounts_for_all_procs" => config.hide_sus_mnts_for_non_su_procs = enabled,
+        "enable_avc_log_spoofing" => config.avc_log_spoofing = enabled,
+        "cmdline_or_bootconfig_path" => config.cmdline_or_bootconfig = value.to_string(),
+        "sus_paths" => {
+            config.sus_path.retain(|p| p.is_loop);
+            for path in split_list(value) {
+                config.sus_path.insert(SusPathItem { path: path.to_string(), is_loop: false });
+            }
+        }
+        "sus_loop_paths" => {
+            config.sus_path.retain(|p| !p.is_loop);
+            for path in split_list(value) {
+                config.sus_path.insert(SusPathItem { path: path.to_string(), is_loop: true });
+            }
+        }
+        "sus_maps" => {
+            config.sus_map = split_list(value).map(str::to_string).collect();
+        }
+        // The remaining legacy keys describe SukiSU-only features; accept the
+        // write so the manager does not report a failure, and store nothing.
+        _ => {}
+    }
+    Ok(())
+}
+
