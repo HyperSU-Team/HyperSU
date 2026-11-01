@@ -38,7 +38,8 @@ jobs:
         
     - name: Setup rustup
       run: |
-        rustup update stable
+        rustup toolchain install nightly --profile minimal
+        rustup default nightly
         rustup target add ${{ inputs.target }}
 
     - uses: Swatinem/rust-cache@v2
@@ -59,7 +60,7 @@ jobs:
           export KSU_PACKAGE_NAME="com.hypersu.manager.pr"
         fi
         source .github/scripts/setup-rust-build.sh ${{ inputs.target }} 26
-        cargo build --target $TRIPLE --release --manifest-path ./userspace/ksud/Cargo.toml
+        cargo +nightly build --target $TRIPLE --release --manifest-path ./userspace/ksud/Cargo.toml
 
     - name: Upload ksud artifact
       uses: actions/upload-artifact@v7
