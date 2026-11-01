@@ -60,7 +60,7 @@ HyperSU 站在优秀开源项目的肩膀上。我们衷心感谢上游项目及
 
 ## 赞助
 
-- [ShirkNeko](https://afdian.com/a/shirkneko) (HyperSU 主要维护者)
+- [ShirkNeko](https://afdian.com/a/shirkneko)
 - [weishu](https://github.com/sponsors/tiann) (KernelSU 作者)
 
 ## ShirkNeko 的赞助列表

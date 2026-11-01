@@ -47,7 +47,7 @@
 
 ## Спонсоры
 
-- [ShirkNeko](https://afdian.com/a/shirkneko) (поддерживает SukiSU)
+- [ShirkNeko](https://afdian.com/a/shirkneko)
 - [weishu](https://github.com/sponsors/tiann) (автор KernelSU)
 
 ## Список спонсоров ShirkNeko

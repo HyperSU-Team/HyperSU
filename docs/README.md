@@ -46,7 +46,7 @@ If you need to submit a translation for the manager, please open a pull request 
 
 ## Sponsor
 
-- [ShirkNeko](https://afdian.com/a/shirkneko) (maintainer of HyperSU)
+- [ShirkNeko](https://afdian.com/a/shirkneko)
 - [weishu](https://github.com/sponsors/tiann) (author of KernelSU)
 
 ## ShirkNeko's sponsorship list
@@ -71,7 +71,7 @@ Thanks also go to all other upstream projects and contributors mentioned in the 
 
 HyperSU would not exist without the people who build and maintain [BakaSU](https://github.com/Baka-SU/BakaSU), the project it is forked from, and [SukiSU Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra), the project BakaSU is forked from. Our thanks go to all of them.
 
-Maintainer, as named by the upstream project:
+Maintainer, as named by SukiSU Ultra (BakaSU's upstream):
 
 - [ShirkNeko](https://github.com/ShirkNeko)
 
