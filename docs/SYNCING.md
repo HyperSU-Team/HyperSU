@@ -70,16 +70,13 @@ local value.
 
 | File | Local value | Why |
 | --- | --- | --- |
-| `kernel/Kbuild` | `KSU_PACKAGE_NAME ?= com.hypersu.manager` | The kernel matches the manager by package name. |
-| `kernel/Kbuild` | `KSU_EXPECTED_SIZE ?= 0x378`, `KSU_EXPECTED_HASH ?= aaef52d7…` | The release certificate. Upstream's values accept SukiSU's manager and reject ours. |
-| `kernel/Kbuild` | `-I$(KSU_KERNEL_DIR)/..` | See "The uapi symlinks" below. |
-| `kernel/Kbuild` | `REPO_OWNER := HyperSU-Team`, `REPO_NAME := HyperSU` | Version reporting and the CI commit count. |
-| `kernel/Makefile` | `EXTRA_CFLAGS="-I$(MDIR)/.."` | Same reason as the Kbuild include path. |
+| `kernel/Kbuild` | `REPO_NAME := HyperSU` | Version reporting and the compile-time notices. |
+| `kernel/Kbuild` | `ccflags-y += -I$(src)/.. -I$(srctree)/$(src)/..` | See "The uapi symlinks" below. |
+| `kernel/Kbuild` | consumes `KSU_EXPECTED_SIZE` / `KSU_EXPECTED_HASH` from the build arguments | The manager certificate the kernel accepts. The values are passed in (`.github/workflows/ddk-lkm.yml`), not defaulted in Kbuild, so a build that does not pass ours rejects our app. |
 | `kernel/setup.sh` | clones `HyperSU-Team/HyperSU`, checks out `main` | Upstream checks out the newest tag, which here predates the rebrand and silently downgrades the sources. |
-| `userspace/ksud/build.rs` | `KSU_PACKAGE_NAME=com.hypersu.manager` | Must match the manager's `applicationId`. |
 | `manager/app/src/main/cpp/CMakeLists.txt` | `include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../../../../..)` | See "The uapi symlinks" below. |
 | `.github/workflows/build-manager.yml` | `package_name: com.hypersu.manager[.pr]` | Feeds the kernel's expected package name. |
-| `.github/workflows/ksud.yml` | `KSU_PACKAGE_NAME="com.hypersu.manager.pr"` | Same, for the ksud build. |
+| `.github/workflows/ksud.yml` | `KSU_PACKAGE_NAME="com.hypersu.manager.pr"` | `ksud`'s own fallback is upstream's `com.resukisu.resukisu`, so this environment value is what makes it look for our manager. |
 | `.github/workflows/crowdin.yml` | triggers commented out | This fork has no Crowdin project, so every run failed. |
 
 ## The uapi symlinks
