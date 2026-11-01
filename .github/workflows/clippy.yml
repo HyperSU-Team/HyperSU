@@ -25,7 +25,9 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - run: rustup update stable
+      - run: |
+          rustup toolchain install nightly --profile minimal
+          rustup default nightly
       
       - uses: Swatinem/rust-cache@v2
         with:
@@ -44,5 +46,5 @@ jobs:
           rustup target add x86_64-linux-android
           source .github/scripts/setup-rust-build.sh aarch64-linux-android 26
           source .github/scripts/setup-rust-build.sh x86_64-linux-android 26
-          cargo clippy --target aarch64-linux-android --release
-          cargo clippy --target x86_64-linux-android --release
+          cargo +nightly clippy --target aarch64-linux-android --release
+          cargo +nightly clippy --target x86_64-linux-android --release
