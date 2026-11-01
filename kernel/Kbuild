@@ -83,9 +83,23 @@ endif
 
 $(shell cd $(KSU_SRC); [ -f ../.git/shallow ] && $(GIT_BIN) fetch --unshallow)
 KSU_LOCAL_VERSION := $(shell cd $(KSU_SRC); $(GIT_BIN) rev-list --count HEAD)
-KSU_VERSION := $(shell expr 30000 + $(KSU_LOCAL_VERSION) + 700)
 
-KSU_TAG_NAME    := $(shell cd $(KSU_SRC); $(GIT_BIN) describe --abbrev=0 --tags 2>/dev/null || echo "v4.1.0")
+# Version code, in the 4xxxx range this project has always used.
+#
+# Derived from the commit count so every build outranks the one before it, which is what the
+# manager compares against. VERSION_OFFSET shifts the result into the band this repository's
+# commit counts actually reach, and the manager's own gradle build computes the same number from
+# the same count (manager/build.gradle.kts: major * 10000 + commitCount - end), so the kernel and
+# the manager report the same version for the same tree.
+#
+# BakaSU's formula was 30000 + count + 700, which for this repository's commit count lands near
+# 30xxx - below every version this project has shipped, so the manager would read the kernel as
+# far older than it is.
+VERSION_BASE   := 40000
+VERSION_OFFSET := 2815
+KSU_VERSION := $(if $(KSU_LOCAL_VERSION),$(shell expr $(VERSION_BASE) + $(KSU_LOCAL_VERSION) - $(VERSION_OFFSET)),$(VERSION_BASE))
+
+KSU_TAG_NAME    := $(shell cd $(KSU_SRC); $(GIT_BIN) describe --abbrev=0 --tags 2>/dev/null || echo "v4.2.1")
 KSU_COMMIT_SHA  := $(shell cd $(KSU_SRC); $(GIT_BIN) rev-parse --short=8 HEAD 2>/dev/null || echo "unknown")
 ifneq ($(shell cd $(KSU_SRC); $(GIT_BIN) diff-index --quiet HEAD; echo $$?),0)
 KSU_COMMIT_SHA  := $(KSU_COMMIT_SHA)-dirty
