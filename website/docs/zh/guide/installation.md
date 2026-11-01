@@ -85,12 +85,6 @@
 curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash
 ```
 
-#### Built-in 内核
-
-```sh [bash]
-curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s builtin
-```
-
 ::: warning 必需的内核配置
 为了支持 KPM，添加 `CONFIG_KPM=y`
 

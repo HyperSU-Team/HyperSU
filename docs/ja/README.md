@@ -21,12 +21,6 @@
 curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash
 ```
 
-Built-in カーネル用のブランチを使用
-
-```
-curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s builtin
-```
-
 ## フックの方式
 
 - この方式は (https://github.com/rsuntk/KernelSU) のフック方式を参照してください。

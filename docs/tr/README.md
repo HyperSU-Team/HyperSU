@@ -22,12 +22,6 @@ Ana dalı kullanın (GKI ve GKI olmayan cihazlar için)
 curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash
 ```
 
-Built-in çekirdek için dalı kullanın
-
-```
-curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s builtin
-```
-
 ## Kanca Yöntemleri
 
 - Bu bölüm [rsuntk\'nin kanca yöntemlerinden](https://github.com/rsuntk/KernelSU) alıntılanmıştır

@@ -78,8 +78,3 @@ curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/se
 curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash
 ```
 
-### Built-in 内核
-
-```sh [bash]
-curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s builtin
-```

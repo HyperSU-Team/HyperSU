@@ -78,8 +78,3 @@ Run command for the step that adds HyperSU to your kernel source tree is replace
 curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash
 ```
 
-### Built-in kernel
-
-```sh
-curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s builtin
-```

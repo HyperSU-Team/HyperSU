@@ -67,10 +67,6 @@ This method is for advanced users who are building a kernel from source.
   ```sh [bash]
   curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash
   ```
-- **Built-in kernel**:
-  ```sh [bash]
-  curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash -s builtin
-  ```
 
 ::: warning Required Kernel Configs
 For KPM support, you must enable `CONFIG_KPM=y`.
