@@ -1,10 +1,10 @@
 {
-  "name": "sukisu-ultra-docs",
+  "name": "hypersu-docs",
   "version": "2.0.0",
-  "description": "SukiSU-Ultra Documentation - Next-Generation Android Root Solution",
+  "description": "HyperSU Documentation - Next-Generation Android Root Solution",
   "type": "module",
   "scripts": {
-    "dev": "tsx scripts/rebuild-ico.ts && tsx scripts/sync-favicons.ts && vitepress dev docs --host",
+    "dev": "tsx scripts/sync-favicons.ts && vitepress dev docs --host",
     "build": "tsx scripts/sync-favicons.ts && vitepress build docs && pnpm build:sw:dist",
     "preview": "vitepress preview docs",
     "build:sw": "tsc scripts/sw.ts --target ES2022 --lib ES2022,WebWorker --outDir docs/public --skipLibCheck",
@@ -18,17 +18,17 @@
     "android",
     "root",
     "kernelsu",
-    "sukisu",
+    "hypersu",
     "documentation",
     "vitepress"
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/sukisu-ultra/sukisu-ultra.git"
+    "url": "https://github.com/HyperSU-Team/HyperSU.git"
   },
-  "homepage": "https://sukisu.org",
+  "homepage": "https://hypersu.top",
   "bugs": {
-    "url": "https://github.com/sukisu-ultra/sukisu-ultra/issues"
+    "url": "https://github.com/HyperSU-Team/HyperSU/issues"
   },
   "devDependencies": {
     "@types/node": "^24.3.0",

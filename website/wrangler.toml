@@ -1,4 +1,4 @@
-# Cloudflare Pages Configuration for SukiSU-Ultra
+# Cloudflare Pages Configuration for HyperSU
 name = "sukisu-ultra-docs"
 compatibility_date = "2025-08-04"
 compatibility_flags = ["nodejs_compat"]

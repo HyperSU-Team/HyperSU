@@ -7,7 +7,7 @@ Disallow: /api/
 Disallow: /.vitepress/
 
 # Sitemap
-Sitemap: https://sukisu.org/sitemap.xml
+Sitemap: https://hypersu.top/sitemap.xml
 
 # Crawl-delay for high-traffic optimization
 Crawl-delay: 0.5

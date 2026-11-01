@@ -1,9 +1,9 @@
 /// <reference lib="webworker" />
 
-const CACHE_NAME: string = 'sukisu-ultra-v2.0'
-const STATIC_CACHE: string = 'sukisu-static-v2.0'
-const RUNTIME_CACHE: string = 'sukisu-runtime-v2.0'
-const IMAGE_CACHE: string = 'sukisu-images-v2.0'
+const CACHE_NAME: string = 'hypersu-v2.0'
+const STATIC_CACHE: string = 'hypersu-static-v2.0'
+const RUNTIME_CACHE: string = 'hypersu-runtime-v2.0'
+const IMAGE_CACHE: string = 'hypersu-images-v2.0'
 
 const CRITICAL_ASSETS: string[] = [
   '/',
