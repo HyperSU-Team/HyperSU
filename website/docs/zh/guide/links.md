@@ -3,14 +3,14 @@
 ## 参与翻译
 
 ::: info 贡献翻译
-如果您需要为管理器提交翻译，请访问我们的 Crowdin 项目
+HyperSU 的管理器翻译请以 Pull Request 形式提交到 [HyperSU-Team/HyperSU](https://github.com/HyperSU-Team/HyperSU)。本分支没有自己的 Crowdin 项目。
 :::
 
-**翻译平台：** [Crowdin - SukiSU-Ultra](https://crowdin.com/project/SukiSU-Ultra)
+**上游翻译平台：** [Crowdin - SukiSU-Ultra](https://crowdin.com/project/SukiSU-Ultra) —— 它属于 BakaSU 的上游 SukiSU Ultra，只用于给上游项目做翻译。
 
 ## 项目与构建
 
-基于 Sukisu 和 susfs 编译的项目：
+以下是由 SukiSU 与 susfs 编译的社区内核构建，由各自的作者维护，不由 HyperSU 维护：
 
 ### GKI 构建
 
@@ -30,9 +30,11 @@
 
 ## 社区与支持
 
-### Telegram 社区
+::: warning 上游社群
+HyperSU 没有自己的社群频道。下列频道属于 BakaSU 的上游 SukiSU Ultra，适合询问 SukiSU 本身的问题。
+:::
 
-> 与其他用户联系，获取支持并保持更新
+### Telegram 社区
 
 **主群组：** [Tg Group](https://t.me/sukiksu)
 
@@ -48,24 +50,29 @@
 
 ### 官方发布
 
-> 从我们的 GitHub 发布页面下载最新稳定版本
+::: tip 稳定版本
+从 HyperSU 的 GitHub 发布页面下载最新稳定版本
+:::
 
-**GitHub 发布：** [SukiSU-Ultra 发布](https://github.com/sukisu-ultra/sukisu-ultra/releases)
+**GitHub 发布：** [HyperSU 发布](https://github.com/HyperSU-Team/HyperSU/releases)
 
 ### 问题报告
 
-> 在我们的 GitHub 仓库上报告错误或请求新功能
+::: info 错误与建议
+在 HyperSU 仓库上报告错误或请求新功能
+:::
 
-**GitHub 问题：** [报告问题](https://github.com/sukisu-ultra/sukisu-ultra/issues)
+**GitHub 问题：** [报告问题](https://github.com/HyperSU-Team/HyperSU/issues)
 
 ## 快速链接汇总
 
-| 资源              |                                  链接                                  |         描述 |
-| ----------------- | :--------------------------------------------------------------------: | -----------: |
-| **翻译**          |          [Crowdin](https://crowdin.com/project/SukiSU-Ultra)           |     提交翻译 |
-| **Telegram 群组** |                  [t.me/sukiksu](https://t.me/sukiksu)                  |     社区支持 |
-| **测试构建**      |                 [测试频道](https://t.me/Sukiksu/7114)                  |   实验性构建 |
-| **发布**          |  [GitHub 发布](https://github.com/sukisu-ultra/sukisu-ultra/releases)  |     稳定下载 |
-| **问题**          |   [GitHub 问题](https://github.com/sukisu-ultra/sukisu-ultra/issues)   |     错误报告 |
-| **GKI 构建**      |      [GKI 仓库](https://github.com/ShirkNeko/GKI_KernelSU_SUSFS)       |     通用构建 |
-| **OnePlus 构建**  | [OnePlus 仓库](https://github.com/ShirkNeko/Action_OnePlus_MKSU_SUSFS) | 设备特定构建 |
+| 资源              |                                  链接                                  |          描述 |
+| ----------------- | :--------------------------------------------------------------------: | ------------: |
+| **翻译**          |       [Pull requests](https://github.com/HyperSU-Team/HyperSU/pulls)       |      提交翻译 |
+| **上游 Crowdin**  |          [Crowdin](https://crowdin.com/project/SukiSU-Ultra)           | 仅 SukiSU Ultra |
+| **Telegram 群组** |                  [t.me/sukiksu](https://t.me/sukiksu)                  | 上游社群（SukiSU） |
+| **测试构建**      |                 [测试频道](https://t.me/Sukiksu/7114)                  |    上游测试构建 |
+| **发布**          |  [GitHub 发布](https://github.com/HyperSU-Team/HyperSU/releases)  |        稳定下载 |
+| **问题**          |   [GitHub 问题](https://github.com/HyperSU-Team/HyperSU/issues)   |        错误报告 |
+| **GKI 构建**      |      [GKI 仓库](https://github.com/ShirkNeko/GKI_KernelSU_SUSFS)       |        社区构建 |
+| **OnePlus 构建**  | [OnePlus 仓库](https://github.com/ShirkNeko/Action_OnePlus_MKSU_SUSFS) |    设备特定构建 |

@@ -1,8 +1,8 @@
 # 集成指导
 
-SukiSU 可以集成到 GKI 和 non-GKI 内核中，并且已反向移植到 4.14 版本。
+HyperSU 可以集成到 GKI 和 non-GKI 内核中，并且已反向移植到 4.14 版本。
 
-<!-- 应该是 3.4 版本，但 backslashxx 的 syscall manual hook 无法在 SukiSU 中使用-->
+<!-- 应该是 3.4 版本，但 backslashxx 的 syscall manual hook 无法在 HyperSU 中使用-->
 
 有些 OEM 定制可能导致多达 50% 的内核代码超出内核树代码，而非来自上游 Linux 内核或 ACK。因此，non-GKI 内核的定制特性导致了严重的内核碎片化，而且我们缺乏构建它们的通用方法。因此，我们无法提供 non-GKI 内核的启动映像。
 
@@ -70,7 +70,7 @@ curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/se
 
 <!-- 这是 backslashxx 的syscall manual hook，但目前无法使用。 -->
 
-将 KernelSU（SukiSU）添加到内核源代码树的步骤的运行命令将被替换为：
+将 HyperSU 添加到内核源代码树的步骤的运行命令将被替换为：
 
 ### GKI / non-GKI 内核
 

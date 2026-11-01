@@ -1,10 +1,10 @@
 # Introduction
 
-Welcome to SukiSU-Ultra, the next-generation Android root solution that provides advanced kernel-based root management for Android devices.
+Welcome to HyperSU, the next-generation Android root solution that provides advanced kernel-based root management for Android devices.
 
-## What is SukiSU-Ultra?
+## What is HyperSU?
 
-SukiSU-Ultra is a modern, secure, and powerful root solution designed specifically for Android devices. It offers kernel-level root access management with enhanced security features and improved compatibility.
+HyperSU is a modern, secure, and powerful root solution designed specifically for Android devices. It offers kernel-level root access management with enhanced security features and improved compatibility.
 
 ## Key Features
 
@@ -32,7 +32,7 @@ Comprehensive customization options to tailor the root experience to your specif
 
 Full KernelPatch Module (KPM) functionality for advanced kernel modifications and enhancements.
 
-## Why Choose SukiSU-Ultra?
+## Why Choose HyperSU?
 
 - **Security First**: Advanced security features protect your device and data
 - **Modern Architecture**: Built with modern Android security models in mind
@@ -42,15 +42,15 @@ Full KernelPatch Module (KPM) functionality for advanced kernel modifications an
 
 ## Getting Started
 
-Ready to get started with SukiSU-Ultra? Follow our step-by-step guide:
+Ready to get started with HyperSU? Follow our step-by-step guide:
 
-1. **[Installation](./installation)** - Learn how to install SukiSU-Ultra on your device
+1. **[Installation](./installation)** - Learn how to install HyperSU on your device
 2. **[Compatibility](./compatibility)** - Check device compatibility requirements
 3. **[Links](./links)** - Find additional resources and downloads
 
 ## System Requirements
 
-Before installing SukiSU-Ultra, ensure your device meets these requirements:
+Before installing HyperSU, ensure your device meets these requirements:
 
 - **Android Version**: Android 8.0 (API 26) or higher
 - **Bootloader**: Unlocked bootloader
@@ -82,4 +82,4 @@ Need help? We're here to assist:
 
 ---
 
-**Ready to unlock the full potential of your Android device?** Start with our [installation guide](./installation) and join thousands of users who trust SukiSU-Ultra for their root needs.
+**Ready to unlock the full potential of your Android device?** Start with our [installation guide](./installation) and join thousands of users who trust HyperSU for their root needs.

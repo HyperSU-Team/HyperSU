@@ -2,19 +2,19 @@
 layout: home
 
 hero:
-  name: 'SukiSU-Ultra'
+  name: 'HyperSU'
   text: '下一代 Android Root 解决方案'
   tagline: Android 上的内核级的高级 root 方案
   image:
     src: /logo.svg
-    alt: SukiSU-Ultra
+    alt: HyperSU
   actions:
     - theme: brand
       text: 开始使用
       link: /zh/guide/
     - theme: alt
       text: 在 GitHub 上查看
-      link: https://github.com/sukisu-ultra/sukisu-ultra
+      link: https://github.com/HyperSU-Team/HyperSU
 
 features:
   - title: 内核级的 su 和 root 权限管理

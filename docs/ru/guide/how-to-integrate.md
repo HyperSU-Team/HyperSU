@@ -1,8 +1,8 @@
 # Интеграция
 
-SukiSU можно интегрировать как в ядра _GKI_, так и в _non-GKI_. Выполнен бэкпорт до версии _4.14_.
+HyperSU можно интегрировать как в ядра _GKI_, так и в _non-GKI_. Выполнен бэкпорт до версии _4.14_.
 
-<!-- It should be 3.4, but backslashxx's syscall manual hook cannot use in SukiSU-->
+<!-- It should be 3.4, but backslashxx's syscall manual hook cannot use in HyperSU-->
 
 Кастомизация некоторых OEM-производителей приводит к тому, что до 50% кода ядра является сторонним (out-of-tree) и не относится к апстриму Linux или ACK (Android Common Kernel). Из-за этого фрагментация _non-GKI_ ядер очень высока, и универсального способа их сборки не существует. По этой причине мы не можем предоставить готовые образы загрузки (boot images) для _non-GKI_ ядер.
 
@@ -51,7 +51,7 @@ KernelSU использует механизм kprobe для создания х
 
 Пожалуйста, обратитесь к этому документу: [https://github.com/~](https://github.com/tiann/KernelSU/blob/main/website/docs/guide/how-to-integrate-for-non-gki.md#integrate-with-kprobe). Несмотря на заголовок "для _non-GKI_", это применимо только к _GKI_.
 
-Команда для добавления SukiSU (писать в корневой папке исходников ядра):
+Команда для добавления HyperSU (писать в корневой папке исходников ядра):
 
 ```sh
 curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/setup.sh" | bash
@@ -70,7 +70,7 @@ curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/se
 
 <!-- It is backslashxx's syscall manual hook, but it cannot be used now. -->
 
-Команды для добавления SukiSU в дерево исходников вашего ядра:
+Команды для добавления HyperSU в дерево исходников вашего ядра:
 
 ### GKI / non-GKI ядро
 

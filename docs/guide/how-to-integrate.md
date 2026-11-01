@@ -1,8 +1,8 @@
 # Integrate
 
-SukiSU can be integrated into both _GKI_ and _non-GKI_ kernels and has been backported to _4.14_.
+HyperSU can be integrated into both _GKI_ and _non-GKI_ kernels and has been backported to _4.14_.
 
-<!-- It should be 3.4, but backslashxx's syscall manual hook cannot use in SukiSU-->
+<!-- It should be 3.4, but backslashxx's syscall manual hook cannot use in HyperSU-->
 
 Some OEMs' customization could result in as much as 50% of kernel code being out-of-tree code and not from upstream Linux kernels or ACKs. Due to this, the custom nature of _non-GKI_ kernels resulted in significant kernel fragmentation, and we lacked a universal method for building them. Therefore, we cannot provide boot images of _non-GKI_ kernels.
 
@@ -70,7 +70,7 @@ There is another way to integrate but still work in the process.
 
 <!-- It is backslashxx's syscall manual hook, but it cannot be used now. -->
 
-Run command for the step that adds KernelSU(SukiSU) to your kernel source tree is replaced with:
+Run command for the step that adds HyperSU to your kernel source tree is replaced with:
 
 ### GKI / non-GKI kernel
 

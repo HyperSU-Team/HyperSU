@@ -1,6 +1,6 @@
-# 什么是 SukiSU-Ultra？
+# 什么是 HyperSU？
 
-一个 Android 上基于内核的 root 方案，由 [`tiann/KernelSU`](https://github.com/tiann/KernelSU) 分叉而来，添加了一些有趣的变更。
+一个 Android 上基于内核的 root 方案，由 [BakaSU](https://github.com/Baka-SU/BakaSU) 分叉而来；BakaSU 由 [SukiSU Ultra](https://github.com/HyperSU/HyperSU) 分叉而来，SukiSU Ultra 又由 [`tiann/KernelSU`](https://github.com/tiann/KernelSU) 分叉而来，并添加了一些有趣的变更。
 
 ## 特性
 
@@ -13,11 +13,11 @@
 
 ## 如何安装
 
-了解如何在您的设备上 **[安装](./installation)** SukiSU-Ultra
+了解如何在您的设备上 **[安装](./installation)** HyperSU
 
 ## 如何集成
 
-阅读 **[集成](./how-to-integrate.md)** 将 SukiSU 集成到你的内核中
+阅读 **[集成](./how-to-integrate.md)** 将 HyperSU 集成到你的内核中
 
 ## 了解兼容性
 
@@ -31,5 +31,5 @@
 
 需要帮助？我们在这里为您提供帮助：
 
-- **错误报告**: [GitHub Issues](https://github.com/SukiSU-Ultra/SukiSU-Ultra/issues)
+- **错误报告**: [GitHub Issues](https://github.com/HyperSU/HyperSU/issues)
 - **直接支持**: 联系开发者处理关键问题

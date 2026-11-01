@@ -1,6 +1,6 @@
 # Installation Guide
 
-This guide provides comprehensive instructions for installing SukiSU-Ultra on your Android device. Please follow the steps carefully.
+This guide provides comprehensive instructions for installing HyperSU on your Android device. Please follow the steps carefully.
 
 ## Prerequisites
 
@@ -14,7 +14,7 @@ Before you begin, ensure you have the following:
 
 ## Installation Methods
 
-There are several ways to install SukiSU-Ultra, depending on your device and preference.
+There are several ways to install HyperSU, depending on your device and preference.
 
 ### Method 1: Using Pre-built GKI Packages
 
@@ -24,7 +24,7 @@ This is the recommended method for devices with Generic Kernel Image (GKI) 2.0, 
 
 #### Steps:
 
-1.  **Download GKI Build**: Visit our [resources section](./links.md) to find the appropriate GKI build for your device's kernel version. Download the `.zip` file that includes `AnyKernel3` in its name.
+1.  **Download GKI Build**: Visit the [links page](./links.md) to find a community GKI build for your device's kernel version. Download the `.zip` file that includes `AnyKernel3` in its name.
 2.  **Flash via Recovery**:
     - [ ] Boot your device into TWRP recovery.
     - [ ] Select "Install".
@@ -32,7 +32,7 @@ This is the recommended method for devices with Generic Kernel Image (GKI) 2.0, 
     - [ ] Swipe to confirm the flash.
     - [ ] Once flashing is complete, reboot your system.
 3.  **Verify Installation**:
-    - [ ] Install the SukiSU-Ultra Manager app.
+    - [ ] Install the HyperSU Manager app.
     - [ ] Open the app and check if root access is granted and working correctly.
     - [ ] You can also verify the new kernel version in your device's settings.
 
@@ -50,7 +50,7 @@ For OnePlus devices, you'll need to create a custom build.
     - Your kernel version (e.g., `5.10`, `5.15`).
     - Your processor's codename.
     - The branch and configuration files from the OnePlus open-source kernel repository.
-2.  **Create Custom Build**: Use the link in our [resources section](./links.md) to generate a custom build with your device's information.
+2.  **Create Custom Build**: Use the link in the [links page](./links.md) to generate a custom build with your device's information.
 3.  **Flash the Build**:
     - [ ] Download the generated `AnyKernel3` zip file.
     - [ ] Boot into recovery.
@@ -85,7 +85,7 @@ To keep root access after an Over-the-Air (OTA) update, follow these steps ==bef
 
 1.  **Flash to Inactive Slot**:
     - [ ] After the OTA update is downloaded and installed, **do not reboot**.
-    - [ ] Open the SukiSU-Ultra Manager.
+    - [ ] Open the HyperSU Manager.
     - [ ] Go to the flashing/patching interface.
     - [ ] Select your `AnyKernel3` kernel zip file.
     - [ ] Choose to install it to the inactive slot.
@@ -100,17 +100,17 @@ For non-GKI devices, the safest method to retain root after an OTA is to use TWR
 
 After installation, please verify the following:
 
-- [ ] **Manager App**: The SukiSU-Ultra Manager app opens and shows a successful root status.
+- [ ] **Manager App**: The HyperSU Manager app opens and shows a successful root status.
 - [ ] **Root Access**: Root checker apps confirm that root access is working.
-- [ ] **Kernel Version**: The kernel version in `Settings > About Phone` reflects the SukiSU-Ultra kernel.
+- [ ] **Kernel Version**: The kernel version in `Settings > About Phone` reflects the HyperSU kernel.
 
 ## Troubleshooting
 
 If you encounter any issues:
 
 1.  Double-check the [Compatibility Guide](./compatibility.md).
-2.  Visit our [GitHub repository](https://github.com/sukisu-ultra/sukisu-ultra) for issues and solutions.
-3.  Join our [Telegram community](https://t.me/sukiksu) for live support.
+2.  Visit the [HyperSU repository](https://github.com/HyperSU-Team/HyperSU) for issues and solutions.
+3.  Ask in the [upstream SukiSU Ultra community](https://t.me/sukiksu) — that Telegram group belongs to SukiSU Ultra, the upstream of BakaSU, and is not a HyperSU channel.
 
 ::: danger Safety Reminder
 ⚠️ **Always have a backup!** Keep a copy of your original `boot.img` and be prepared to restore your device if something goes wrong.

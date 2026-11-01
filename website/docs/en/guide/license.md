@@ -59,5 +59,5 @@ For questions about licensing or usage permissions:
 4. **Distribution:** Ensure compliance with all applicable licenses
 
 ::: tip Compliance Note
-When redistributing or modifying SukiSU-Ultra, ensure you comply with all applicable licenses and attribution requirements for each component.
+When redistributing or modifying HyperSU, ensure you comply with all applicable licenses and attribution requirements for each component.
 :::
