@@ -1,5 +1,3 @@
-pub mod blocklist;
-
 use anyhow::{Context, Result, bail};
 use goblin::elf::{Elf, section_header, sym::Sym};
 use rustix::system::init_module;
@@ -314,8 +312,6 @@ fn replace_module_vermagic(buffer: &mut Vec<u8>, required_vermagic: &str) -> Res
     Ok(())
 }
 
-/// Relocate undefined symbols in an ELF kernel module buffer using /proc/kallsyms,
-/// then load it via init_module syscall.
 type UndefinedSymbols = HashMap<String, (Sym, usize)>;
 
 /// Collect the undefined symbols of an ELF kernel module, keyed by name, with

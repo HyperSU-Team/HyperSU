@@ -118,6 +118,11 @@
 #define FD_SETIDXMASK (8 * sizeof(unsigned long))
 #define FD_SETBITMASK (8 * sizeof(unsigned long)-1)
 
+#undef FD_CLR
+#undef FD_SET
+#undef FD_ISSET
+#undef FD_ZERO
+
 /* for select() */
 typedef struct {
 	unsigned long fds[(FD_SETSIZE + FD_SETBITMASK) / FD_SETIDXMASK];

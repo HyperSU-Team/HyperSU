@@ -1,11 +1,14 @@
 #include "policy/feature.h"
 #include "klog.h" // IWYU pragma: keep
 
+#include <linux/version.h>
 #include <linux/bitmap.h>
 #include <linux/kernel.h>
 #include <linux/moduleparam.h>
 #include <linux/mutex.h>
 #include <linux/string.h>
+
+#include "compat/kernel_compat.h"
 
 static const struct ksu_feature_handler *feature_handlers[KSU_FEATURE_MAX];
 
@@ -18,7 +21,6 @@ static const char *const feature_names[KSU_FEATURE_MAX] = {
     [KSU_FEATURE_ADB_ROOT] = "adb_root",
     [KSU_FEATURE_SELINUX_HIDE] = "selinux_hide",
     [KSU_FEATURE_SHELL_SU_ADB_ONLY] = "shell_su_adb_only",
-    [KSU_FEATURE_MOUNT_HIDE] = "mount_hide",
 };
 
 // Features forced by boot config. Written only while parsing module params
@@ -96,8 +98,13 @@ static int force_feature_param_set(const char *val, const struct kernel_param *k
 }
 
 static const struct kernel_param_ops force_feature_param_ops = {
-    // A bare `force_feature` would otherwise fail parse_args() and the whole module load
+// A bare `force_feature` would otherwise fail parse_args() and the whole module load
+// https://github.com/torvalds/linux/commit/6a4c264313c4ae32dc53821a9c57e0dc9696fb81
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 18, 0) || defined(KSU_COMPAT_HAS_KERNEL_PARAM_OPS_FL_NOARG)
     .flags = KERNEL_PARAM_OPS_FL_NOARG,
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0) || defined(KSU_COMPAT_HAS_KERNEL_PARAM_FL_NOARG)
+    .flags = KERNEL_PARAM_FL_NOARG,
+#endif
     .set = force_feature_param_set,
 };
 module_param_cb(force_feature, &force_feature_param_ops, NULL, 0);

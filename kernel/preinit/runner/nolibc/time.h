@@ -18,6 +18,10 @@
 #include <linux/signal.h>
 #include <linux/time.h>
 
+#if defined(__NR_clock_getres_time64) || defined(__NR_clock_gettime64) || \
+    defined(__NR_clock_settime64) || defined(__NR_clock_nanosleep_time64) || \
+    defined(__NR_timer_gettime64) || defined(__NR_timer_settime64) || \
+    defined(__NR_timerfd_gettime64) || defined(__NR_timerfd_settime64)
 static __inline__
 void __nolibc_timespec_user_to_kernel(const struct timespec *ts, struct __kernel_timespec *kts)
 {
@@ -31,6 +35,7 @@ void __nolibc_timespec_kernel_to_user(const struct __kernel_timespec *kts, struc
 	ts->tv_sec = kts->tv_sec;
 	ts->tv_nsec = kts->tv_nsec;
 }
+#endif
 
 /*
  * int clock_getres(clockid_t clockid, struct timespec *res);

@@ -3,6 +3,7 @@
 #include <linux/fs.h>
 #include <linux/namei.h>
 #include <linux/printk.h>
+#include <linux/version.h>
 
 #include "policy/allowlist.h"
 #include "policy/feature.h"
@@ -10,7 +11,6 @@
 #include "runtime/ksud_boot.h"
 #include "runtime/ksud.h"
 #include "manager/manager_observer.h"
-#include "manager/dynamic_manager.h"
 #include "manager/throne_tracker.h"
 
 bool ksu_module_mounted __read_mostly = false;
@@ -19,47 +19,62 @@ bool ksu_boot_completed __read_mostly = false;
 void on_post_fs_data(void)
 {
     static bool done = false;
-
     if (done) {
         pr_info("on_post_fs_data already done\n");
         return;
     }
-
     done = true;
     pr_info("on_post_fs_data!\n");
 
     ksu_load_allow_list();
-    ksu_dynamic_manager_load();
     ksu_observer_init();
-    // Sanity check for safe mode only needs early-boot input samples.
+    // sanity check, this may influence the performance
     ksu_stop_input_hook_runtime();
     ksu_selinux_hide_handle_post_fs_data();
+
     // retry forced features which failed at second stage
     ksu_feature_apply_forced();
+
+    // scan manager
+    pr_info("post-fs-data triggered, scanning manager...");
+    track_throne(0);
 }
 
+#if defined(CONFIG_EXT4_FS) && (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0) || defined(KSU_HAS_MODERN_EXT4))
 extern void ext4_unregister_sysfs(struct super_block *sb);
-
 int nuke_ext4_sysfs(const char *mnt)
 {
     struct path path;
-    int err = kern_path(mnt, 0, &path);
+    struct super_block *sb = NULL;
+    const char *name = NULL;
+    int err;
 
+    err = kern_path(mnt, 0, &path);
     if (err) {
         pr_err("nuke path err: %d\n", err);
         return err;
     }
 
-    if (strcmp(path.dentry->d_inode->i_sb->s_type->name, "ext4") != 0) {
+    sb = path.dentry->d_inode->i_sb;
+    name = sb->s_type->name;
+    if (strcmp(name, "ext4") != 0) {
         pr_info("nuke but module aren't mounted\n");
         path_put(&path);
         return -EINVAL;
     }
 
-    ext4_unregister_sysfs(path.dentry->d_inode->i_sb);
+    ext4_unregister_sysfs(sb);
     path_put(&path);
+
     return 0;
 }
+#else
+int nuke_ext4_sysfs(const char *mnt)
+{
+    pr_info("%s: feature not implemented!\n", __func__);
+    return 0;
+}
+#endif
 
 void on_module_mounted(void)
 {
@@ -71,6 +86,6 @@ void on_boot_completed(void)
 {
     ksu_boot_completed = true;
     pr_info("on_boot_completed!\n");
-    track_throne(true);
+    track_throne(TRACK_THRONE_PRUNE_ONLY);
     ksu_selinux_hide_drop_backup_if_unused();
 }

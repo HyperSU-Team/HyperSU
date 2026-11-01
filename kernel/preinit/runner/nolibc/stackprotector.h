@@ -41,7 +41,9 @@ uintptr_t __stack_chk_guard;
 
 static __no_stack_protector void __stack_chk_init(void)
 {
+#ifdef __NR_getrandom
 	my_syscall3(__NR_getrandom, &__stack_chk_guard, sizeof(__stack_chk_guard), 0);
+#endif
 	/* a bit more randomness in case getrandom() fails, ensure the guard is never 0 */
 	if (__stack_chk_guard != (uintptr_t) &__stack_chk_guard)
 		__stack_chk_guard ^= (uintptr_t) &__stack_chk_guard;

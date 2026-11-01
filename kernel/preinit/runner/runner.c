@@ -414,9 +414,21 @@ static bool range_ok(uint64_t off, uint64_t size, size_t len)
     return off <= len && size <= len - off;
 }
 
+#if __SIZEOF_POINTER__ == 8
+typedef Elf64_Ehdr module_ehdr;
+typedef Elf64_Shdr module_shdr;
+typedef Elf64_Sym module_sym;
+#define MODULE_ELFCLASS ELFCLASS64
+#else
+typedef Elf32_Ehdr module_ehdr;
+typedef Elf32_Shdr module_shdr;
+typedef Elf32_Sym module_sym;
+#define MODULE_ELFCLASS ELFCLASS32
+#endif
+
 #define LOOKUP_BATCH 256
 
-static Elf64_Sym *lookup_syms[LOOKUP_BATCH];
+static module_sym *lookup_syms[LOOKUP_BATCH];
 static uint64_t lookup_names[LOOKUP_BATCH];
 static uint64_t lookup_addrs[LOOKUP_BATCH];
 
@@ -458,29 +470,29 @@ static int flush_lookup(const struct module_ctx *m, const char *path, int drv, u
  */
 static int bind_module_symbols(const struct module_ctx *m, const char *path, int drv, void *buf, size_t len)
 {
-    Elf64_Ehdr *eh = buf;
-    Elf64_Shdr *shdrs, *symsec = NULL, *strsec;
-    Elf64_Sym *syms;
+    module_ehdr *eh = buf;
+    module_shdr *shdrs, *symsec = NULL, *strsec;
+    module_sym *syms;
     const char *strtab;
     size_t nsyms, strsz, i;
     uint32_t nlookup = 0;
     int bound = 0;
 
-    if (len < sizeof(*eh) || memcmp(eh->e_ident, ELFMAG, SELFMAG) || eh->e_ident[EI_CLASS] != ELFCLASS64 ||
-        eh->e_type != ET_REL || eh->e_shentsize != sizeof(Elf64_Shdr) ||
-        !range_ok(eh->e_shoff, (uint64_t)eh->e_shnum * sizeof(Elf64_Shdr), len)) {
-        klog("[%s] insmod %s: not an ELF64 relocatable object", m->id, path);
+    if (len < sizeof(*eh) || memcmp(eh->e_ident, ELFMAG, SELFMAG) || eh->e_ident[EI_CLASS] != MODULE_ELFCLASS ||
+        eh->e_type != ET_REL || eh->e_shentsize != sizeof(module_shdr) ||
+        !range_ok(eh->e_shoff, (uint64_t)eh->e_shnum * sizeof(module_shdr), len)) {
+        klog("[%s] insmod %s: not a native ELF relocatable object", m->id, path);
         return -1;
     }
 
-    shdrs = (Elf64_Shdr *)((char *)buf + eh->e_shoff);
+    shdrs = (module_shdr *)((char *)buf + eh->e_shoff);
     for (i = 0; i < eh->e_shnum; i++) {
         if (shdrs[i].sh_type == SHT_SYMTAB) {
             symsec = &shdrs[i];
             break;
         }
     }
-    if (!symsec || symsec->sh_entsize != sizeof(Elf64_Sym) || symsec->sh_size % sizeof(Elf64_Sym) ||
+    if (!symsec || symsec->sh_entsize != sizeof(module_sym) || symsec->sh_size % sizeof(module_sym) ||
         !range_ok(symsec->sh_offset, symsec->sh_size, len) || symsec->sh_link >= eh->e_shnum) {
         klog("[%s] insmod %s: bad or missing symtab", m->id, path);
         return -1;
@@ -496,11 +508,11 @@ static int bind_module_symbols(const struct module_ctx *m, const char *path, int
         return -1;
     }
 
-    syms = (Elf64_Sym *)((char *)buf + symsec->sh_offset);
-    nsyms = symsec->sh_size / sizeof(Elf64_Sym);
+    syms = (module_sym *)((char *)buf + symsec->sh_offset);
+    nsyms = symsec->sh_size / sizeof(module_sym);
     /* Entry 0 is the reserved null symbol. */
     for (i = 1; i < nsyms; i++) {
-        Elf64_Sym *sym = &syms[i];
+        module_sym *sym = &syms[i];
 
         if (sym->st_shndx != SHN_UNDEF || sym->st_name >= strsz || !strtab[sym->st_name])
             continue;
@@ -513,6 +525,33 @@ static int bind_module_symbols(const struct module_ctx *m, const char *path, int
     if (nlookup && flush_lookup(m, path, drv, &nlookup, &bound))
         return -1;
     return bound;
+}
+
+static int load_module_fd(int fd)
+{
+    struct stat st;
+    void *image;
+    int ret, saved_errno;
+
+#ifdef __NR_finit_module
+    ret = syscall(__NR_finit_module, fd, params_buf, 0);
+    if (!ret || errno != ENOSYS)
+        return ret;
+#endif
+    if (fstat(fd, &st))
+        return -1;
+    if (st.st_size <= 0 || (uint64_t)st.st_size > (size_t)-1) {
+        errno = EINVAL;
+        return -1;
+    }
+    image = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    if (image == MAP_FAILED)
+        return -1;
+    ret = syscall(__NR_init_module, image, st.st_size, params_buf);
+    saved_errno = errno;
+    munmap(image, st.st_size);
+    errno = saved_errno;
+    return ret;
 }
 
 static int do_insmod(const struct module_ctx *m, int argc, char **argv)
@@ -537,7 +576,7 @@ static int do_insmod(const struct module_ctx *m, int argc, char **argv)
      * Bind the module's non-exported symbols through the KSU symbol lookup
      * supercall, then load the patched private copy with init_module. A
      * module that needs no binding (or no driver fd) goes through plain
-     * finit_module on the validated fd.
+     * finit_module on the validated fd, or init_module on older kernels.
      */
     drv = ksu_get_driver_fd();
     if (drv >= 0 && !fstat(fd, &st) && st.st_size > 0) {
@@ -555,16 +594,25 @@ static int do_insmod(const struct module_ctx *m, int argc, char **argv)
             return -1;
         }
         if (bound > 0) {
+            int saved_errno;
+
             ret = syscall(__NR_init_module, image, st.st_size, params_buf);
+            saved_errno = errno;
             munmap(image, st.st_size);
             close(fd);
+            errno = saved_errno;
             goto out;
         }
         munmap(image, st.st_size);
     }
 
-    ret = syscall(__NR_finit_module, fd, params_buf, 0);
-    close(fd);
+    ret = load_module_fd(fd);
+    {
+        int saved_errno = errno;
+
+        close(fd);
+        errno = saved_errno;
+    }
 out:
     if (ret && errno == EEXIST) {
         klog("[%s] insmod %s: already loaded", m->id, argv[1]);
@@ -738,7 +786,17 @@ static int do_exec(const struct module_ctx *m, int argc, char **argv)
         dup2(pfd[1], 1);
         dup2(pfd[1], 2);
         /* Static ELF only, so a close-on-exec fd is fine for AT_EMPTY_PATH. */
+#ifdef __NR_execveat
         syscall(__NR_execveat, fd, "", argv + idx, envp, AT_EMPTY_PATH);
+        if (errno != ENOSYS)
+            _exit(127);
+#endif
+        {
+            char exec_path[32];
+
+            snprintf(exec_path, sizeof(exec_path), "/proc/self/fd/%d", fd);
+            execve(exec_path, argv + idx, envp);
+        }
         _exit(127);
     }
     close(fd);

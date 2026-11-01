@@ -352,7 +352,7 @@ pid_t sys_vfork(void)
 {
 #if defined(__NR_vfork)
 	return my_syscall0(__NR_vfork);
-#else
+#elif defined(__NR_clone3)
 	/*
 	 * clone() could be used but has different argument orders per
 	 * architecture.
@@ -363,6 +363,8 @@ pid_t sys_vfork(void)
 	};
 
 	return my_syscall2(__NR_clone3, &args, sizeof(args));
+#else
+	return __nolibc_enosys(__func__);
 #endif
 }
 #endif

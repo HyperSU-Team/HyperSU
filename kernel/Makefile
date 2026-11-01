@@ -9,22 +9,24 @@ else
 KBUILD_ARGS := M=$(ODIR) src=$(MDIR)
 endif
 
+ifneq ($(KDIR),)
 $(info -- KDIR: $(KDIR))
 $(info -- MDIR: $(MDIR))
 $(info -- OUTPUT DIR: $(ODIR))
 $(info -- KMI: $(KMI))
 $(info -- KBUILD_ARGS: $(KBUILD_ARGS))
+endif
 
 .PHONY: all compdb clean format check-format
 
 all: check_symbol
-	$(MAKE) -C $(KDIR) $(KBUILD_ARGS) EXTRA_CFLAGS="-I$(MDIR)/.." modules compile_commands.json -j$(shell nproc)
+	$(MAKE) -C $(KDIR) $(KBUILD_ARGS) modules compile_commands.json -j$(shell nproc)
 	./check_symbol $(ODIR)/kernelsu.ko $(KDIR)/vmlinux
 
 compdb:
 	python3 $(MDIR)/.vscode/generate_compdb.py -O $(ODIR) $(MDIR)
 clean:
-	$(MAKE) -C $(KDIR) $(KBUILD_ARGS) clean
+	make -C $(KDIR) M=$(ODIR) src=$(MDIR) clean
 	rm check_symbol
 check_symbol: tools/check_symbol.c
 	$(CC) tools/check_symbol.c -o check_symbol

@@ -1,41 +1,58 @@
-#![allow(clippy::ref_option, clippy::needless_pass_by_value)]
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+use std::{
+    fs::File,
+    io::{Cursor, Seek, SeekFrom},
+    path::PathBuf,
+};
 
-use std::fs::File;
-use std::io::{Cursor, Seek, SeekFrom};
-use std::path::Path;
-use std::path::PathBuf;
-
-use android_bootimg::cpio::{Cpio, CpioEntry};
-use android_bootimg::parser::{BootImage, BootImageVersion, RamdiskImage};
-use android_bootimg::patcher::BootImagePatchOption;
-use anyhow::Context;
-use anyhow::Result;
-use anyhow::anyhow;
-use anyhow::bail;
-use anyhow::ensure;
+use android_bootimg::{
+    cpio::{Cpio, CpioEntry},
+    parser::{BootImage, BootImageVersion, RamdiskImage},
+    patcher::BootImagePatchOption,
+};
+use anyhow::{Context, Result, anyhow, bail, ensure};
 use memmap2::{Mmap, MmapOptions};
 use regex_lite::Regex;
 
-use crate::assets;
 use crate::feature_id::{FeatureId, parse_feature_id};
+use crate::{assets, banner};
+
+const KSU_BLOCK_MODULES_CONFIG: &str = "ksu_block_modules";
+const KSU_BLOCK_MODULES_MAX_LEN: usize = 255;
+
+fn valid_block_modules(modules: &str) -> bool {
+    modules.len() <= KSU_BLOCK_MODULES_MAX_LEN
+        && (modules.is_empty()
+            || modules.split(',').all(|name| {
+                !name.is_empty()
+                    && name
+                        .bytes()
+                        .all(|ch| ch.is_ascii_alphanumeric() || ch == b'_' || ch == b'-')
+            }))
+}
 
 #[cfg(target_os = "android")]
 mod android {
-    use super::Result;
-    pub(super) use crate::defs::{BACKUP_FILENAME, KSU_BACKUP_DIR, KSU_BACKUP_FILE_PREFIX};
-    use crate::defs::{DEFAULT_PACKAGE_NAME, KSU_TEMP_BACKUP_DIR_NAME};
+    use rustix::process::getuid;
+    use std::{
+        fs::{File, OpenOptions},
+        io::Write,
+        os::fd::AsRawFd,
+        path::{Path, PathBuf},
+        process::Command,
+    };
+
     use android_bootimg::cpio::{Cpio, CpioEntry};
     use anyhow::{Context, anyhow, bail, ensure};
     use regex_lite::Regex;
-    use rustix::process::getuid;
-    use std::fs::{File, OpenOptions};
-    use std::io::Write;
-    use std::os::fd::AsRawFd;
-    use std::os::unix::fs::PermissionsExt;
-    use std::path::{Path, PathBuf};
-    use std::process::Command;
 
-    use crate::utils;
+    use super::{PermissionsExt, Result};
+    use crate::android::utils;
+    pub(super) use crate::defs::{
+        BACKUP_FILENAME, DEFAULT_PACKAGE_NAME, KSU_BACKUP_DIR, KSU_BACKUP_FILE_PREFIX,
+        KSU_TEMP_BACKUP_DIR_NAME,
+    };
 
     pub(super) fn ensure_gki_kernel() -> Result<()> {
         let version = get_kernel_version()?;
@@ -152,7 +169,6 @@ mod android {
         {
             return Ok((file, backup_file));
         }
-
         bail!("Both /data/adb/ksu and {backup_dir} are not accessible!")
     }
 
@@ -160,6 +176,7 @@ mod android {
         let sha1 = calculate_sha1(image)?;
         let (mut target_file, target) = find_backup_location(&sha1)?;
         println!("- Backup stock boot image");
+
         let mut source = OpenOptions::new()
             .create(false)
             .truncate(false)
@@ -167,9 +184,8 @@ mod android {
             .write(false)
             .open(image)?;
 
-        // Use io::copy instead of fs::copy to allow copy block device
         std::io::copy(&mut source, &mut target_file)
-            .with_context(|| format!("failed to backup to {target}"))?;
+            .with_context(|| format!("backup to {target}"))?;
 
         let backup_file = CpioEntry::regular(0o755, Box::new(sha1));
         cpio.add(BACKUP_FILENAME, backup_file)?;
@@ -219,6 +235,7 @@ mod android {
         Ok(())
     }
 
+    #[allow(clippy::ref_option)]
     pub fn choose_boot_partition(
         kmi: &str,
         is_replace_kernel: bool,
@@ -278,9 +295,9 @@ mod android {
         PathBuf::from(format!("/dev/block/by-name/{name}{slot_suffix}"))
     }
 
+    #[cfg(target_os = "android")]
     pub(super) fn post_ota() -> Result<()> {
-        use crate::assets::BOOTCTL_PATH;
-        use crate::defs::ADB_DIR;
+        use crate::{assets::BOOTCTL_PATH, defs::ADB_DIR};
         let status = Command::new(BOOTCTL_PATH).arg("hal-info").status()?;
         if !status.success() {
             return Ok(());
@@ -295,7 +312,7 @@ mod android {
         let target_slot = i32::from(current_slot == "0");
 
         Command::new(BOOTCTL_PATH)
-            .arg(format!("set-active-boot-slot {target_slot}"))
+            .args(["set-active-boot-slot", target_slot.to_string().as_str()])
             .status()?;
 
         let post_fs_data = Path::new(ADB_DIR).join("post-fs-data.d");
@@ -311,6 +328,7 @@ rm -f /data/adb/post-fs-data.d/post_ota.sh
         );
 
         std::fs::write(&post_ota_sh, sh_content)?;
+        #[cfg(unix)]
         std::fs::set_permissions(post_ota_sh, std::fs::Permissions::from_mode(0o755))?;
 
         Ok(())
@@ -320,7 +338,7 @@ rm -f /data/adb/post-fs-data.d/post_ota.sh
 #[cfg(target_os = "android")]
 pub use android::*;
 
-fn map_file(file: &Path) -> Result<Mmap> {
+fn map_file(file: &PathBuf) -> Result<Mmap> {
     let mut f = File::open(file).with_context(|| format!("open {}", file.display()))?;
     let len = f
         .seek(SeekFrom::End(0))
@@ -365,15 +383,16 @@ pub fn parse_kmi(buffer: &[u8]) -> Result<String> {
         })
 }
 
-fn parse_kmi_from_kernel(kernel: &Path) -> Result<String> {
+fn parse_kmi_from_kernel(kernel: &PathBuf) -> Result<String> {
     let data = std::fs::read(kernel).context("Failed to read kernel file")?;
+
     parse_kmi(&data)
 }
 
-fn parse_kmi_from_boot(image: &Path) -> Result<String> {
-    let data = map_file(image)?;
-    let boot = BootImage::parse(&data)?;
-    if let Some(kernel) = boot.get_blocks().get_kernel() {
+fn parse_kmi_from_boot(image: &PathBuf) -> Result<String> {
+    let image = map_file(image)?;
+    let bootimage = BootImage::parse(&image)?;
+    if let Some(kernel) = bootimage.get_blocks().get_kernel() {
         let mut output = Vec::<u8>::new();
         kernel.dump(&mut output, false)?;
         parse_kmi(&output)
@@ -416,8 +435,8 @@ fn enforce_bootimage_version(boot: &BootImage<'_>) -> Result<()> {
     Ok(())
 }
 
-#[allow(clippy::struct_excessive_bools)]
 #[derive(clap::Args, Debug)]
+#[allow(clippy::struct_excessive_bools)]
 pub struct BootPatchArgs {
     /// boot image path, if not specified, will try to find the boot image automatically
     #[arg(short, long)]
@@ -450,15 +469,7 @@ pub struct BootPatchArgs {
     #[arg(long, default_value = "false")]
     pub backup: bool,
 
-    /// Output path. If not specified, will use current directory.
-    /// If specified, the boot image will be written to the directory
-    /// even if --flash is specified.
-    #[cfg(target_os = "android")]
-    #[arg(short, long, default_value = None)]
-    pub out: Option<PathBuf>,
-
-    /// Output path. If not specified, will use current directory.
-    #[cfg(not(target_os = "android"))]
+    /// output path, if not specified, will use current directory
     #[arg(short, long, default_value = None)]
     pub out: Option<PathBuf>,
 
@@ -471,35 +482,20 @@ pub struct BootPatchArgs {
     #[arg(long, default_value = None)]
     pub partition: Option<String>,
 
-    /// File name of the output. If specified, the boot image will be
-    /// written to the output directory even if --flash is specified.
-    #[cfg(target_os = "android")]
-    #[arg(long, default_value = None)]
-    pub out_name: Option<String>,
-
     /// File name of the output.
-    #[cfg(not(target_os = "android"))]
     #[arg(long, default_value = None)]
     pub out_name: Option<String>,
-
-    /// Extra cmdline to append to boot image header
-    #[arg(long, default_value = None)]
-    pub cmdline: Option<String>,
 
     #[command(flatten)]
     config: KsuConfigArgs,
 
-    /// Kernel release string passed to kernelsu.ko as spoof_release
-    #[arg(long, default_value = None)]
-    spoof_release: Option<String>,
-
-    /// Kernel version string passed to kernelsu.ko as spoof_version
-    #[arg(long, default_value = None)]
-    spoof_version: Option<String>,
-
     /// Force enable adbd and disable adbd auth
     #[arg(long, default_value = "false")]
     enable_adbd: bool,
+
+    /// Extra cmdline to append to boot image header
+    #[arg(long, default_value = None)]
+    cmdline: Option<String>,
 
     /// Add more adb_debug prop
     #[arg(long, required = false)]
@@ -508,6 +504,14 @@ pub struct BootPatchArgs {
     /// Do not (re-)install kernelsu, only modify configs (allow_shell, etc.)
     #[arg(long, default_value = "false")]
     no_install: bool,
+
+    /// Block what module loading
+    #[arg(
+        long,
+        value_name = "NAMES",
+        default_value = "vr,vklp,vklp_smaps_rollup,oplus_secure_guard,oplus_secure_guard_new,mkp"
+    )]
+    block_modules: Option<String>,
 
     #[cfg(not(target_os = "android"))]
     #[arg(long, default_value = "aarch64")]
@@ -538,33 +542,9 @@ pub struct KsuConfigArgs {
     /// Forced features can not be changed or loaded by userspace. Can be repeated.
     #[arg(long, value_name = "FEATURE=VALUE", value_parser = parse_force_feature)]
     force_feature: Vec<(FeatureId, u64)>,
-
-    /// Block a kernel module from loading at boot by name, e.g.
-    /// `oplus_secure_guard`. Comma-separated and/or repeated. Omitting clears it.
-    #[arg(long = "block-module", value_name = "NAME", value_delimiter = ',', value_parser = parse_block_module)]
-    block_module: Vec<String>,
 }
 
-/// Max length of the `block_modules=` value. The kernel copies it into a
-/// 256-byte buffer, leaving 255 bytes for the value; anything longer is
-/// silently truncated there, so reject it on the host instead.
-const MAX_BLOCK_MODULES_LEN: usize = 255;
-
 impl KsuConfigArgs {
-    /// Validate options whose full value is only known after joining. Call
-    /// before `apply` so the user gets an error instead of the kernel silently
-    /// truncating an over-long list (which would leave some modules unblocked).
-    pub fn validate(&self) -> Result<()> {
-        if !self.block_module.is_empty() {
-            let len = self.block_module.join(",").len();
-            ensure!(
-                len <= MAX_BLOCK_MODULES_LEN,
-                "block-module list is too long ({len} bytes, max {MAX_BLOCK_MODULES_LEN}); block fewer modules"
-            );
-        }
-        Ok(())
-    }
-
     /// Set the full state of these options in `config`, other entries are kept.
     pub fn apply(&self, config: &mut Vec<String>) {
         set_config_flag(config, "no custom rc", "norc=1", self.no_custom_rc);
@@ -580,29 +560,7 @@ impl KsuConfigArgs {
             }
             config.push(format!("force_feature={}", entries.join(",")));
         }
-
-        config.retain(|v| !v.starts_with("block_modules="));
-        if !self.block_module.is_empty() {
-            let list = self.block_module.join(",");
-            println!("- Blocking modules: {list}");
-            config.push(format!("block_modules={list}"));
-        }
     }
-}
-
-/// Validate a single module name for the `--block-module` option. The kernel
-/// `block_modules` buffer holds 255 bytes, so keep names well within that.
-fn parse_block_module(s: &str) -> Result<String> {
-    ensure!(!s.is_empty(), "module name must not be empty");
-    ensure!(
-        s.len() <= 64,
-        "module name '{s}' is too long (max 64 bytes)"
-    );
-    ensure!(
-        s.bytes().all(|ch| ch.is_ascii_alphanumeric() || ch == b'_'),
-        "invalid module name '{s}': only letters, digits and '_' are allowed"
-    );
-    Ok(s.to_owned())
 }
 
 fn set_config_flag(config: &mut Vec<String>, name: &str, value: &str, add: bool) {
@@ -617,48 +575,6 @@ fn set_config_flag(config: &mut Vec<String>, name: &str, value: &str, add: bool)
         println!("- Removing {name} config");
         config.retain(|v| v != value);
     }
-}
-
-/// Split a ksu_config blob into entries, honoring the quoting/escaping rules
-/// used when entries are written: `"` toggles quoting, `\` escapes the next
-/// character inside quotes, and whitespace only separates entries outside
-/// quotes. Entries are returned in their stored form (quotes and escapes kept
-/// intact) so they can be written back verbatim.
-fn split_config_tokens(input: &str) -> Vec<String> {
-    let mut tokens = Vec::new();
-    let mut current = String::new();
-    let mut in_quotes = false;
-    let mut escaped = false;
-
-    for c in input.chars() {
-        if escaped {
-            current.push('\\');
-            current.push(c);
-            escaped = false;
-        } else if in_quotes && c == '\\' {
-            escaped = true;
-        } else {
-            match c {
-                '"' => {
-                    in_quotes = !in_quotes;
-                    current.push(c);
-                }
-                ' ' | '\t' | '\n' | '\r' if !in_quotes => {
-                    if !current.is_empty() {
-                        tokens.push(std::mem::take(&mut current));
-                    }
-                }
-                _ => current.push(c),
-            }
-        }
-    }
-    if escaped {
-        current.push('\\');
-    }
-    if !current.is_empty() {
-        tokens.push(current);
-    }
-    tokens
 }
 
 fn parse_force_feature(s: &str) -> Result<(FeatureId, u64)> {
@@ -681,13 +597,12 @@ pub fn patch(args: BootPatchArgs) -> Result<()> {
             out,
             kmi,
             out_name,
-            cmdline,
-            spoof_release,
-            spoof_version,
             config,
             enable_adbd,
             adb_debug_prop,
+            cmdline,
             no_install,
+            block_modules,
             #[cfg(target_os = "android")]
             ota,
             #[cfg(target_os = "android")]
@@ -701,7 +616,14 @@ pub fn patch(args: BootPatchArgs) -> Result<()> {
             ramdisk,
         } = args;
 
-        println!(include_str!("banner"));
+        if let Some(modules) = &block_modules {
+            ensure!(
+                valid_block_modules(modules),
+                "blocked preset module list must be at most 255 bytes and contain only letters, digits, '_' or '-'"
+            );
+        }
+
+        println!("{}", banner::print_banner());
 
         #[cfg(target_os = "android")]
         let patch_file = image.is_some();
@@ -741,7 +663,7 @@ pub fn patch(args: BootPatchArgs) -> Result<()> {
                 if ota {
                     let slot_suffix = get_slot_suffix(true);
                     println!("- Trying to auto detect KMI version from boot");
-                    return parse_kmi_from_boot(Path::new(&format!(
+                    return parse_kmi_from_boot(&PathBuf::from(&format!(
                         "/dev/block/by-name/boot{slot_suffix}"
                     )));
                 }
@@ -792,17 +714,20 @@ pub fn patch(args: BootPatchArgs) -> Result<()> {
         #[cfg(target_os = "android")]
         println!("- Bootdevice: {}", boot_image_file.display());
 
-        // try extract bootctl/busybox
+        // try extract bootctl
         #[cfg(target_os = "android")]
         let _ = assets::ensure_binaries(false);
 
-        println!("- Preparing assets");
-        println!("- Unpacking boot image");
+        println!("- Parsing boot image");
+
         let boot_image_data = map_file(&boot_image_file)?;
-        let boot_image = if ramdisk {
-            BootImage::parse_raw_ramdisk(&boot_image_data)?
+        let boot_image = match if ramdisk {
+            BootImage::parse_raw_ramdisk(&boot_image_data)
         } else {
-            BootImage::parse(&boot_image_data)?
+            BootImage::parse(&boot_image_data)
+        } {
+            Ok(b) => b,
+            Err(e) => bail!("Failed to parse boot iamge, boot image maybe is empty, {e}"),
         };
         enforce_bootimage_version(&boot_image)?;
 
@@ -812,7 +737,6 @@ pub fn patch(args: BootPatchArgs) -> Result<()> {
             patcher.override_cmdline(cmdline_value.as_bytes());
             println!("- Set cmdline to: {cmdline_value}");
         }
-
         if let Some(kernel_path) = kernel {
             println!("- Adding Kernel");
             let kernel_data = map_file(&kernel_path)?;
@@ -828,14 +752,18 @@ pub fn patch(args: BootPatchArgs) -> Result<()> {
             {
                 println!("- KMI: {kmi}");
                 let name = format!("{kmi}_kernelsu.ko");
-                assets::get_asset(&name).with_context(|| format!("Failed to load {name}"))?
+                Box::new(
+                    assets::get_asset(&name).with_context(|| format!("Failed to load {name}"))?,
+                )
             }
             #[cfg(not(target_os = "android"))]
             {
                 println!("- KMI: {kmi}");
                 println!("- Arch: {arch}");
                 let name = format!("{arch}/{kmi}_kernelsu.ko");
-                assets::get_asset(&name).with_context(|| format!("Failed to load {name}"))?
+                Box::new(
+                    assets::get_asset(&name).with_context(|| format!("Failed to load {name}"))?,
+                )
             }
         };
 
@@ -846,11 +774,14 @@ pub fn patch(args: BootPatchArgs) -> Result<()> {
         } else {
             #[cfg(not(target_os = "android"))]
             {
-                assets::get_asset(&format!("{arch}/ksuinit")).context("Failed to load ksuinit")?
+                Box::new(
+                    assets::get_asset(&format!("{arch}/ksuinit"))
+                        .context("Failed to load ksuinit")?,
+                )
             }
             #[cfg(target_os = "android")]
             {
-                assets::get_asset("ksuinit").context("Failed to load ksuinit")?
+                Box::new(assets::get_asset("ksuinit").context("Failed to load ksuinit")?)
             }
         };
 
@@ -890,51 +821,33 @@ pub fn patch(args: BootPatchArgs) -> Result<()> {
             .entry_by_name("ksu_config")
             .and_then(CpioEntry::data)
             .and_then(|v| str::from_utf8(v).ok())
-            .map(split_config_tokens)
+            .map(|v| v.split(' ').map(std::borrow::ToOwned::to_owned).collect())
             .unwrap_or_default();
 
-        config.validate()?;
         config.apply(&mut ksu_config);
         if let Some(bundled) = bundled_lkm {
             set_config_flag(&mut ksu_config, "bundled LKM", "bundled=1", bundled);
         }
 
-        let mut apply_spoof_config = |key: &str, value: Option<&str>| {
-            // Option is None means the user did not specify this option; leave any
-            // existing config entry untouched instead of clearing it.
-            let Some(v) = value else {
-                return;
-            };
-            ksu_config.retain(|x| !x.starts_with(&format!("{key}=")));
-            let v = v.trim();
-            if v.is_empty() {
-                println!("- Removing {key} config");
-            } else {
-                println!("- Adding {key} config");
-                let config_str = format!(
-                    "{}=\"{}\"",
-                    key,
-                    v.replace('\\', "\\\\").replace('"', "\\\"")
-                );
-                ksu_config.push(config_str);
-            }
-        };
-
-        apply_spoof_config("spoof_release", spoof_release.as_deref());
-        apply_spoof_config("spoof_version", spoof_version.as_deref());
-
         if ksu_config.is_empty() {
             cpio.rm("ksu_config", false);
         } else {
             let data = ksu_config.join(" ").into_bytes();
-            println!("- ksu_config content: {:?}", String::from_utf8_lossy(&data));
             cpio.add("ksu_config", CpioEntry::regular(0o644, Box::new(data)))?;
         }
 
-        // remove legacy config files
+        // remove legacy config file
         cpio.rm("allow_shell", false);
-        cpio.rm("ksu_spoof_release", false);
-        cpio.rm("ksu_spoof_version", false);
+
+        if let Some(modules) = block_modules {
+            if !modules.is_empty() {
+                println!("- Blocking modules: {modules}");
+            }
+            cpio.add(
+                KSU_BLOCK_MODULES_CONFIG,
+                CpioEntry::regular(0o644, Box::new(modules.into_bytes())),
+            )?;
+        }
 
         if enable_adbd || adb_debug_prop.is_some() {
             println!("- Adding adb_debug props");
@@ -976,7 +889,8 @@ pub fn patch(args: BootPatchArgs) -> Result<()> {
         }
 
         println!("- Repacking boot image");
-        let mut new_boot_buf = Cursor::new(Vec::<u8>::with_capacity(boot_image.get_size()));
+
+        let mut new_boot_buf = Cursor::new(Vec::<u8>::new());
         patcher.patch(&mut new_boot_buf)?;
         let new_boot_bytes = new_boot_buf.into_inner();
 
@@ -1046,14 +960,7 @@ pub struct BootRestoreArgs {
     #[arg(short, long, default_value = None)]
     pub out: Option<PathBuf>,
 
-    /// File name of the output. If specified, the boot image will be
-    /// written to the output directory even if --flash is specified.
-    #[cfg(target_os = "android")]
-    #[arg(long, default_value = None)]
-    pub out_name: Option<String>,
-
     /// File name of the output.
-    #[cfg(not(target_os = "android"))]
     #[arg(long, default_value = None)]
     pub out_name: Option<String>,
 }
@@ -1207,188 +1114,7 @@ fn rebuild_without_ksu(
         patcher.replace_ramdisk(Box::new(Cursor::new(new_cpio)), false);
     }
 
-    let mut buf = Cursor::new(Vec::<u8>::with_capacity(boot_image.get_size()));
+    let mut buf = Cursor::new(Vec::<u8>::new());
     patcher.patch(&mut buf)?;
     Ok(buf.into_inner())
-}
-
-pub fn read_ksu_config() -> Result<Vec<String>> {
-    #[cfg(target_os = "android")]
-    {
-        let boot_image_file = auto_boot_partition_path("", false, false, &None);
-        let bootimage_data = map_file(&boot_image_file)?;
-        let boot_image = BootImage::parse(&bootimage_data)?;
-
-        let (cpio, _) = if let Some(ramdisk_image) = boot_image.get_blocks().get_ramdisk() {
-            extract_ramdisk(ramdisk_image)?
-        } else {
-            bail!("No compatible ramdisk found.")
-        };
-
-        let config = cpio
-            .entry_by_name("ksu_config")
-            .and_then(CpioEntry::data)
-            .and_then(|v| str::from_utf8(v).ok())
-            .map(split_config_tokens)
-            .unwrap_or_default();
-
-        Ok(config)
-    }
-
-    #[cfg(not(target_os = "android"))]
-    {
-        Ok(Vec::new())
-    }
-}
-
-#[cfg(test)]
-mod block_modules_tests {
-    use super::*;
-
-    #[test]
-    fn parse_block_module_accepts_valid_names() {
-        assert_eq!(
-            parse_block_module("oplus_secure_guard").unwrap(),
-            "oplus_secure_guard"
-        );
-        assert_eq!(parse_block_module("vr").unwrap(), "vr");
-        assert_eq!(parse_block_module("mkp0").unwrap(), "mkp0");
-    }
-
-    #[test]
-    fn parse_block_module_rejects_invalid_names() {
-        assert!(parse_block_module("").is_err());
-        assert!(parse_block_module("bad-name").is_err());
-        assert!(parse_block_module("a b").is_err());
-        assert!(parse_block_module(&"a".repeat(65)).is_err());
-    }
-
-    #[test]
-    fn apply_writes_and_clears_block_modules() {
-        let args = KsuConfigArgs {
-            block_module: vec!["vr".to_owned(), "vklp".to_owned()],
-            ..Default::default()
-        };
-        // Unrelated entries are preserved; apply() only owns the keys it manages.
-        let mut config = vec!["bundled=1".to_owned()];
-        args.apply(&mut config);
-        assert!(config.contains(&"block_modules=vr,vklp".to_owned()));
-        assert!(config.contains(&"bundled=1".to_owned()));
-
-        // Omitting the option removes a previously written entry.
-        let empty = KsuConfigArgs::default();
-        empty.apply(&mut config);
-        assert!(!config.iter().any(|v| v.starts_with("block_modules=")));
-    }
-
-    #[test]
-    fn apply_replaces_existing_block_modules() {
-        let args = KsuConfigArgs {
-            block_module: vec!["vr".to_owned()],
-            ..Default::default()
-        };
-        let mut config = vec!["block_modules=old,stale".to_owned()];
-        args.apply(&mut config);
-        assert_eq!(
-            config
-                .iter()
-                .filter(|v| v.starts_with("block_modules="))
-                .count(),
-            1
-        );
-        assert!(config.contains(&"block_modules=vr".to_owned()));
-    }
-
-    #[test]
-    fn apply_keeps_sibling_keys_with_shared_prefix() {
-        // A key that merely starts with "block_modules" but is not the exact
-        // "block_modules=" entry must not be dropped by retain().
-        let args = KsuConfigArgs {
-            block_module: vec!["vr".to_owned()],
-            ..Default::default()
-        };
-        let mut config = vec!["block_modules_foo=1".to_owned()];
-        args.apply(&mut config);
-        assert!(config.contains(&"block_modules_foo=1".to_owned()));
-        assert!(config.contains(&"block_modules=vr".to_owned()));
-    }
-
-    #[test]
-    fn validate_rejects_overlong_list() {
-        // Many valid names whose joined length exceeds the kernel's 255-byte
-        // value budget must be rejected rather than silently truncated.
-        let names: Vec<String> = (0..30).map(|i| format!("module_name_{i:03}")).collect();
-        assert!(names.join(",").len() > MAX_BLOCK_MODULES_LEN);
-        let args = KsuConfigArgs {
-            block_module: names,
-            ..Default::default()
-        };
-        assert!(args.validate().is_err());
-
-        // A short list is accepted.
-        let ok = KsuConfigArgs {
-            block_module: vec!["vr".to_owned(), "mkp".to_owned()],
-            ..Default::default()
-        };
-        assert!(ok.validate().is_ok());
-        assert!(KsuConfigArgs::default().validate().is_ok());
-    }
-}
-
-#[cfg(test)]
-mod config_tokenizer_tests {
-    use super::split_config_tokens;
-
-    #[test]
-    fn splits_plain_entries_on_whitespace() {
-        assert_eq!(
-            split_config_tokens("bundled=1 allow_shell=1"),
-            ["bundled=1", "allow_shell=1"]
-        );
-        // Extra whitespace and newlines are tolerated.
-        assert_eq!(
-            split_config_tokens("  bundled=1\nallow_shell=1\t"),
-            ["bundled=1", "allow_shell=1"]
-        );
-    }
-
-    #[test]
-    fn keeps_quoted_value_with_spaces_intact() {
-        assert_eq!(
-            split_config_tokens("spoof_version=\"#1 SMP PREEMPT\""),
-            ["spoof_version=\"#1 SMP PREEMPT\""]
-        );
-    }
-
-    #[test]
-    fn honors_escaped_quote_and_backslash() {
-        // Stored form keeps the escapes verbatim; unescaping is the reader's job.
-        assert_eq!(
-            split_config_tokens("spoof_release=\"a\\\"b\\\\c\""),
-            ["spoof_release=\"a\\\"b\\\\c\""]
-        );
-    }
-
-    #[test]
-    fn handles_mixed_entries() {
-        assert_eq!(
-            split_config_tokens(
-                "bundled=1 spoof_release=\"5.10.115-android12-9\" spoof_version=\"#1 SMP PREEMPT Thu Jan 1 00:00:00 UTC 2026\""
-            ),
-            [
-                "bundled=1",
-                "spoof_release=\"5.10.115-android12-9\"",
-                "spoof_version=\"#1 SMP PREEMPT Thu Jan 1 00:00:00 UTC 2026\"",
-            ]
-        );
-    }
-
-    #[test]
-    fn tolerates_unterminated_quote_and_trailing_backslash() {
-        assert_eq!(
-            split_config_tokens("spoof_version=\"#1 SMP"),
-            ["spoof_version=\"#1 SMP"]
-        );
-        assert_eq!(split_config_tokens("key=\"abc\\"), ["key=\"abc\\"]);
-    }
 }

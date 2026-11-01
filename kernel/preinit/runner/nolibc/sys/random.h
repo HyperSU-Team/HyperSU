@@ -22,7 +22,11 @@
 static __attribute__((unused))
 ssize_t sys_getrandom(void *buf, size_t buflen, unsigned int flags)
 {
+#ifdef __NR_getrandom
 	return my_syscall3(__NR_getrandom, buf, buflen, flags);
+#else
+	return __nolibc_enosys(__func__, buf, buflen, flags);
+#endif
 }
 
 static __attribute__((unused))

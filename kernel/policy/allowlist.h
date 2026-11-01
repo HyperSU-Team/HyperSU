@@ -3,7 +3,7 @@
 
 #include <linux/types.h>
 #include <linux/uidgid.h>
-#include "uapi/app_profile.h"
+#include "policy/app_profile.h"
 
 #define PER_USER_RANGE 100000
 #define WEBVIEW_ZYGOTE_UID 1053
@@ -11,11 +11,6 @@
 #define LAST_APPLICATION_UID 19999
 #define FIRST_ISOLATED_UID 99000
 #define LAST_ISOLATED_UID 99999
-// App-zygote isolated processes (e.g. Chrome sandboxed renderers) use a separate
-// range and must be treated as isolated too, otherwise their mount view is neither
-// unmounted nor hidden.
-#define FIRST_APP_ZYGOTE_ISOLATED_UID 90000
-#define LAST_APP_ZYGOTE_ISOLATED_UID 98999
 
 void ksu_allowlist_init(void);
 
@@ -64,8 +59,9 @@ static inline bool is_appuid(uid_t uid)
 static inline bool is_isolated_process(uid_t uid)
 {
     uid_t appid = uid % PER_USER_RANGE;
-    return (appid >= FIRST_ISOLATED_UID && appid <= LAST_ISOLATED_UID) ||
-           (appid >= FIRST_APP_ZYGOTE_ISOLATED_UID && appid <= LAST_APP_ZYGOTE_ISOLATED_UID);
+    return appid >= FIRST_ISOLATED_UID && appid <= LAST_ISOLATED_UID;
 }
 
 #endif
+
+extern bool allow_shell;

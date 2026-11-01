@@ -1,7 +1,7 @@
 [package]
 name = "ksuinit"
 version = "2.0.0"
-edition.workspace = true
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -11,8 +11,8 @@ edition.workspace = true
 goblin = "0.10"
 scroll = "0.13"
 
-anyhow.workspace = true
-rustix = { git = "https://github.com/KernelSU2/rustix.git", rev = "4a53fbc", features = ["mount", "fs", "runtime", "system", "process"] }
+anyhow = "1"
+rustix = { git = "https://github.com/Baka-SU/rustix.git", rev = "4a53fbc", features = ["mount", "fs", "runtime", "system", "process"] }
 
 syscalls = { version = "0.8", default-features = false, features = [
     "aarch64",
@@ -21,5 +21,14 @@ syscalls = { version = "0.8", default-features = false, features = [
 ] }
 
 # for kmsg logging
-log.workspace = true
-kernlog = { git = "https://github.com/kstep/kernlog.rs" }
+log = "0.4"
+kernlog = { git = "https://github.com/Baka-SU/kernlog.rs" }
+
+[patch.crates-io]
+libc = { git = "https://github.com/rust-lang/libc", rev = "1a661633f11a261ff9c00b40875ef72f1cbec818" }
+
+[profile.release]
+strip = true
+lto = true
+opt-level = "z"
+panic = "abort"

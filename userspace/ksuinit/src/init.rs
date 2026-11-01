@@ -1,7 +1,7 @@
 use std::ffi::CString;
 use std::io::{ErrorKind, Write};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, ensure};
 use rustix::fs::{Mode, symlink, unlink};
 use rustix::{
     fd::AsFd,
@@ -14,6 +14,49 @@ use rustix::{
 
 struct AutoUmount {
     mountpoints: Vec<String>,
+}
+
+const KSU_CONFIG_PATH: &str = "/ksu_config";
+const KSU_BLOCK_MODULES_PATH: &str = "/ksu_block_modules";
+const KSU_BLOCK_MODULES_MAX_LEN: usize = 255;
+const KSU_DEFAULT_BLOCK_MODULES: &str =
+    "vr,vklp,vklp_smaps_rollup,oplus_secure_guard,oplus_secure_guard_new,mkp";
+
+fn valid_block_modules(modules: &str) -> bool {
+    modules.len() <= KSU_BLOCK_MODULES_MAX_LEN
+        && (modules.is_empty()
+            || modules.split(',').all(|name| {
+                !name.is_empty()
+                    && name
+                        .bytes()
+                        .all(|ch| ch.is_ascii_alphanumeric() || ch == b'_' || ch == b'-')
+            }))
+}
+
+fn load_module_params() -> Result<CString> {
+    let mut params = std::fs::read(KSU_CONFIG_PATH).unwrap_or_default();
+
+    let blocked_modules = match std::fs::read_to_string(KSU_BLOCK_MODULES_PATH) {
+        Ok(modules) => modules,
+        Err(err) if err.kind() == ErrorKind::NotFound => KSU_DEFAULT_BLOCK_MODULES.to_owned(),
+        Err(err) => {
+            return Err(err).with_context(|| format!("Cannot read {KSU_BLOCK_MODULES_PATH}"));
+        }
+    };
+
+    ensure!(
+        valid_block_modules(&blocked_modules),
+        "Invalid blocked preset module list"
+    );
+    if params
+        .last()
+        .is_some_and(|byte| !byte.is_ascii_whitespace())
+    {
+        params.push(b' ');
+    }
+    params.extend_from_slice(format!("block_modules={blocked_modules}").as_bytes());
+
+    CString::new(params).context("KernelSU module parameters contain a NUL byte")
 }
 
 impl Drop for AutoUmount {
@@ -103,18 +146,11 @@ pub fn init() -> Result<()> {
     // This relies on the fact that we have /proc mounted
     unlimit_kmsg();
 
-    let params = std::fs::read("/ksu_config").unwrap_or_default();
-
-    // Before first stage init reads modules.blocklist, see blocklist.rs
-    ksuinit::blocklist::apply(&ksuinit::blocklist::block_modules_from_params(
-        &String::from_utf8_lossy(&params),
-    ));
-
     if ksuinit::has_kernelsu() {
         log::info!("KernelSU may be already loaded in kernel, skip!");
     } else {
         log::info!("Loading kernelsu.ko..");
-        if let Err(e) = load_module_from_path("/kernelsu.ko", params) {
+        if let Err(e) = load_module_from_path("/kernelsu.ko") {
             log::error!("Cannot load kernelsu.ko: {:?}", e);
         }
     }
@@ -133,10 +169,10 @@ pub fn init() -> Result<()> {
     Ok(())
 }
 
-fn load_module_from_path(path: &str, params: Vec<u8>) -> Result<()> {
+fn load_module_from_path(path: &str) -> Result<()> {
     anyhow::ensure!(rustix::process::getpid().is_init(), "Invalid process");
     let buffer = std::fs::read(path).with_context(|| format!("Cannot read file {}", path))?;
-    let params = unsafe { CString::from_vec_unchecked(params) };
+    let params = load_module_params()?;
     log::info!("load kernelsu with params {params:?}");
     ksuinit::load_module(&buffer, &params)
 }

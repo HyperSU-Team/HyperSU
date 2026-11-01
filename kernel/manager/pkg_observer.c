@@ -11,11 +11,6 @@
 #include "klog.h" // IWYU pragma: keep
 #include "manager/throne_tracker.h"
 
-// Older kernels use a boolean task_work notification argument.
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 8, 0) && !defined(TWA_RESUME)
-#define TWA_RESUME true
-#endif
-
 #define MASK_SYSTEM (FS_CREATE | FS_MOVE | FS_EVENT_ON_CHILD)
 
 struct watch_dir {
@@ -34,7 +29,7 @@ static void ksu_track_throne_tw_func(struct callback_head *cb)
     // Runs after exit_fs() if the task is exiting; path lookups would oops
     if (current->flags & PF_EXITING)
         return;
-    track_throne(false);
+    track_throne(TRACK_THRONE_FORCE_SYNCHRONOUS);
 }
 
 // Never scan from the fsnotify handler: fsnotify_mark_srcu and the rename's dir
@@ -46,20 +41,17 @@ static void ksu_defer_track_throne(void)
 {
     struct callback_head *cb;
 
-    if (current->flags & PF_KTHREAD)
-        goto skipped;
-
-    cb = kzalloc(sizeof(*cb), GFP_KERNEL);
-    if (!cb)
-        goto skipped;
-
-    cb->func = ksu_track_throne_tw_func;
-    if (!task_work_add(current, cb, TWA_RESUME))
-        return;
-
-    kfree(cb);
-skipped:
-    pr_warn("defer track_throne failed, skipping scan\n");
+    if (!(current->flags & PF_KTHREAD)) {
+        cb = kzalloc(sizeof(*cb), GFP_KERNEL);
+        if (cb) {
+            cb->func = ksu_track_throne_tw_func;
+            if (!task_work_add(current, cb, TWA_RESUME))
+                return;
+            kfree(cb);
+        }
+    }
+    pr_warn("defer track_throne failed, run it inline\n");
+    track_throne(TRACK_THRONE_FORCE_SYNCHRONOUS);
 }
 
 static int ksu_handle_inode_event(struct fsnotify_mark *mark, u32 mask, struct inode *inode, struct inode *dir,
@@ -153,7 +145,7 @@ int ksu_observer_init(void)
         return PTR_ERR(g);
 
     ret = watch_one_dir(&g_watch);
-    pr_info("observer init done\n");
+    pr_info("%s done.\n", __func__);
     return 0;
 }
 
@@ -161,5 +153,5 @@ void __exit ksu_observer_exit(void)
 {
     unwatch_one_dir(&g_watch);
     fsnotify_put_group(g);
-    pr_info("observer exit done\n");
+    pr_info("%s: done.\n", __func__);
 }
