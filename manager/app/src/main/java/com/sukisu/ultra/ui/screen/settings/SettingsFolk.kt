@@ -107,9 +107,11 @@ fun SettingPagerFolk(
                     scope.launch {
                         loadingDialog.show()
                         runCatching {
-                            download(url, "HyperSU-${available.versionName}.apk") { uri ->
-                                installApk(context, uri)
-                            }
+                            download(
+                                url,
+                                "HyperSU-${available.versionName}.apk",
+                                onDownloaded = { uri -> installApk(context, uri) },
+                            )
                         }.onFailure {
                             snackBarHost.showSnackbar(
                                 context.getString(R.string.settings_manager_update_failed),
