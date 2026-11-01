@@ -1054,6 +1054,43 @@ fn resolve_module_icon_path(
     }
 }
 
+/// Whether the module ships a Zygisk client library (`zygisk/*.so`).
+fn has_zygisk_library(path: &Path) -> bool {
+    let zygisk_dir = path.join(defs::MODULE_ZYGISK_DIR);
+    let Ok(entries) = std::fs::read_dir(&zygisk_dir) else {
+        return false;
+    };
+    entries
+        .flatten()
+        .any(|entry| entry.path().extension().is_some_and(|ext| ext == "so"))
+}
+
+/// Whether the module id names a Zygisk implementation rather than a client.
+fn is_zygisk_provider(module_id: &str) -> bool {
+    module_id.to_ascii_lowercase().contains("zygisk")
+}
+
+/// Whether any Zygisk daemon is currently running.
+fn is_zygisk_daemon_running() -> bool {
+    let Ok(entries) = std::fs::read_dir("/proc") else {
+        return false;
+    };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        if !name.to_string_lossy().chars().all(|c| c.is_ascii_digit()) {
+            continue;
+        }
+        let Ok(comm) = std::fs::read_to_string(entry.path().join("comm")) else {
+            continue;
+        };
+        let comm = comm.trim().to_ascii_lowercase();
+        if comm.starts_with("zygisk") || comm.starts_with("rezygisk") {
+            return true;
+        }
+    }
+    false
+}
+
 fn list_module(path: &str) -> Vec<HashMap<String, String>> {
     // Load all module configs once to minimize I/O overhead
     let all_configs = match module_config::get_all_module_configs() {
@@ -1114,6 +1151,17 @@ fn list_module(path: &str) -> Vec<HashMap<String, String>> {
         module_prop_map.insert("remove".to_owned(), remove.to_string());
         module_prop_map.insert("web".to_owned(), web.to_string());
         module_prop_map.insert("action".to_owned(), action.to_string());
+
+        // Zygisk: a provider is identified by its module id, a client by the
+        // zygisk/*.so it ships. The manager renders both from these fields.
+        let module_id = module_prop_map.get("id").cloned().unwrap_or_default();
+        let is_provider = is_zygisk_provider(&module_id);
+        let zygisk_module = is_provider || has_zygisk_library(&path);
+        let zygisk_running = is_provider && is_zygisk_daemon_running();
+        module_prop_map.insert("zygisk".to_owned(), zygisk_module.to_string());
+        module_prop_map.insert("zygisk_provider".to_owned(), is_provider.to_string());
+        module_prop_map.insert("zygisk_running".to_owned(), zygisk_running.to_string());
+
         module_prop_map.insert("mount".to_owned(), need_mount.to_string());
         if let Some(state) = module_prop_map
             .get("id")

@@ -98,46 +98,23 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.2 - the first release after the base moved to BakaSU, with fixes across the kernel, the manager, ksud and the documentation.
+            HyperSU v4.2.3 - fixes on top of v4.2.2.
 
-            ## Kernel
+            ## Zygisk detection
 
-            - Port four upstream fixes: `selinux_hide` drops the `status_lock` around the `fake_status` read (it is written only while the hook is installed, yet the lock was taken on every non-system read of `/sys/fs/selinux/status`); `ksud_integration` matches `init.rc` by its mounted path instead of `d_name` (a bind-mounted `init.rc` keeps the source dentry's name, so the short-name check rejected the very file the hook exists to catch); `preinit` guards the third argument of `shmem_file_setup`, which changed from flags to vma_flags in 6.19; `su_mount_ns` / `util` call `setns` and `unshare` through `ksyscall`, so `ksys_unshare` cannot be inlined away.
-            - Drop the `__user` annotations from the KPM ioctl struct: a uapi struct describes the userspace layout, and the freestanding preinit runner parsed `__user` as a field name and failed to compile.
-            - Add the repository root to the preinit runner's include path, so `uapi/*.h` resolves in a Windows checkout where `core.symlinks=false` leaves an empty file instead of the symlink.
-            - Pass `CONFIG_KSU_TRACEPOINT_HOOK=y` and `CONFIG_KSU_MULTI_MANAGER_SUPPORT=y` from the DDK workflow; without one of the hook options preinit stops at `#error Unsupported hook type`.
-            - Derive the version code from this repository again (40000 + commit count - 2815), which is the value the manager computes in `build.gradle.kts`, and move the tag fallback to v4.2.2.
+            The home screen always said "Zygisk implementation: not installed", even with Zygisk Next installed and running: the manager reads that line from `ksud module list`, and the ksud in this tree never emitted the fields it looks at.
 
-            ## Manager
+            - `ksud module list` now reports `zygisk`, `zygisk_provider` and `zygisk_running` for every module.
+            - A provider (Zygisk Next, ReZygisk, NeoZygisk) is recognised by its module id; a client module by the `zygisk/*.so` it ships, which also lights up the ZYGISK tag on the module card.
+            - The running state comes from scanning `/proc/*/comm` for a Zygisk daemon, so an enabled but stopped provider reports "reboot required" instead of a false positive.
 
-            - Rebuilt the update dialog: the version is a header block, the primary action spans the row so its label no longer wraps onto three lines, the secondary actions sit below it, and the page action moves up when a release carries no APK.
-            - Stop showing "null" as release notes: `JSONObject.optString` returns the four-character string "null" for a JSON null, so use `opt` and treat a missing body as empty, skipping the notes block.
-            - Use `Icons.Filled.Fence` for the hide-suspicious-mounts switch; the previous `Policy` icon was never imported and the screen did not compile.
-            - `parseKernelVersion` no longer throws `NumberFormatException` on an over-long field; it returns the same (-1, -1, -1) it already used for "could not parse".
-            - Show a warning tag on modules whose preinit content was not applied.
+            ## Also in this line, from v4.2.2
 
-            ## ksud
+            - Removed the "hide suspicious mounts" switch: the kernel has no handler for feature 16 after the base moved to BakaSU.
+            - Added the shell / ADB only su switch (`KSU_FEATURE_SHELL_SU_ADB_ONLY`).
+            - The SuSFS entry is detected again: `susfs status`, `susfs version`, `susfs features`, kebab-case command aliases, and a legacy `config get|set` view over the typed configuration.
 
-            - `get_zip_uncompressed_size` returns the error from a truncated or corrupt zip instead of panicking on `unwrap()`.
-            - `load_config` applies the same length limits as `save_config`, so a damaged file cannot ask for a 4 GB allocation.
-            - New `ksud module preinit status|reset` and preinit partition sync.
-            - Force-add `installer.sh`: the directory `.gitignore` excludes `*.sh`, which broke the `include_str!` at compile time.
-            - Build and lint with nightly, which `#![feature(decl_macro)]` requires.
-
-            ## Build and branch
-
-            - Base moved to BakaSU: `kernel/`, `userspace/`, `uapi/`, `scripts/` and `js/` now come from BakaSU, while the manager keeps this project's UI and its own certificate (`0x378`) in `manager_sign.h` / `apk_sign.c`.
-            - Ported module preinit and mount view hiding (`KSU_FEATURE_MOUNT_HIDE = 16`).
-            - Removed `build-su.yml` (this tree has no `userspace/su`), fixed the shellcheck ignore path, and made `uapi/**` changes trigger the build.
-
-            ## Documentation
-
-            - Every document names the project HyperSU, and the upstream chain is stated once: HyperSU <- BakaSU <- SukiSU Ultra <- KernelSU.
-            - The site uses `hypersu.top` and `HyperSU-Team/HyperSU`; SukiSU's Telegram group and Crowdin project are labelled as upstream resources.
-            - The integration guides fetch this repository's `setup.sh`, and the `susfs-*` branch sections that could only fail are gone.
-            - 39 dead relative links repaired, along with wrong manager package names and the stale local-values table in `SYNCING.md`.
-
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.1...v4.2.2
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.2...v4.2.3
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
