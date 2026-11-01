@@ -51,6 +51,12 @@ ccflags-y += -Wno-int-to-pointer-cast -Wno-declaration-after-statement
 ccflags-y += -I$(srctree)/security/selinux -I$(srctree)/security/selinux/include
 ccflags-y += -I$(srctree)/$(src) -I$(srctree)/$(src)/include
 ccflags-y += -I$(src) -I$(src)/include
+# `#include "uapi/..."` resolves through kernel/include/uapi, which is a symlink to the repo
+# root's uapi/ in a normal checkout. A checkout that cannot create symlinks - git on Windows with
+# core.symlinks=false, which is the default there - materialises it as an empty file instead, and
+# every uapi include then fails. Pointing at the repo root as well makes those includes resolve
+# whether or not the symlink exists.
+ccflags-y += -I$(src)/.. -I$(srctree)/$(src)/..
 
 obj-$(CONFIG_KSU) += kernelsu.o
 
