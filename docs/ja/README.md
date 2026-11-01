@@ -7,7 +7,7 @@
 [KernelSU](https://github.com/tiann/KernelSU) をベースとした Android デバイスの root ソリューション
 
 **試験中なビルドです！自己責任で使用してください！**<br>
-このソリューションは [SukiSU Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra) に基づいていますが、試験中なビルドです。
+このソリューションは [BakaSU](https://github.com/Baka-SU/BakaSU) に基づいていますが、試験中なビルドです。
 
 > これは非公式なフォークです。すべての権利は [@tiann](https://github.com/tiann) に帰属します。
 >
@@ -112,7 +112,7 @@ curl -LSs "https://raw.githubusercontent.com/HyperSU-Team/HyperSU/main/kernel/se
 
 HyperSU は優れたオープンソースプロジェクトの肩の上に成り立っています。上流プロジェクトとそのメンテナーの皆様に心より感謝いたします。
 
-特に、HyperSU の直接の上流およびフォーク元である [SukiSU Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra) とそのすべての貢献者に感謝します。また、最初のカーネルベース root ソリューションを生み出し、SukiSU と HyperSU の基礎を築いた [KernelSU](https://github.com/tiann/KernelSU) と作者 [tiann](https://github.com/tiann) に深く感謝します。
+特に、HyperSU の直接の上流およびフォーク元である [BakaSU](https://github.com/Baka-SU/BakaSU) とそのすべての貢献者に、そして BakaSU の上流である [SukiSU Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra) とそのすべての貢献者に感謝します。また、最初のカーネルベース root ソリューションを生み出し、SukiSU と HyperSU の基礎を築いた [KernelSU](https://github.com/tiann/KernelSU) と作者 [tiann](https://github.com/tiann) に深く感謝します。
 
 「貢献者」に記載されているその他の上流プロジェクトと貢献者の皆様にも感謝します。
 
@@ -134,7 +134,8 @@ HyperSU は優れたオープンソースプロジェクトの肩の上に成り
 
 ## 貢献者
 
-- [SukiSU](https://github.com/SukiSU-Ultra/SukiSU-Ultra): 直接の上流 / フォーク元。SukiSU チームとすべての貢献者に特別な感謝を表します。
+- [BakaSU](https://github.com/Baka-SU/BakaSU): 直接の上流 / フォーク元。BakaSU チームとすべての貢献者に特別な感謝を表します。
+- [SukiSU](https://github.com/SukiSU-Ultra/SukiSU-Ultra): BakaSU の上流。SukiSU チームとすべての貢献者に特別な感謝を表します。
 - [KernelSU](https://github.com/tiann/KernelSU): SukiSU の上流。tiann とすべての KernelSU 貢献者に特別な感謝を表します。
 - [FolkPatch](https://github.com/LyraVoid/FolkPatch): 本プロジェクトのマネージャー UI は FolkPatch から移植されています。FolkPatch チームの優れた UI/UX デザインに感謝します。特に LyraVoid 氏とすべての貢献者に感謝します。
 - [MKSU](https://github.com/5ec1cff/KernelSU): 使用しているプロジェクト

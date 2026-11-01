@@ -1,10 +1,10 @@
-# SukiSU Ultra
-<img align='right' src='SukiSU-mini.svg' width='220px' alt="логотип sukisu">
+# HyperSU
+<img align='right' src='SukiSU-mini.svg' width='220px' alt="логотип HyperSU">
 
 
 [English](../README.md) | [简体中文](./zh/README.md) | [日本語](./ja/README.md) | [Türkçe](./tr/README.md) | **Русский**
 
-Решение для получения root-прав на уровне ядра для устройств Android. Форк [`tiann/KernelSU`](https://github.com/tiann/KernelSU) с добавлением интересных изменений.
+Решение для получения root-прав на уровне ядра для устройств Android. Форк [`Baka-SU/BakaSU`](https://github.com/Baka-SU/BakaSU), который, в свою очередь, является форком [`SukiSU-Ultra/SukiSU-Ultra`](https://github.com/SukiSU-Ultra/SukiSU-Ultra), а тот — форком [`tiann/KernelSU`](https://github.com/tiann/KernelSU), с добавлением интересных изменений.
 
 [![Latest release](https://img.shields.io/github/v/release/SukiSU-Ultra/SukiSU-Ultra?label=Release&logo=github)](https://github.com/tiann/KernelSU/releases/latest)
 [![Channel](https://img.shields.io/badge/Follow-Telegram-blue.svg?logo=telegram)](https://t.me/Sukiksu)
@@ -68,6 +68,8 @@
 
 ## Благодарности
 
+- [BakaSU](https://github.com/Baka-SU/BakaSU): прямой upstream / основа форка.
+- [SukiSU](https://github.com/SukiSU-Ultra/SukiSU-Ultra): upstream BakaSU.
 - [KernelSU](https://github.com/tiann/KernelSU): база (основа).
 - [MKSU](https://github.com/5ec1cff/KernelSU): Magic Mount.
 - [RKSU](https://github.com/rsuntk/KernelsU): поддержка non-GKI.

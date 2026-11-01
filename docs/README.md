@@ -4,7 +4,7 @@
 
 **English** | [简体中文](./zh/README.md) | [日本語](./ja/README.md) | [Türkçe](./tr/README.md) | [Русский](./ru/README.md)
 
-A kernel-based root solution for Android devices, forked from [`SukiSU-Ultra/SukiSU-Ultra`](https://github.com/SukiSU-Ultra/SukiSU-Ultra), which is forked from [`tiann/KernelSU`](https://github.com/tiann/KernelSU), and added some interesting changes.
+A kernel-based root solution for Android devices, forked from [`Baka-SU/BakaSU`](https://github.com/Baka-SU/BakaSU), which is forked from [`SukiSU-Ultra/SukiSU-Ultra`](https://github.com/SukiSU-Ultra/SukiSU-Ultra) and ultimately [`tiann/KernelSU`](https://github.com/tiann/KernelSU), and added some interesting changes.
 
 [![Latest release](https://img.shields.io/github/v/release/HyperSU-Team/HyperSU?label=Release&logo=github)](https://github.com/HyperSU-Team/HyperSU/releases/latest)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-orange.svg?logo=gnu)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
@@ -63,13 +63,13 @@ If you need to submit a translation for the manager, please open a pull request 
 
 HyperSU is built on the shoulders of excellent open-source projects. We would like to express our sincere gratitude to the upstream projects and their maintainers.
 
-In particular, we thank [SukiSU Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra) and all of its contributors for serving as the direct upstream and fork base of HyperSU. We also deeply thank [KernelSU](https://github.com/tiann/KernelSU) and its author [tiann](https://github.com/tiann) for creating the original kernel-based root solution and laying the foundation for SukiSU and HyperSU.
+In particular, we thank [BakaSU](https://github.com/Baka-SU/BakaSU) and all of its contributors for serving as the direct upstream and fork base of HyperSU, and [SukiSU Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra) and all of its contributors for serving as the upstream of BakaSU. We also deeply thank [KernelSU](https://github.com/tiann/KernelSU) and its author [tiann](https://github.com/tiann) for creating the original kernel-based root solution and laying the foundation for SukiSU and HyperSU.
 
 Thanks also go to all other upstream projects and contributors mentioned in the Credit section for their open-source work and continuous contributions.
 
 ## Upstream maintainers and contributors
 
-HyperSU would not exist without the people who build and maintain [SukiSU Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra), the project it is forked from. Our thanks go to all of them.
+HyperSU would not exist without the people who build and maintain [BakaSU](https://github.com/Baka-SU/BakaSU), the project it is forked from, and [SukiSU Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra), the project BakaSU is forked from. Our thanks go to all of them.
 
 Maintainer, as named by the upstream project:
 
@@ -106,7 +106,7 @@ Contributors, by the work they have landed upstream:
 - [fatalcoder524](https://github.com/fatalcoder524)
 - [YuKongA](https://github.com/YuKongA)
 
-And everyone else who has contributed to SukiSU Ultra, KernelSU, or the projects listed under Credit, including those whose commits are not named here.
+And everyone else who has contributed to BakaSU, SukiSU Ultra, KernelSU, or the projects listed under Credit, including those whose commits are not named here.
 
 ## License
 
@@ -116,7 +116,8 @@ And everyone else who has contributed to SukiSU Ultra, KernelSU, or the projects
 
 ## Credit
 
-- [SukiSU](https://github.com/SukiSU-Ultra/SukiSU-Ultra): direct upstream / fork base. Special thanks to the SukiSU team and all contributors.
+- [BakaSU](https://github.com/Baka-SU/BakaSU): direct upstream / fork base. Special thanks to the BakaSU team and all contributors.
+- [SukiSU](https://github.com/SukiSU-Ultra/SukiSU-Ultra): upstream of BakaSU. Special thanks to the SukiSU team and all contributors.
 - [KernelSU](https://github.com/tiann/KernelSU): upstream of SukiSU. Special thanks to tiann and all KernelSU contributors.
 - [FolkPatch](https://github.com/LyraVoid/FolkPatch): The manager UI is ported from this project. We thank the FolkPatch team for their excellent UI/UX design work. Special thanks to LyraVoid and all contributors.
 - [MKSU](https://github.com/5ec1cff/KernelSU): Magic Mount

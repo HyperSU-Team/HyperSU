@@ -4,7 +4,7 @@
 
 [English](../README.md) | **简体中文** | [日本語](../ja/README.md) | [Türkçe](../tr/README.md) | [Русский](../ru/README.md)
 
-一个 Android 上基于内核的 root 方案，由 [`SukiSU-Ultra/SukiSU-Ultra`](https://github.com/SukiSU-Ultra/SukiSU-Ultra) 分叉而来，而 SukiSU Ultra 由 [`tiann/KernelSU`](https://github.com/tiann/KernelSU) 分叉而来，添加了一些有趣的变更。
+一个 Android 上基于内核的 root 方案，由 [`Baka-SU/BakaSU`](https://github.com/Baka-SU/BakaSU) 分叉而来，而 BakaSU 由 [`SukiSU-Ultra/SukiSU-Ultra`](https://github.com/SukiSU-Ultra/SukiSU-Ultra) 分叉而来，SukiSU Ultra 又由 [`tiann/KernelSU`](https://github.com/tiann/KernelSU) 分叉而来，添加了一些有趣的变更。
 
 [![最新发行](https://img.shields.io/github/v/release/HyperSU-Team/HyperSU?label=Release&logo=github)](https://github.com/HyperSU-Team/HyperSU/releases/latest)
 [![协议: GPL v2](https://img.shields.io/badge/License-GPL%20v2-orange.svg?logo=gnu)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
@@ -48,7 +48,7 @@
 
 HyperSU 站在优秀开源项目的肩膀上。我们衷心感谢上游项目及其维护者。
 
-特别感谢 [SukiSU Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra) 及其所有贡献者，作为 HyperSU 的直接上游与分叉基础。也深深感谢 [KernelSU](https://github.com/tiann/KernelSU) 及其作者 [tiann](https://github.com/tiann)，创造了最初基于内核的 root 方案，为 SukiSU 与 HyperSU 奠定基础。
+特别感谢 [BakaSU](https://github.com/Baka-SU/BakaSU) 及其所有贡献者，作为 HyperSU 的直接上游与分叉基础；也感谢 [SukiSU Ultra](https://github.com/SukiSU-Ultra/SukiSU-Ultra) 及其所有贡献者，作为 BakaSU 的上游。同时深深感谢 [KernelSU](https://github.com/tiann/KernelSU) 及其作者 [tiann](https://github.com/tiann)，创造了最初基于内核的 root 方案，为 SukiSU 与 HyperSU 奠定基础。
 
 同时感谢“鸣谢”部分提到的所有其他上游项目与贡献者。
 
@@ -75,7 +75,8 @@ HyperSU 站在优秀开源项目的肩膀上。我们衷心感谢上游项目及
 
 ## 鸣谢
 
-- [SukiSU](https://github.com/SukiSU-Ultra/SukiSU-Ultra): 直接上游 / 分叉基础。特别感谢 SukiSU 团队及所有贡献者。
+- [BakaSU](https://github.com/Baka-SU/BakaSU): 直接上游 / 分叉基础。特别感谢 BakaSU 团队及所有贡献者。
+- [SukiSU](https://github.com/SukiSU-Ultra/SukiSU-Ultra): BakaSU 的上游。特别感谢 SukiSU 团队及所有贡献者。
 - [KernelSU](https://github.com/tiann/KernelSU): SukiSU 的上游。特别感谢 tiann 及所有 KernelSU 贡献者。
 - [FolkPatch](https://github.com/LyraVoid/FolkPatch): 本项目的管理器 UI 移植自该项目。感谢 FolkPatch 团队优秀的 UI/UX 设计工作。特别感谢 LyraVoid 及所有贡献者。
 - [MKSU](https://github.com/5ec1cff/KernelSU): 魔法坐骑支持
