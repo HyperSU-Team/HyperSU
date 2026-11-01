@@ -95,6 +95,49 @@ jobs:
         with:
           # 使用内置令牌，无需任何 Secret
           token: ${{ github.token }}
+          name: ${{ github.ref_name }}
+          # 每次打 tag 前更新下面的修复说明；空正文会让管理器更新对话框没有内容可显示。
+          body: |
+            HyperSU v4.2.2 —— 基线切换到 BakaSU 之后的第一个版本，包含内核、管理器、ksud 与文档的一批修复。
+
+            ## 内核
+
+            - 移植上游四项修复：`selinux_hide` 去掉 `status_lock`（它保护的是只在安装期写入的 `fake_status`，却在每次非 system uid 读取 `/sys/fs/selinux/status` 时加锁）；`ksud_integration` 改按挂载路径匹配 `init.rc`（bind mount 会保留源 dentry 的名字，按短名匹配会漏掉）；`preinit` 为 6.19 改名的 `shmem_file_setup` 第三参数加版本保护；`su_mount_ns` / `util` 改用 `ksyscall` 调用 `setns` / `unshare`，避免 `ksys_unshare` 被内联后失效。
+            - KPM ioctl 结构体去掉 `__user` 注解：uapi 结构体描述的是用户态布局，preinit runner 独立编译时会把它当成字段名而报错。
+            - preinit runner 的头文件搜索路径加上仓库根目录，修 `core.symlinks=false` 的 Windows 检出下 `uapi/*.h` 找不到的问题。
+            - DDK 工作流补上 `CONFIG_KSU_TRACEPOINT_HOOK=y` 与 `CONFIG_KSU_MULTI_MANAGER_SUPPORT=y`，否则 preinit 会落到 `#error Unsupported hook type`。
+            - 版本号回到本仓库的 4xxxx 公式（40000 + 提交数 - 2815），与管理器 `build.gradle.kts` 算出的数字一致；tag 回退值更新为 v4.2.2。
+
+            ## 管理器
+
+            - 更新对话框重做：版本号改为标题块，主按钮占满整行（“下载并安装”不再折成三行），次要操作下移；release 没有 APK 时按钮上移补位。
+            - 修复更新说明显示 “null”：`JSONObject.optString` 对 JSON null 返回字符串 “null”，改用 `opt`，缺失正文按空处理并跳过说明区块。
+            - 「隐藏可疑挂载」开关改用已导入的 `Icons.Filled.Fence`（原先引用的 `Policy` 未导入，编译不过）。
+            - `parseKernelVersion` 对超长字段不再抛 `NumberFormatException` 崩溃，按既有的 (-1,-1,-1) 处理。
+            - 模块的 preinit 内容未生效时显示警告标记。
+
+            ## ksud
+
+            - `get_zip_uncompressed_size` 对损坏或截断的 zip 不再 `unwrap()` 崩溃，改为返回错误。
+            - `load_config` 的读取路径加上与 `save_config` 相同的长度上限，避免损坏文件诱导 4GB 分配。
+            - 新增 `ksud module preinit status|reset` 与 preinit 分区同步。
+            - `installer.sh` 用 `git add -f` 入库：目录 `.gitignore` 排除了 `*.sh`，导致 `include_str!` 编译失败。
+            - ksud 需要 nightly（`#![feature(decl_macro)]`），构建与 clippy 都改为 nightly。
+
+            ## 构建与分支
+
+            - 基线切换到 BakaSU：`kernel/`、`userspace/`、`uapi/`、`scripts/`、`js/` 来自 BakaSU，管理器保留本项目 UI；管理器签名证书替换为本项目的 `0x378` 证书。
+            - 移植模块 preinit 与挂载视图隐藏（`KSU_FEATURE_MOUNT_HIDE = 16`）。
+            - 删除 `build-su.yml`（本树没有 `userspace/su`）；shellcheck 忽略新的 installer 路径；`uapi/**` 变更现在会触发构建。
+
+            ## 文档
+
+            - 全部文档的品牌标识从 SukiSU Ultra 改为 HyperSU，上游声明统一为 HyperSU ← BakaSU ← SukiSU Ultra ← KernelSU。
+            - 网站域名、仓库与社交链接改为 `hypersu.top` 与 `HyperSU-Team/HyperSU`；SukiSU 的 Telegram 群与 Crowdin 明确标注为上游资源。
+            - 集成指导改为本仓库的 `setup.sh`，删除本仓库并不存在的 `susfs-*` 分支说明。
+            - 修复 39 条失效相对链接，以及管理器包名、`SYNCING.md` 本地差异表等与实际不符的陈述。
+
+            **完整变更**：https://github.com/HyperSU-Team/HyperSU/compare/v4.2.1...v4.2.2
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
