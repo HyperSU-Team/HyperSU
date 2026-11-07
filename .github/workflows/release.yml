@@ -98,22 +98,25 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.4 - fixes on top of v4.2.3.
+            HyperSU v4.2.5 - fixes on top of v4.2.4.
 
-            ## Zygisk implementation list
+            ## Module install
 
-            The line listed client modules too: any module id containing "zygisk" was treated as a provider, so HMA-OSS Zygisk and Zygisk - FuseHide appeared next to the real implementation.
+            - The success page no longer disappears: a finished flash used to close the activity a second later when the app had been opened from a file, taking the reboot button with it.
+            - Opening a downloaded module actually asks for confirmation again. The intent handler read `activity.intent` once, so a second intent (the manager already running) was dropped; it now consumes every zip/apk intent.
+            - Downloads and browser uris carry no file name (`content://.../document/msf%3A42`), so the old suffix test discarded them before the prompt. The archive MIME type and the resolved display name are accepted too.
+            - The notification's Install action for a module zip reaches the same confirmation instead of an action nothing handled.
+            - A module installed from outside the module screen shows up straight away: flashes ask the list to reload on its next resume.
 
-            - A provider is now matched by its exact id (`zygisksu`, `rezygisk`, `neozygisk`, `zygisk_next`), and a client module only gets the ZYGISK tag on its card.
-            - Client modules keep working as before; they are simply not implementations.
+            ## SUSFS
 
-            ## Manager update
+            - Backup and restore no longer freeze the app. The backup ran fifteen `ksud` calls under `runBlocking` from a main-dispatcher coroutine, so the window was blocked until every process had exited; it is a suspend function now.
 
-            - After the release APK downloads, the system package installer opens instead of nothing happening.
-            - The completion notification's "Install" action now opens the installer for an APK; it used to hand the file to the module installer, which is why tapping it did nothing.
-            - Declare `REQUEST_INSTALL_PACKAGES`.
+            ## Zygisk
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.3...v4.2.4
+            - "Reboot required" no longer sticks when the provider is running: the daemon check also accepts a process whose executable or command line lives inside the provider's module directory, and `zygisk-next` is recognised as a provider id.
+
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.4...v4.2.5
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
