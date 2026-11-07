@@ -89,9 +89,14 @@ fun ModulePager(
         // toggle, WebUI exit). A plain resume has nothing to reload.
         if (initialResumeHandled.value && latestIsCurrentPage) {
             val state = viewModel.uiState.value
-            if (!state.isRefreshing && (!state.hasLoaded || viewModel.isNeedRefresh)) {
+            // A flash that started elsewhere (a zip from the browser, the repo page, the update
+            // dialog) sets this, because its own screen is gone by the time the list is back.
+            val refreshedElsewhere = ModuleListRefresh.consume()
+            if (!state.isRefreshing &&
+                (!state.hasLoaded || refreshedElsewhere || viewModel.isNeedRefresh)
+            ) {
                 viewModel.fetchModuleList(
-                    checkUpdate = !state.hasLoaded || viewModel.isNeedRefresh,
+                    checkUpdate = !state.hasLoaded || refreshedElsewhere || viewModel.isNeedRefresh,
                     resort = !state.hasLoaded,
                 )
             }

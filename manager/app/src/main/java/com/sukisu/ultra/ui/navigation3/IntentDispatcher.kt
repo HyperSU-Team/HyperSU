@@ -6,13 +6,8 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.widget.Toast
-import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.sukisu.ultra.Natives
@@ -27,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.Locale
 import java.util.zip.ZipInputStream
 
 private const val SCHEME_KSU = "ksu"
@@ -125,12 +121,10 @@ private fun CollectIntentChannel(intentChannel: ReceiveChannel<Intent>, onIntent
 }
 
 @Composable
-fun HandleZipFileIntent() {
+fun HandleZipFileIntent(intentChannel: ReceiveChannel<Intent>) {
     val context = LocalContext.current
-    val activity = LocalActivity.current ?: return
     val navigator = LocalNavigator.current
     val confirmDialog = rememberConfirmDialog()
-    var processed by remember { mutableStateOf(false) }
 
     val strings = Strings(
         safeMode = stringResource(R.string.safe_mode_module_disabled),
@@ -144,33 +138,32 @@ fun HandleZipFileIntent() {
         module = stringResource(R.string.module),
     )
 
-    LaunchedEffect(Unit) {
-        if (processed) return@LaunchedEffect
+    // Every zip/apk intent is handled, not just the one that launched the activity: when the
+    // manager is already running, tapping a downloaded module only calls onNewIntent, and the old
+    // one-shot read of activity.intent silently dropped it - the app opened with no prompt.
+    LaunchedEffect(intentChannel) {
+        for (intent in intentChannel) {
+            val zipUris = withContext(Dispatchers.IO) { extractZipUris(context, intent) }
+            if (zipUris.isEmpty()) continue
 
-        val zipUris = extractZipUris(activity.intent)
-        if (zipUris.isEmpty()) return@LaunchedEffect
+            val zipTypes = withContext(Dispatchers.IO) {
+                zipUris.map { uri -> detectZipType(context, uri) }
+            }
 
-        processed = true
-        activity.intent.data = null
-        activity.intent.type = null
+            val (moduleUris, kernelUris, unknownUris) = categorizeUris(zipUris, zipTypes)
+            val finalModuleUris = moduleUris + unknownUris
 
-        val zipTypes = withContext(Dispatchers.IO) {
-            zipUris.map { uri -> detectZipType(context, uri) }
+            val fileNames = buildFileNames(zipUris, zipTypes, context, strings)
+            val (confirmTitle, confirmContent) = buildConfirmInfo(
+                moduleUris, kernelUris, fileNames, strings
+            )
+
+            if (confirmDialog.awaitConfirm(title = confirmTitle, content = confirmContent) != ConfirmResult.Confirmed) {
+                continue
+            }
+
+            handleConfirmed(finalModuleUris, kernelUris, context, navigator, strings)
         }
-
-        val (moduleUris, kernelUris, unknownUris) = categorizeUris(zipUris, zipTypes)
-        val finalModuleUris = moduleUris + unknownUris
-
-        val fileNames = buildFileNames(zipUris, zipTypes, context, strings)
-        val (confirmTitle, confirmContent) = buildConfirmInfo(
-            moduleUris, kernelUris, fileNames, strings
-        )
-
-        if (confirmDialog.awaitConfirm(title = confirmTitle, content = confirmContent) != ConfirmResult.Confirmed) {
-            return@LaunchedEffect
-        }
-
-        handleConfirmed(finalModuleUris, kernelUris, context, navigator, strings)
     }
 }
 
@@ -186,14 +179,29 @@ private data class Strings(
     val module: String,
 )
 
-private fun extractZipUris(intent: Intent): List<Uri> {
+private fun extractZipUris(context: Context, intent: Intent): List<Uri> {
     val uris = mutableSetOf<Uri>()
+
+    // A Downloads or browser uri carries no file name - it is "content://.../document/msf%3A42" -
+    // so a suffix test alone silently dropped the very intents these filters exist for. Trust the
+    // MIME type the chooser matched on, and fall back to the resolved display name.
+    val mime = intent.type?.lowercase(Locale.ROOT)
+    val mimeIsArchive = mime == "application/zip" ||
+        mime == "application/x-zip-compressed" ||
+        mime == "application/vnd.android.package-archive"
 
     fun isZipFile(uri: Uri?): Boolean {
         if (uri == null) return false
+        if (mimeIsArchive) return true
         val uriString = uri.toString()
-        return uriString.endsWith(".zip", ignoreCase = true) ||
-               uriString.endsWith(".apk", ignoreCase = true)
+        if (uriString.endsWith(".zip", ignoreCase = true) ||
+            uriString.endsWith(".apk", ignoreCase = true)
+        ) {
+            return true
+        }
+        val name = runCatching { uri.getFileName(context) }.getOrNull() ?: return false
+        return name.endsWith(".zip", ignoreCase = true) ||
+            name.endsWith(".apk", ignoreCase = true)
     }
 
     when (intent.action) {

@@ -1073,26 +1073,49 @@ fn has_zygisk_library(path: &Path) -> bool {
 fn is_zygisk_provider(module_id: &str) -> bool {
     matches!(
         module_id.to_ascii_lowercase().as_str(),
-        "zygisksu" | "rezygisk" | "neozygisk" | "zygisk_next" | "zygisknext"
+        "zygisksu" | "rezygisk" | "neozygisk" | "zygisk_next" | "zygisknext" | "zygisk-next"
     )
 }
 
-/// Whether any Zygisk daemon is currently running.
-fn is_zygisk_daemon_running() -> bool {
+/// Whether the provider's daemon is currently running.
+///
+/// The daemon name is not stable across implementations (zygiskd, zygisk-ptrace64,
+/// rezygiskd, ...), so match on three signals: the process name, an executable or
+/// command line that lives inside the module directory, and the comm prefix.
+fn is_zygisk_daemon_running(module_id: &str) -> bool {
+    let module_marker = format!("/modules/{module_id}");
     let Ok(entries) = std::fs::read_dir("/proc") else {
         return false;
     };
     for entry in entries.flatten() {
-        let name = entry.file_name();
-        if !name.to_string_lossy().chars().all(|c| c.is_ascii_digit()) {
+        if !entry
+            .file_name()
+            .to_string_lossy()
+            .chars()
+            .all(|c| c.is_ascii_digit())
+        {
             continue;
         }
-        let Ok(comm) = std::fs::read_to_string(entry.path().join("comm")) else {
-            continue;
-        };
-        let comm = comm.trim().to_ascii_lowercase();
-        if comm.starts_with("zygisk") || comm.starts_with("rezygisk") {
+        let proc_dir = entry.path();
+
+        if let Ok(comm) = std::fs::read_to_string(proc_dir.join("comm")) {
+            let comm = comm.trim().to_ascii_lowercase();
+            if comm.starts_with("zygisk") || comm.starts_with("rezygisk") {
+                return true;
+            }
+        }
+
+        if let Ok(exe) = std::fs::read_link(proc_dir.join("exe"))
+            && exe.to_string_lossy().contains(&module_marker)
+        {
             return true;
+        }
+
+        if let Ok(cmdline) = std::fs::read(proc_dir.join("cmdline")) {
+            let cmdline = String::from_utf8_lossy(&cmdline).to_ascii_lowercase();
+            if cmdline.contains(&module_marker) || cmdline.contains(module_id) {
+                return true;
+            }
         }
     }
     false
@@ -1164,7 +1187,7 @@ fn list_module(path: &str) -> Vec<HashMap<String, String>> {
         let module_id = module_prop_map.get("id").cloned().unwrap_or_default();
         let is_provider = is_zygisk_provider(&module_id);
         let zygisk_module = is_provider || has_zygisk_library(&path);
-        let zygisk_running = is_provider && is_zygisk_daemon_running();
+        let zygisk_running = is_provider && is_zygisk_daemon_running(&module_id);
         module_prop_map.insert("zygisk".to_owned(), zygisk_module.to_string());
         module_prop_map.insert("zygisk_provider".to_owned(), is_provider.to_string());
         module_prop_map.insert("zygisk_running".to_owned(), zygisk_running.to_string());

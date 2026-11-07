@@ -1,7 +1,5 @@
 package com.sukisu.ultra.ui.screen.flash
 
-import android.content.Intent
-import androidx.activity.compose.LocalActivity
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,14 +17,12 @@ import com.sukisu.ultra.Natives
 import com.sukisu.ultra.R
 import com.sukisu.ultra.data.repository.isSoftRebootPreferred
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
+import com.sukisu.ultra.ui.screen.module.ModuleListRefresh
 import com.sukisu.ultra.ui.util.reboot
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun FlashScreen(flashIt: FlashIt) {
     val navigator = LocalNavigator.current
-    val activity = LocalActivity.current
     val scope = rememberCoroutineScope()
     var text by rememberSaveable { mutableStateOf("") }
     val logContent = remember { StringBuilder() }
@@ -54,19 +50,12 @@ fun FlashScreen(flashIt: FlashIt) {
         enabled = flashingEnabled,
     )
 
-    LaunchedEffect(flashingStatus, flashIt) {
-        if (flashingStatus == FlashingStatus.SUCCESS && flashIt is FlashIt.FlashModules) {
-            val intent = activity?.intent
-            val isFromExternalIntent = intent?.action?.let { action ->
-                action == Intent.ACTION_VIEW ||
-                        action == Intent.ACTION_SEND ||
-                        action == Intent.ACTION_SEND_MULTIPLE
-            } ?: false
-
-            if (isFromExternalIntent) {
-                delay(1000.milliseconds)
-                activity.finish()
-            }
+    LaunchedEffect(flashingStatus) {
+        // A finished flash changes what the module list should show, so ask it to reload on its
+        // next resume. The success page stays up: it carries the reboot action, and closing the
+        // activity a second after a successful install took that page away before it could be used.
+        if (flashingStatus == FlashingStatus.SUCCESS) {
+            ModuleListRefresh.request()
         }
     }
 

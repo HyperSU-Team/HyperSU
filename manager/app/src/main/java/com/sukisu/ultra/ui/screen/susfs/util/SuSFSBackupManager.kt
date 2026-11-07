@@ -6,7 +6,6 @@ import android.widget.Toast
 import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.util.getSuSFSVersion
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
@@ -14,7 +13,10 @@ import java.util.Date
 import java.util.Locale
 
 object SuSFSBackupManager {
-    private fun getAllConfigurations(): Map<String, Any> = runBlocking(Dispatchers.IO) {
+    // Reads fifteen settings, each through its own `ksud` call. Suspending keeps that off the
+    // caller's thread: the old runBlocking ran the whole backup on the main thread when the UI
+    // called it, which froze the window until every ksud process had started and exited.
+    private suspend fun getAllConfigurations(): Map<String, Any> = withContext(Dispatchers.IO) {
         mapOf(
             SuSFSConfig.KEY_UNAME_VALUE to getUnameValueInternal(),
             SuSFSConfig.KEY_BUILD_TIME_VALUE to getBuildTimeValueInternal(),

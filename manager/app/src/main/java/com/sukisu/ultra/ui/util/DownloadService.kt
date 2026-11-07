@@ -267,11 +267,14 @@ class DownloadService : Service() {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         } else {
+            // Send the zip through the same path the browser uses, so the manager shows its
+            // install confirmation instead of a module action nothing listens for.
             Intent(this, MainActivity::class.java).apply {
-                action = ACTION_INSTALL_MODULE
-                putExtra(EXTRA_MODULE_URI, uri.toString())
+                action = Intent.ACTION_VIEW
+                setDataAndType(uri, "application/zip")
                 putExtra(EXTRA_DOWNLOAD_ID, id)
                 putExtra(EXTRA_TOKEN, SettingsRepositoryImpl().intentToken)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
             }
         }

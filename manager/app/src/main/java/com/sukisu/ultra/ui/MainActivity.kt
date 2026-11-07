@@ -134,6 +134,9 @@ import top.yukonga.miuix.kmp.utils.pagerGestureOverride
 
 class MainActivity : ComponentActivity() {
     private val intentChannel = Channel<Intent>(capacity = Channel.BUFFERED)
+    // Zip/apk intents need their own channel: a Channel hands each element to one receiver, and
+    // the deep-link dispatcher also reads intentChannel.
+    private val zipIntentChannel = Channel<Intent>(capacity = Channel.BUFFERED)
     private var contentReady = false
     private var splashStartedAt = 0L
     private val splashAnimationDurationMs = 500L
@@ -182,7 +185,10 @@ class MainActivity : ComponentActivity() {
             }
         }.onFailure { android.util.Log.w("MainActivity", "kernel check failed", it) }
 
-        if (savedInstanceState == null) intent?.let { intentChannel.trySend(it) }
+        if (savedInstanceState == null) intent?.let {
+            intentChannel.trySend(it)
+            zipIntentChannel.trySend(it)
+        }
 
         setContent {
             val viewModel = viewModel<MainActivityViewModel>()
@@ -289,7 +295,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     IntentDispatcher(intentChannel = intentChannel)
-                    HandleZipFileIntent()
+                    HandleZipFileIntent(zipIntentChannel)
                     val swipeDismiss = if (uiState.enableSwipeDismiss) {
                         if (LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl) {
                             NavSwipeDirection.RightToLeft
@@ -394,6 +400,7 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         intentChannel.trySend(intent)
+        zipIntentChannel.trySend(intent)
     }
 }
 
