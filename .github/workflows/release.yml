@@ -98,13 +98,18 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.6 - the multi-manager entry, on top of v4.2.5.
+            HyperSU v4.2.7 - the multi-manager screen, done properly.
 
-            ## Multi-manager support (dynamic signature)
+            ## Multi-manager support
 
-            BakaSU lets you pick another manager whose signature the kernel should accept; this manager never offered that entry. The kernel side was already here (`feature/dynamic_manager.c` registers `KSU_SIGNATURE_INDEX_DYNAMIC_MANAGER`, `apk_sign.c` accepts it) and so was the CLI (`ksud kernel dynamic-manager get|set|set-apk|clear`).
+            Settings now offers **Multi-manager support**, the entry BakaSU has and this manager was missing. The kernel side (`feature/dynamic_manager.c`, `apk_sign.c`) and the CLI (`ksud kernel dynamic-manager`) were already there; what was missing was the way to use them.
 
-            Settings now has **Multi-manager support**: it shows the signature the kernel currently accepts, lets you clear it, and lists the installed apps that ship `libksud.so` - the managers - so one of them can be chosen. `ksud` reads the signature out of the chosen APK, so the app never parses it.
+            - Every installed app that ships `libksud.so` is listed with its icon, its name and its package.
+            - Each row shows what the kernel thinks of it: **Built-in** when it matches a signature the kernel was built with, **Dynamic** when it was granted here, **Not authorized** otherwise. The status comes from the kernel's own manager table (`KSU_IOCTL_GET_MANAGERS`), not from guesswork.
+            - Only an unauthorized row can be granted; granting or clearing first shows a confirmation.
+            - Granting asks you to confirm the risk explicitly: a manager holds the highest privilege on the device, can read and write the system, install modules, grant root and run arbitrary code. A granted malicious manager would control the device and be hard to notice. The list also carries a standing warning above it.
+            - The signature is read out of the chosen APK by `ksud`, so the app never parses it, and the choice survives a reboot.
+            - Only the managers a grant replaced show a changed state; both the kernel config and the manager table are reloaded after every action.
 
             ## From v4.2.5
 
@@ -114,7 +119,7 @@ jobs:
             - SUSFS backup and restore no longer freeze the app.
             - Zygisk providers no longer stick on "reboot required".
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.5...v4.2.6
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.6...v4.2.7
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
