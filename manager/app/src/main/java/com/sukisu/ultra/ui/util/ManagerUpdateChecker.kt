@@ -131,9 +131,20 @@ object ManagerUpdateChecker {
         return false
     }
 
-    /** The first `.apk` asset, if the release carries one. */
-    private fun apkAssetOf(assets: List<JSONObject>): String? =
-        assets.firstOrNull { it.optString("name").endsWith(".apk", ignoreCase = true) }
-            ?.optString("browser_download_url")
-            ?.takeIf { it.isNotEmpty() }
+    /**
+     * The APK asset this build should install.
+     *
+     * A release carries both the normal APK and a `-spoofed` variant, and the spoofed one sorts
+     * first ("release-spoofed" < "release."), so taking the first `.apk` handed the updater the
+     * spoofed build. Prefer the plain `-release.apk` name and never fall back to a spoofed asset.
+     */
+    private fun apkAssetOf(assets: List<JSONObject>): String? {
+        val apks = assets
+            .filter { it.optString("name").endsWith(".apk", ignoreCase = true) }
+            .filterNot { it.optString("name").contains("spoofed", ignoreCase = true) }
+        val preferred = apks.firstOrNull { it.optString("name").endsWith("-release.apk", ignoreCase = true) }
+            ?: apks.firstOrNull()
+            ?: return null
+        return preferred.optString("browser_download_url").takeIf { it.isNotEmpty() }
+    }
 }

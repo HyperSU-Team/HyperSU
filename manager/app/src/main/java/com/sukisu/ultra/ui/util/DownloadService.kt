@@ -6,6 +6,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.ContentValues
 import android.content.Intent
+import android.util.Log
 import android.content.pm.ServiceInfo
 import android.net.Uri
 import android.os.Build
@@ -193,12 +194,15 @@ class DownloadService : Service() {
                 throw e
             } catch (e: Exception) {
                 ensureActive()
+                // The notification only says that it failed; the reason (timeout, DNS, HTTP code)
+                // is what tells an asset host that is unreachable apart from a bad asset URL.
+                Log.w("DownloadService", "download failed: $url", e)
                 DownloadManager.markFailed(id, e.message ?: "Unknown error")
 
                 notificationManager.cancel(id)
                 notificationManager.notify(
                     COMPLETION_NOTIFICATION_ID_BASE + id,
-                    buildFailureNotification(displayName)
+                    buildFailureNotification(displayName, e.message ?: "Unknown error")
                 )
             } finally {
                 pendingUri?.let { deleteDownload(it) }
@@ -312,12 +316,17 @@ class DownloadService : Service() {
         return builder.build()
     }
 
-    private fun buildFailureNotification(fileName: String) = NotificationCompat.Builder(this, CHANNEL_ID)
-        .setContentTitle(getString(R.string.download_failed_title))
-        .setContentText(getString(R.string.download_failed_content, fileName))
-        .setSmallIcon(android.R.drawable.stat_notify_error)
-        .setAutoCancel(true)
-        .build()
+    private fun buildFailureNotification(fileName: String, reason: String) =
+        NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.download_failed_title))
+            .setContentText(getString(R.string.download_failed_content, fileName))
+            // The reason is the difference between "GitHub is unreachable" and "this asset URL is
+            // wrong", and without it the failure is indistinguishable from any other one.
+            .setSubText(reason)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(reason))
+            .setSmallIcon(android.R.drawable.stat_notify_error)
+            .setAutoCancel(true)
+            .build()
 
     private fun createCancelPendingIntent(downloadId: Int): PendingIntent {
         val intent = Intent(this, DownloadService::class.java).apply {

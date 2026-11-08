@@ -116,6 +116,14 @@ fun SettingPagerFolk(
                             snackBarHost.showSnackbar(
                                 context.getString(R.string.settings_manager_update_failed),
                             )
+                            // The in-app download can fail where the API request succeeded - the
+                            // asset host is a different one. Falling back to the release page at
+                            // least leaves the user with a working way to get the build.
+                            runCatching {
+                                context.startActivity(
+                                    Intent(Intent.ACTION_VIEW, available.pageUrl.toUri()),
+                                )
+                            }
                         }
                         loadingDialog.hide()
                     }
