@@ -98,28 +98,25 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.8 - the GPU reading, fixed.
+            HyperSU v4.2.9 - the Grid home card, back to FolkPatch's proportions.
 
             ## Home
 
-            The GPU chart kept falling back to `--` and occasionally showed a wrong number. Three causes, all fixed:
+            On the Grid layout the working-status card carried its wallpaper in a card that was roughly half the screen wide but only as tall as the two small tiles beside it. A portrait working-card image was therefore cropped into a wide, short strip and the character looked squeezed next to the same image in FolkPatch.
 
-            - **Only three sysfs nodes were tried, all through the root shell.** Adreno's `gpu_busy_percentage` and `gpubusy`, plus Mali's `/sys/class/misc/mali0/device/utilization`. A counter that lives elsewhere - a `.mali` platform node, a generic `gpu_busy` - was never read at all, and every sample paid for a `cat` process.
-            - **An unreadable sample was reported as 0.** A GPU that powered down (its cumulative counters stop advancing) or a single failed read produced 0, and 0 drew as `--`, so a working GPU could look absent for a tick.
-            - **The chart only printed a value above zero**, so a real 0% load was indistinguishable from "no data".
+            With a wallpaper the row now keeps a portrait-ish minimum height (224dp) and the status card fills it, so the picture has the shape it has in FolkPatch. Without a wallpaper the row is unchanged.
 
-            The node is now read directly first and through the root shell only when it is unreadable. The counter family is probed once and remembered, re-probed when a read starts failing, the last good value survives a single failed sample, and 0% gets its own number. A device with no counter at all hides the GPU chart instead of leaving a permanent `--`.
+            ## From v4.2.8
 
-            ## From v4.2.7
-
-            - Multi-manager support: manager list with icons and Built-in / Dynamic / Not authorized state from the kernel manager table, explicit risk confirmation before granting.
+            - GPU load reads the vendor counter family that actually exists, reads sysfs directly with a shell fallback, keeps the last good value across a failed sample, and a real 0% no longer draws as `--`.
+            - Multi-manager support with icons and Built-in / Dynamic / Not authorized state from the kernel manager table, plus an explicit risk confirmation before granting.
             - The module flash success page stays, with its reboot button.
             - Downloaded module zips and the notification's Install action open the confirmation again.
             - A module installed from outside the module screen shows up right away.
             - SUSFS backup and restore no longer freeze the app.
             - Zygisk providers no longer stick on "reboot required".
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.7...v4.2.8
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.8...v4.2.9
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
