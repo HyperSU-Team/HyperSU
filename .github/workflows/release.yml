@@ -98,25 +98,13 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.10 - the in-app update, fixed.
+            HyperSU v4.2.11 - a version-code bump.
 
-            ## Settings: manager update
+            No functional change. This release exists so a manager installed from v4.2.10 can exercise the fixed in-app updater end to end: v4.2.10 changed which APK asset is downloaded (the plain `-release.apk`, never the `-spoofed` one) and made a failure say why it failed, but there was no newer release for it to find.
 
-            Two faults made the update fail:
+            If the update from v4.2.10 works, you will land here; if it does not, the failure notification now carries the reason (HTTP status, timeout, DNS) and the dialog opens this page.
 
-            - **The updater downloaded the wrong APK.** A release carries both `...-release.apk` and `...-release-spoofed.apk`, and the updater took the first `.apk` asset - which, because "release-spoofed" sorts before "release.", was the spoofed build. It now prefers the plain `-release.apk` and never falls back to a spoofed asset.
-            - **A failed download had no explanation and no way out.** The version check talks to `api.github.com`, but the APK comes from the release-asset host, and one being unreachable while the other works is common. The failure notification now carries the reason (HTTP status, timeout, DNS), and the dialog opens the release page instead of leaving the update dead.
-
-            ## From v4.2.9
-
-            - Grid home: the working-status card keeps a portrait-ish height when it carries a wallpaper, so the picture is no longer cropped into a short wide strip.
-            - GPU load reads the vendor counter family that exists, keeps the last good value across a failed sample, and a real 0% no longer draws as `--`.
-            - Multi-manager support with icons and Built-in / Dynamic / Not authorized state from the kernel manager table, plus an explicit risk confirmation before granting.
-            - The module flash success page stays; downloaded zips and the notification's Install action open the confirmation; the module list reloads after an install started elsewhere.
-            - SUSFS backup and restore no longer freeze the app.
-            - Zygisk providers no longer stick on "reboot required".
-
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.9...v4.2.10
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.10...v4.2.11
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
