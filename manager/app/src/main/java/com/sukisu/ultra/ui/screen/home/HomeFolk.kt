@@ -1054,10 +1054,12 @@ private fun HomeGridStatusCards(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxHeight(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            // The two readings are a pair, not two slots stretched to the row: centring the pair
+            // against the wallpaper tile is what makes their labels line up with the tile instead
+            // of sitting above its top edge.
+            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
         ) {
             HomeTile(
-                modifier = Modifier.weight(1f),
                 icon = Icons.Outlined.Info,
                 label = stringResource(R.string.home_kernel),
                 value = state.systemInfo.kernelVersion,
@@ -1065,7 +1067,6 @@ private fun HomeGridStatusCards(
                 plain = true,
             )
             HomeTile(
-                modifier = Modifier.weight(1f),
                 icon = Icons.Outlined.Security,
                 label = stringResource(R.string.home_selinux_status),
                 value = state.systemInfo.selinuxStatus,
