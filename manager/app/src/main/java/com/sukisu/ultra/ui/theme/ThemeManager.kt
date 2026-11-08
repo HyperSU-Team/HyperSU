@@ -15,6 +15,7 @@ import com.sukisu.ultra.data.repository.STATS_TOP_LIST
 import com.sukisu.ultra.data.repository.folkPatchLayoutNameFor
 import com.sukisu.ultra.data.repository.resolveHomeLayout
 import com.sukisu.ultra.ui.util.LocaleHelper
+import com.sukisu.ultra.ui.util.MusicManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -418,8 +419,7 @@ object ThemeManager {
     }
 
     /** FolkPatch's flat sound-effect keys. */
-    private fun applyFolkPatchSound(context: Context, json: JSONObject) {
-        val filename = json.optString("soundEffectFilename", "").takeIf { it.isNotBlank() && it != "null" }
+    private fun applyFolkPatchSound(context: Context, json: JSONObject) {        val filename = json.optString("soundEffectFilename", "").takeIf { it.isNotBlank() && it != "null" }
         val hasFile = filename != null && File(context.filesDir, "sound_effects/$filename").isFile
 
         SoundEffectConfig.setEnabledState(json.optBoolean("isSoundEffectEnabled", false))
@@ -431,6 +431,49 @@ object ThemeManager {
         )
         SoundEffectConfig.setFilenameValue(if (hasFile) filename else null)
         SoundEffectConfig.save(context)
+    }
+
+    /**
+     * Restores the bottom-bar icons a FolkPatch theme carries.
+     *
+     * The files are already on disk, named `nav_icon_<destination>.png` - the same names this app
+     * uses - because the archive extractor recognises them. What was missing were the two things
+     * that make them visible: the per-destination preference pointing at the file, and the switch
+     * that enables custom icons. Without those the extracted files sat unused and the bar kept its
+     * built-in glyphs. A theme with no icons leaves the current bar alone, the same way an absent
+     * music section leaves the current track alone.
+     */
+    private fun applyFolkPatchNavIcons(context: Context, json: JSONObject) {
+        val prefs = context.getSharedPreferences(BackgroundConfig.PREFS_NAME, Context.MODE_PRIVATE)
+        val declared = json.optJSONObject("navIcons")
+        var restored = false
+
+        BottomBarIconConfig.DESTINATIONS.forEach { destination ->
+            val expected = BottomBarIconConfig.fileName(destination)
+            val candidates = buildList {
+                declared?.optString(destination)?.takeIf { it.isNotBlank() }?.let { add(it) }
+                add(expected)
+            }
+            val source = candidates
+                .map { File(context.filesDir, it) }
+                .firstOrNull { it.isFile } ?: return@forEach
+
+            // A theme may name its icons differently from this app's convention; renaming on the
+            // way in keeps the preference, the file and a later export all pointing at one name.
+            val target = File(context.filesDir, expected)
+            if (source.absolutePath != target.absolutePath) {
+                runCatching { source.copyTo(target, overwrite = true) }
+                    .onSuccess { source.delete() }
+                    .onFailure { Log.w(TAG, "failed to restore nav icon $expected", it) }
+            }
+            prefs.edit { putString("nav_icon_$destination", target.absolutePath) }
+            restored = true
+        }
+
+        if (restored) {
+            BottomBarIconConfig.setEnabled(context, json.optBoolean("navIconCustomEnabled", true))
+            BottomBarIconConfig.notifyChanged()
+        }
     }
 
     /** 应用归档里的字体段落。
@@ -616,6 +659,9 @@ object ThemeManager {
      * 解压只放行这些目录，其余任何含 `/` 的条目一律丢弃（配合 `..` 检查防路径穿越）。
      */
     private val ARCHIVE_DIRS = setOf("music", "sound_effects")
+
+    private val AUDIO_EXTENSIONS =
+        listOf(".mp3", ".flac", ".ogg", ".wav", ".m4a", ".aac", ".opus")
 
     /** 归档里字体的合法后缀（字体没有目录前缀，靠后缀识别）。 */
     private val FONT_EXTENSIONS = listOf(".ttf", ".otf", ".ttc")
@@ -907,7 +953,7 @@ object ThemeManager {
                 val json = openConfig(context, uri) ?: return@withContext null
 
                 // Images first: the preference URIs written below must already resolve.
-                val localUris = unzipImages(context, uri, tempDir)
+                val localUris = unzipImages(context, uri, tempDir, json)
 
                 // HyperSU-native sections win when present: they are this app's own keys, so a
                 // round trip restores exactly what was exported. FolkPatch themes have only the
@@ -943,6 +989,11 @@ object ThemeManager {
                 // importing a theme that carries only a main wallpaper would wipe the user's
                 // per-page wallpapers, which is not what "import this theme" means.
                 applyWallpaperSlots(context, backgroundPrefs, json, localUris)
+
+                // The bar's icons are files, not preferences, so they are restored from the
+                // archive rather than from a section: both a FolkPatch theme and this app's own
+                // export carry them under the same names.
+                applyFolkPatchNavIcons(context, json)
 
                 // 字体 / 音乐 / 音效：**归档里没有的段落一律不动**。
                 //
@@ -991,7 +1042,13 @@ object ThemeManager {
         }
         // Raised on the main thread so the screens that watch it recompose on the same frame the
         // import finished, rather than reading the preferences again mid-write.
-        withContext(Dispatchers.Main) { ThemeImportSignal.notifyImported() }
+        withContext(Dispatchers.Main) {
+            ThemeImportSignal.notifyImported()
+            // The imported theme may name a different track than the one already playing; reload
+            // rather than waiting for the next foreground switch to pick it up.
+            runCatching { MusicManager.reload() }
+                .onFailure { Log.w(TAG, "failed to reload music after import", it) }
+        }
         return true
     }
 
@@ -1151,7 +1208,12 @@ object ThemeManager {
      * `background_video.*`; those two names are normalised so the rest of the import can work in
      * this app's vocabulary.
      */
-    private fun unzipImages(context: Context, uri: Uri, tempDir: File): Map<String, String> {
+    private fun unzipImages(
+        context: Context,
+        uri: Uri,
+        tempDir: File,
+        json: JSONObject,
+    ): Map<String, String> {
         tempDir.deleteRecursively()
         tempDir.mkdirs()
 
@@ -1160,6 +1222,15 @@ object ThemeManager {
         // into one - the rank of the sub-card that currently owns it.
         val claimedFocusRank = mutableMapOf<String, Int>()
         val entries = ThemeArchive.extractTo(context, uri, tempDir)
+
+        // FolkPatch packs the music and sound-effect files at the archive root under the name its
+        // JSON records, while this app stores them in `music/` and `sound_effects/`. Without the
+        // mapping below those two files counted as unrecognised entries and were dropped, which
+        // left the imported theme's music switched off - the file it named was never written.
+        val musicEntry = json.optString("musicFilename", "")
+            .takeIf { it.isNotBlank() && it != "null" }
+        val soundEntry = json.optString("soundEffectFilename", "")
+            .takeIf { it.isNotBlank() && it != "null" }
 
         entries.forEach { name ->
             val normalised = normaliseEntryName(name)
@@ -1180,10 +1251,25 @@ object ThemeManager {
             val isNavIcon = !isWallpaper && BottomBarIconConfig.DESTINATIONS.any {
                 normalised == BottomBarIconConfig.fileName(it)
             }
-            val isMedia = !isWallpaper && !isNavIcon && when {
-                normalised.contains("/") -> topLevel in ARCHIVE_DIRS
-                else -> FONT_EXTENSIONS.any { normalised.endsWith(it) }
+            // A root-level entry named by the theme's music/sound keys is one of those files:
+            // FolkPatch writes them there, this app keeps them in their own directory. A theme
+            // that carries an audio file but no matching key is still taken as the music track.
+            val mediaDestination = when {
+                normalised == musicEntry -> "music/$normalised"
+                normalised == soundEntry -> "sound_effects/$normalised"
+                !normalised.contains('/') &&
+                    musicEntry == null &&
+                    AUDIO_EXTENSIONS.any { normalised.endsWith(it, ignoreCase = true) } ->
+                    "music/$normalised"
+                else -> normalised
             }
+            val isRootMedia = mediaDestination != normalised
+            val isMedia = !isWallpaper && !isNavIcon && (
+                isRootMedia || when {
+                    normalised.contains("/") -> topLevel in ARCHIVE_DIRS
+                    else -> FONT_EXTENSIONS.any { normalised.endsWith(it) }
+                }
+                )
             if (!isWallpaper && !isMedia && !isNavIcon) return@forEach
 
             // Four Focus sub-cards all normalise onto this app's single hero card. The zip's
@@ -1206,7 +1292,7 @@ object ThemeManager {
                 }
             }
 
-            val target = File(context.filesDir, normalised)
+            val target = File(context.filesDir, mediaDestination)
             // `music/…` 与 `sound_effects/…` 在全新安装上可能还不存在。
             target.parentFile?.mkdirs()
             runCatching { source.copyTo(target, overwrite = true) }
