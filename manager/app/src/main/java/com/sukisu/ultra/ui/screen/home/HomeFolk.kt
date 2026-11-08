@@ -156,6 +156,14 @@ private const val WALLPAPER_LIGHT_THRESHOLD = 0.5f
 private val WorkingCardMinHeight = 120.dp
 
 /**
+ * Height the Grid layout's hero card keeps once it carries a wallpaper.
+ *
+ * The card is roughly half the screen wide, so a portrait image needs a portrait-ish card: at the
+ * tiles' height it was cropped into a strip and the character read as squeezed.
+ */
+private val GridHeroMinHeightWithWallpaper = 224.dp
+
+/**
  * The wallpaper layer, sized to whatever the card measures to.
  *
  * `matchParentSize` and not `fillMaxSize`: the card is wrap-content, and filling the maximum
@@ -602,6 +610,16 @@ private fun HomeWorkingCard(
                     Modifier
                 }
             )
+            // The Grid row is taller than this card's own content once a wallpaper is set, and a
+            // wrap-content card would sit at the top of it with the picture squeezed into its text
+            // height. Filling the row lets the wallpaper use the whole tile, as FolkPatch's does.
+            .then(
+                if (gridStyle) {
+                    Modifier.fillMaxHeight()
+                } else {
+                    Modifier
+                }
+            )
             .then(
                 if (!state.isLateLoadMode) {
                     Modifier.clickable(onClick = actions.onInstallClick)
@@ -993,17 +1011,34 @@ private fun HomeGridStatusCards(
     state: HomeUiState,
     actions: HomeActions,
 ) {
+    val heroWallpaper = gridHeroWallpaperUri()
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(IntrinsicSize.Max),
+            .height(IntrinsicSize.Max)
+            // FolkPatch's GridUI gives the left card enough room for its wallpaper to read as a
+            // picture. Ours let the two small tiles decide the row height, so a portrait working-card
+            // image was cropped into a wide, short band and the character looked squeezed. With a
+            // wallpaper the row keeps a portrait-ish height instead; without one it stays as it was.
+            .then(
+                if (heroWallpaper != null) {
+                    Modifier.heightIn(min = GridHeroMinHeightWithWallpaper)
+                } else {
+                    Modifier
+                }
+            ),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Box(modifier = Modifier.weight(1f)) {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+        ) {
             HomeHeroCard(
                 state = state,
                 actions = actions,
-                wallpaperUri = gridHeroWallpaperUri(),
+                wallpaperUri = heroWallpaper,
                 gridStyle = true,
             )
         }
