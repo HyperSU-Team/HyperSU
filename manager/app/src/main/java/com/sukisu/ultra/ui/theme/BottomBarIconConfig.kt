@@ -26,8 +26,32 @@ object BottomBarIconConfig {
     private const val PREFS = BackgroundConfig.PREFS_NAME
     private const val KEY_ENABLED = "nav_icon_custom_enabled"
 
-    /** Destination names, matching FolkPatch so a theme's entries line up. */
-    val DESTINATIONS = listOf("Home", "KModule", "SuperUser", "AModule", "Settings")
+    /**
+     * Destination names of this app's bar.
+     *
+     * The app has four tabs while FolkPatch has five: its module tab is split into KernelPatch
+     * (`KModule`) and AndroidPatch (`AModule`). A theme therefore names its module icon with one
+     * of those two, which is why [appDestinationOf] maps both onto `Module` - without that mapping
+     * the module tab kept its built-in glyph no matter what the theme carried.
+     */
+    val DESTINATIONS = listOf("Home", "SuperUser", "Module", "Settings")
+
+    private val THEME_ALIASES = mapOf(
+        "Module" to listOf("KModule", "AModule"),
+    )
+
+    /** The names a theme may use for [destination]'s icon. */
+    fun acceptingNames(destination: String): List<String> =
+        listOf(destination) + THEME_ALIASES[destination].orEmpty()
+
+    /** The destination a theme's icon name belongs to, or null when it is not a nav icon. */
+    fun appDestinationOf(themeName: String): String? = when {
+        themeName in DESTINATIONS -> themeName
+        else -> THEME_ALIASES.entries.firstOrNull { themeName in it.value }?.key
+    }
+
+    /** Every name a theme may use for a bottom-bar icon. */
+    fun allThemeNames(): List<String> = DESTINATIONS.flatMap { acceptingNames(it) }
 
     private fun prefKey(destination: String) = "nav_icon_$destination"
 
@@ -53,12 +77,16 @@ object BottomBarIconConfig {
 
     /** The custom icon for [destination], or null when it has none. */
     fun getCustomIconUri(context: Context, destination: String): String? {
-        val stored = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .getString(prefKey(destination), null)
-        if (stored.isNullOrBlank()) return null
-        // The stored value is a file path; a theme can restore an icon whose file was never
-        // written on this device, so the file is checked rather than trusted.
-        return stored.takeIf { File(it).isFile }
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        // A theme may have stored the icon under a FolkPatch name (`KModule`); the fine-grained
+        // lookup below is what makes a restored theme icon actually show up.
+        acceptingNames(destination).forEach { name ->
+            val stored = prefs.getString(prefKey(name), null)
+            if (!stored.isNullOrBlank() && File(stored).isFile) return stored
+            val onDisk = File(context.filesDir, fileName(name))
+            if (onDisk.isFile) return onDisk.absolutePath
+        }
+        return null
     }
 
     /**
@@ -83,20 +111,26 @@ object BottomBarIconConfig {
         }
 
     fun clearCustomIcon(context: Context, destination: String) {
-        File(context.filesDir, fileName(destination)).takeIf { it.exists() }?.delete()
+        acceptingNames(destination).forEach { name ->
+            File(context.filesDir, fileName(name)).takeIf { it.exists() }?.delete()
+        }
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            .edit().remove(prefKey(destination)).apply()
+            .edit()
+            .also { edit -> acceptingNames(destination).forEach { edit.remove(prefKey(it)) } }
+            .apply()
         notifyChanged()
     }
 
     fun clearAll(context: Context) {
-        DESTINATIONS.forEach { destination ->
-            File(context.filesDir, fileName(destination)).takeIf { it.exists() }?.delete()
+        DESTINATIONS.flatMap { acceptingNames(it) }.forEach { name ->
+            File(context.filesDir, fileName(name)).takeIf { it.exists() }?.delete()
         }
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit()
             .putBoolean(KEY_ENABLED, false)
-            .also { edit -> DESTINATIONS.forEach { edit.remove(prefKey(it)) } }
+            .also { edit ->
+                DESTINATIONS.flatMap { acceptingNames(it) }.forEach { edit.remove(prefKey(it)) }
+            }
             .apply()
         notifyChanged()
     }

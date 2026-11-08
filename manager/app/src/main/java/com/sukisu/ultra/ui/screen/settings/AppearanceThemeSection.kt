@@ -1,6 +1,7 @@
 package com.sukisu.ultra.ui.screen.settings
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -41,6 +42,10 @@ import com.sukisu.ultra.ui.component.folk.FolkButtonDefaults
 import com.sukisu.ultra.ui.component.folk.FolkSettingsSectionGroup
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
 import com.sukisu.ultra.ui.navigation3.Route
+import com.sukisu.ultra.ui.screen.themes.ThemeLibrary
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
 import com.sukisu.ultra.ui.component.folk.FolkValuePreference
 import com.sukisu.ultra.ui.theme.ThemeManager
 import com.sukisu.ultra.ui.theme.tokens.FolkType
@@ -210,6 +215,11 @@ fun AppearanceThemeSection(
                     scope.launch {
                         loadingDialog.show()
                         val success = ThemeManager.importTheme(context, uri)
+                        // Keep a copy in the on-device library so an imported theme can be applied
+                        // again later from the store's "downloaded" tab without the original file.
+                        if (success) {
+                            runCatching { copyToThemeLibrary(context, uri) }
+                        }
                         loadingDialog.hide()
                         showMessage(
                             if (success) R.string.settings_theme_imported
@@ -219,6 +229,27 @@ fun AppearanceThemeSection(
                 }
             },
         )
+    }
+}
+
+/**
+ * Copies a picked theme archive into the on-device library.
+ *
+ * The picker hands over a content uri that may stop being readable once the activity is gone, so
+ * the bytes are copied into a temporary file first and the library takes it from there.
+ */
+private suspend fun copyToThemeLibrary(context: android.content.Context, uri: Uri) {
+    withContext(Dispatchers.IO) {
+        val temp = File(context.cacheDir, "theme_library_import.fpt")
+        runCatching {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                temp.outputStream().use { output -> input.copyTo(output) }
+            } ?: return@runCatching
+            if (temp.isFile) {
+                ThemeLibrary.add(context, temp, temp.name)
+            }
+        }.onFailure { Log.w("AppearanceThemeSection", "could not keep a copy of the theme", it) }
+        temp.delete()
     }
 }
 

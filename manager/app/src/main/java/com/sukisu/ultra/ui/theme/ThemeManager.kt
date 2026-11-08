@@ -450,10 +450,15 @@ object ThemeManager {
 
         BottomBarIconConfig.DESTINATIONS.forEach { destination ->
             val expected = BottomBarIconConfig.fileName(destination)
+            // A theme may name the icon with a FolkPatch destination (`KModule`, `AModule`) and may
+            // list it in its navIcons map; both spellings are tried, then the canonical file name
+            // the extractor writes after mapping.
             val candidates = buildList {
-                declared?.optString(destination)?.takeIf { it.isNotBlank() }?.let { add(it) }
-                add(expected)
-            }
+                BottomBarIconConfig.acceptingNames(destination).forEach { name ->
+                    declared?.optString(name)?.takeIf { it.isNotBlank() }?.let { add(it) }
+                    add(BottomBarIconConfig.fileName(name))
+                }
+            }.distinct()
             val source = candidates
                 .map { File(context.filesDir, it) }
                 .firstOrNull { it.isFile } ?: return@forEach
@@ -1247,16 +1252,21 @@ object ThemeManager {
                 base in WALLPAPER_SLOTS &&
                 imageExtensions.any { normalised.endsWith(it) }
             // 导航图标是根目录下的 nav_icon_*.png，既不是壁纸也不是字体，所以单独认一次；
-            // 漏掉它会让主题里的图标被静默丢弃。
-            val isNavIcon = !isWallpaper && BottomBarIconConfig.DESTINATIONS.any {
-                normalised == BottomBarIconConfig.fileName(it)
-            }
+            // 漏掉它会让主题里的图标被静默丢弃。FolkPatch 的模块图标叫 KModule/AModule，这里
+            // 通过 appDestinationOf 归到本应用的 Module，否则模块页永远拿不到主题图标。
+            val navThemeName = normalised
+                .takeIf { it.startsWith("nav_icon_") && it.endsWith(".png", ignoreCase = true) }
+                ?.removePrefix("nav_icon_")
+                ?.removeSuffix(".png")
+            val navDestination = navThemeName?.let { BottomBarIconConfig.appDestinationOf(it) }
+            val isNavIcon = !isWallpaper && navDestination != null
             // A root-level entry named by the theme's music/sound keys is one of those files:
             // FolkPatch writes them there, this app keeps them in their own directory. A theme
             // that carries an audio file but no matching key is still taken as the music track.
             val mediaDestination = when {
                 normalised == musicEntry -> "music/$normalised"
                 normalised == soundEntry -> "sound_effects/$normalised"
+                navDestination != null -> BottomBarIconConfig.fileName(navDestination)
                 !normalised.contains('/') &&
                     musicEntry == null &&
                     AUDIO_EXTENSIONS.any { normalised.endsWith(it, ignoreCase = true) } ->

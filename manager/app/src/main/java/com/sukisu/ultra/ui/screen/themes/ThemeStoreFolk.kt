@@ -14,12 +14,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -42,86 +49,175 @@ fun ThemeStoreFolk(
     state: ThemeStoreState,
     onBack: () -> Unit,
     onRefresh: () -> Unit,
+    onTabChange: (ThemeStoreTab) -> Unit,
+    onQueryChange: (String) -> Unit,
     onInstall: (StoreTheme) -> Unit,
+    onApplyLocal: (LocalTheme) -> Unit,
+    onDeleteLocal: (LocalTheme) -> Unit,
 ) {
     FolkScaffold(
         title = stringResource(R.string.theme_store),
         titleStyle = FolkTitleStyle.Flexible,
         onBack = onBack,
     ) { innerPadding ->
-        LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = innerPadding.calculateTopPadding()),
-            contentPadding = PaddingValues(
-                start = 16.dp,
-                end = 16.dp,
-                bottom = innerPadding.calculateBottomPadding() + 16.dp,
-            ),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            when {
-                state.loading -> item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(160.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
+            TabRow(selectedTabIndex = state.tab.ordinal) {
+                Tab(
+                    selected = state.tab == ThemeStoreTab.STORE,
+                    onClick = { onTabChange(ThemeStoreTab.STORE) },
+                    text = { Text(stringResource(R.string.theme_store_tab_store)) },
+                )
+                Tab(
+                    selected = state.tab == ThemeStoreTab.DOWNLOADED,
+                    onClick = { onTabChange(ThemeStoreTab.DOWNLOADED) },
+                    text = { Text(stringResource(R.string.theme_store_tab_downloaded)) },
+                )
+            }
 
-                state.failed -> item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 48.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            text = stringResource(R.string.theme_store_error),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                        )
-                        TextButton(onClick = onRefresh) {
-                            Text(stringResource(R.string.theme_store_retry))
-                        }
-                    }
-                }
+            OutlinedTextField(
+                value = state.query,
+                onValueChange = onQueryChange,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                singleLine = true,
+                leadingIcon = {
+                    Icon(Icons.Outlined.Search, contentDescription = null)
+                },
+                placeholder = { Text(stringResource(R.string.theme_store_search)) },
+            )
 
-                state.themes.isEmpty() -> item {
-                    Text(
-                        text = stringResource(R.string.theme_store_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 48.dp),
-                    )
-                }
-
-                else -> items(state.themes, key = { it.tag }) { theme ->
-                    ThemeCard(
-                        theme = theme,
-                        state = state,
-                        onInstall = onInstall,
-                    )
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(
+                    start = 16.dp,
+                    end = 16.dp,
+                    bottom = innerPadding.calculateBottomPadding() + 16.dp,
+                ),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                if (state.tab == ThemeStoreTab.STORE) {
+                    storeItems(state, onRefresh, onInstall)
+                } else {
+                    downloadedItems(state, onApplyLocal, onDeleteLocal)
                 }
             }
         }
     }
 }
 
+private fun androidx.compose.foundation.lazy.LazyListScope.storeItems(
+    state: ThemeStoreState,
+    onRefresh: () -> Unit,
+    onInstall: (StoreTheme) -> Unit,
+) {
+    val query = state.query.trim()
+    val visible = if (query.isEmpty()) {
+        state.themes
+    } else {
+        state.themes.filter {
+            it.name.contains(query, ignoreCase = true) || it.tag.contains(query, ignoreCase = true)
+        }
+    }
+
+    when {
+        state.loading -> item {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(160.dp),
+                contentAlignment = Alignment.Center,
+            ) { CircularProgressIndicator() }
+        }
+
+        state.failed -> item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = stringResource(R.string.theme_store_error),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+                TextButton(onClick = onRefresh) {
+                    Text(stringResource(R.string.theme_store_retry))
+                }
+            }
+        }
+
+        visible.isEmpty() -> item {
+            Text(
+                text = stringResource(R.string.theme_store_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 32.dp),
+            )
+        }
+
+        else -> items(visible, key = { it.tag }) { theme ->
+            StoreThemeCard(
+                theme = theme,
+                state = state,
+                onInstall = onInstall,
+            )
+        }
+    }
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope.downloadedItems(
+    state: ThemeStoreState,
+    onApply: (LocalTheme) -> Unit,
+    onDelete: (LocalTheme) -> Unit,
+) {
+    val query = state.query.trim()
+    val visible = if (query.isEmpty()) {
+        state.downloads
+    } else {
+        state.downloads.filter { it.name.contains(query, ignoreCase = true) }
+    }
+
+    if (visible.isEmpty()) {
+        item {
+            Text(
+                text = stringResource(R.string.theme_store_no_downloads),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 32.dp),
+            )
+        }
+    } else {
+        items(visible, key = { it.id }) { local ->
+            LocalThemeCard(
+                theme = local,
+                busy = state.busyKey == local.id,
+                onApply = onApply,
+                onDelete = onDelete,
+            )
+        }
+    }
+}
+
 @Composable
-private fun ThemeCard(
+private fun StoreThemeCard(
     theme: StoreTheme,
     state: ThemeStoreState,
     onInstall: (StoreTheme) -> Unit,
 ) {
-    val busy = state.busyTag == theme.tag
+    val busy = state.busyKey == theme.tag
     val progress = state.progress[theme.tag] ?: 0
 
     Card(
@@ -131,23 +227,24 @@ private fun ThemeCard(
         ),
     ) {
         Column {
-            if (!theme.previewUrl.isNullOrBlank()) {
-                AsyncImage(
-                    model = theme.previewUrl,
-                    contentDescription = theme.name,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(180.dp),
-                )
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(120.dp)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                    contentAlignment = Alignment.Center,
-                ) {
+            // The previews are phone screenshots. Cropping them to a fixed height showed only the
+            // middle of each theme, so the whole picture is fitted instead, letterboxed on a
+            // neutral surface.
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(260.dp)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (!theme.previewUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = theme.previewUrl,
+                        contentDescription = theme.name,
+                        contentScale = ContentScale.Fit,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                } else {
                     Text(
                         text = theme.name,
                         style = MaterialTheme.typography.titleMedium,
@@ -199,11 +296,66 @@ private fun ThemeCard(
                 } else {
                     Button(
                         onClick = { onInstall(theme) },
-                        enabled = state.busyTag == null,
+                        enabled = state.busyKey == null,
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text(stringResource(R.string.theme_store_install))
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LocalThemeCard(
+    theme: LocalTheme,
+    busy: Boolean,
+    onApply: (LocalTheme) -> Unit,
+    onDelete: (LocalTheme) -> Unit,
+) {
+    Card(
+        shape = FolkShape.Corner20,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+        ),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = theme.name,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = buildString {
+                    if (theme.author.isNotBlank()) append(theme.author)
+                    if (theme.version.isNotBlank()) {
+                        if (isNotEmpty()) append(" · ")
+                        append(theme.version)
+                    }
+                    if (isNotEmpty()) append(" · ")
+                    append(formatSize(theme.sizeBytes))
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(Modifier.height(12.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = { onApply(theme) },
+                    enabled = !busy,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(stringResource(R.string.theme_store_apply))
+                }
+                TextButton(
+                    onClick = { onDelete(theme) },
+                    enabled = !busy,
+                ) {
+                    Text(stringResource(R.string.theme_store_delete))
                 }
             }
         }

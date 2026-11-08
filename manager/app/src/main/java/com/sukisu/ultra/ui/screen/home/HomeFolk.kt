@@ -26,6 +26,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.outlined.Extension
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Info
@@ -97,7 +99,9 @@ import com.sukisu.ultra.ui.component.folk.folkPreferenceValueStyle
 import com.sukisu.ultra.ui.component.folk.folkSeverityColor
 import com.sukisu.ultra.ui.component.rebootlistpopup.RebootListPopup
 import com.sukisu.ultra.ui.component.statustag.StatusTag
+import com.sukisu.ultra.ui.util.MusicManager
 import com.sukisu.ultra.ui.theme.BackgroundConfig
+import com.sukisu.ultra.ui.theme.MusicConfig
 import com.sukisu.ultra.ui.theme.isInDarkTheme
 import com.sukisu.ultra.ui.theme.tokens.FolkShape
 import com.sukisu.ultra.ui.theme.tokens.FolkType
@@ -336,6 +340,20 @@ private fun HomeTopBar(
             }
         },
         actions = {
+            // A track can be paused without leaving the home screen: the control only exists when
+            // there is a track configured, so the top bar does not grow a dead button.
+            if (MusicConfig.isMusicEnabled && MusicConfig.musicFilename != null) {
+                val musicPlaying by MusicManager.isPlaying.collectAsStateWithLifecycle()
+                IconButton(onClick = { MusicManager.toggle() }) {
+                    Icon(
+                        imageVector = if (musicPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                        contentDescription = stringResource(
+                            if (musicPlaying) R.string.music_pause else R.string.music_play,
+                        ),
+                    )
+                }
+            }
+
             IconButton(onClick = actions.onInstallClick) {
                 Icon(
                     imageVector = Icons.Filled.AutoFixHigh,

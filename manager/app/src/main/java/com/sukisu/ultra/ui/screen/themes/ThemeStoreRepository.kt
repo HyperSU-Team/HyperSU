@@ -8,6 +8,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.Request
 import org.json.JSONArray
+import org.json.JSONObject
 import java.io.File
 
 /** One theme offered by the store: a release whose single asset is the `.fpt` archive. */
@@ -26,24 +27,70 @@ data class StoreTheme(
  * A release is a theme: its `name` is the title, its one `.fpt` asset is the archive, and its body
  * carries the preview screenshot as a markdown image. That is the whole format - there is no index
  * file to keep in sync, and publishing a theme is publishing a release.
+ *
+ * The parsed list is cached on disk for a while: the GitHub call is the slow part of opening the
+ * store, and the catalogue changes at most a few times a week. Opening the screen shows the last
+ * list immediately and refreshes it in the background.
  */
 object ThemeStoreRepository {
 
     private const val TAG = "ThemeStore"
     private const val RELEASES_URL = "https://api.github.com/repos/1542296180/FolkPatch-/releases"
     private const val PER_PAGE = 100
-    private const val MAX_PAGES = 5
+    private const val CACHE_TTL_MS = 10 * 60 * 1000L
 
     private val MARKDOWN_IMAGE = Regex("""!\[[^\]]*]\((https?://[^)]+)\)""")
 
-    suspend fun fetchThemes(): List<StoreTheme> = withContext(Dispatchers.IO) {
-        val themes = mutableListOf<StoreTheme>()
-        for (page in 1..MAX_PAGES) {
-            val batch = fetchPage(page)
-            themes += batch
-            if (batch.size < PER_PAGE) break
+    private fun cacheFile(context: Context) = File(context.cacheDir, "theme_store/catalog.json")
+
+    suspend fun fetchThemes(context: Context, force: Boolean = false): List<StoreTheme> =
+        withContext(Dispatchers.IO) {
+            val cache = cacheFile(context)
+            if (!force && cache.isFile && System.currentTimeMillis() - cache.lastModified() < CACHE_TTL_MS) {
+                readCache(cache)?.let { return@withContext it }
+            }
+
+            val fresh = runCatching { fetchPage(1) }
+                .onFailure { Log.w(TAG, "could not load the theme catalogue", it) }
+                .getOrNull() ?: return@withContext readCache(cache).orEmpty()
+
+            writeCache(cache, fresh)
+            fresh
         }
-        themes
+
+    private fun readCache(file: File): List<StoreTheme>? = runCatching {
+        val array = JSONArray(file.readText())
+        (0 until array.length()).mapNotNull { index ->
+            val item = array.optJSONObject(index) ?: return@mapNotNull null
+            StoreTheme(
+                tag = item.optString("tag"),
+                name = item.optString("name"),
+                previewUrl = item.optString("previewUrl").takeIf { it.isNotBlank() },
+                downloadUrl = item.optString("downloadUrl"),
+                sizeBytes = item.optLong("sizeBytes"),
+                downloadCount = item.optInt("downloadCount"),
+            )
+        }
+    }.getOrNull()
+
+    private fun writeCache(file: File, themes: List<StoreTheme>) {
+        runCatching {
+            file.parentFile?.mkdirs()
+            val array = JSONArray()
+            themes.forEach { theme ->
+                array.put(
+                    JSONObject().apply {
+                        put("tag", theme.tag)
+                        put("name", theme.name)
+                        put("previewUrl", theme.previewUrl.orEmpty())
+                        put("downloadUrl", theme.downloadUrl)
+                        put("sizeBytes", theme.sizeBytes)
+                        put("downloadCount", theme.downloadCount)
+                    },
+                )
+            }
+            file.writeText(array.toString())
+        }.onFailure { Log.w(TAG, "could not cache the theme catalogue", it) }
     }
 
     private fun fetchPage(page: Int): List<StoreTheme> {
@@ -79,8 +126,7 @@ object ThemeStoreRepository {
     /**
      * Downloads [theme] into the cache and returns the local archive.
      *
-     * The store keeps one file per tag: a retry overwrites the half-finished attempt instead of
-     * filling the cache with them, and the archive is removed again once it has been imported.
+     * The file is a transfer target only; [ThemeLibrary] keeps the copy that survives the import.
      */
     suspend fun download(
         context: Context,

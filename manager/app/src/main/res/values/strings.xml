@@ -1033,5 +1033,14 @@
     <string name="theme_store_download_failed">Theme download failed</string>
     <string name="theme_store_install_confirm_title">Apply this theme?</string>
     <string name="theme_store_install_confirm_message">%1$s\nAuthor: %2$s\nVersion: %3$s</string>
+    <string name="theme_store_tab_store">Store</string>
+    <string name="theme_store_tab_downloaded">Downloaded</string>
+    <string name="theme_store_search">Search themes</string>
+    <string name="theme_store_apply">Apply</string>
+    <string name="theme_store_delete">Delete</string>
+    <string name="theme_store_no_downloads">No downloaded themes</string>
+    <string name="music_play">Play music</string>
+    <string name="music_pause">Pause music</string>
+
 
 </resources>
