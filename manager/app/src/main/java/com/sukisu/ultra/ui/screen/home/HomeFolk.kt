@@ -1132,8 +1132,18 @@ private fun HomeLayoutStats(
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // The status cards, drawn exactly as the Grid layout draws them.
-        HomeGridStatusCards(state, actions)
+        // The status cards sit on their own surface in this layout. Without it they floated on the
+        // page wallpaper, and because a custom background is dimmed for readability that dimmed
+        // strip showed as a dark band above the device-status card - the band disappeared only
+        // because the card below scrolled over it.
+        androidx.compose.material3.Surface(
+            shape = FolkShape.Corner20,
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+        ) {
+            Box(modifier = Modifier.padding(12.dp)) {
+                HomeGridStatusCards(state, actions)
+            }
+        }
 
         if (canSample) {
             SystemMonitoringSection(systemMonitor, timeSeries)
