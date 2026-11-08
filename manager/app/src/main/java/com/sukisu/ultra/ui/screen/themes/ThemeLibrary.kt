@@ -104,7 +104,7 @@ object ThemeLibrary {
     }
 
     /** Index entries whose archive still exists, plus archives the index does not mention. */
-    private fun scan(context: Context): List<LocalTheme> {
+    private suspend fun scan(context: Context): List<LocalTheme> {
         val indexed = readIndex(context).filter { file(context, it).isFile }
         val known = indexed.map { it.fileName }.toSet()
         val orphans = directory(context)
@@ -119,7 +119,7 @@ object ThemeLibrary {
         return merged
     }
 
-    private fun describe(context: Context, archive: File): LocalTheme? = runCatching {
+    private suspend fun describe(context: Context, archive: File): LocalTheme? = runCatching {
         val metadata = ThemeManager.readThemeMetadata(context, Uri.fromFile(archive))
         LocalTheme(
             id = archive.nameWithoutExtension,
