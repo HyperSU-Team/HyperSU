@@ -1028,6 +1028,7 @@
     <string name="theme_store_empty">No themes available</string>
     <string name="theme_store_error">Could not load the theme list. Check the network and try again.</string>
     <string name="theme_store_retry">Retry</string>
+    <string name="theme_store_preview_failed">Preview failed to load</string>
     <string name="theme_store_install">Download and apply</string>
     <string name="theme_store_downloads">%1$d downloads</string>
     <string name="theme_store_download_failed">Theme download failed</string>

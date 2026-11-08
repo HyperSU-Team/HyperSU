@@ -948,6 +948,7 @@
     <string name="theme_store_empty">暂无可用主题</string>
     <string name="theme_store_error">无法加载主题列表，请检查网络后重试。</string>
     <string name="theme_store_retry">重试</string>
+    <string name="theme_store_preview_failed">预览图加载失败</string>
     <string name="theme_store_install">下载并应用</string>
     <string name="theme_store_downloads">%1$d 次下载</string>
     <string name="theme_store_download_failed">主题下载失败</string>

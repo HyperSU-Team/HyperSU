@@ -173,6 +173,10 @@ private val GridHeroSizeWithWallpaper = 144.dp
  *
  * `matchParentSize` and not `fillMaxSize`: the card is wrap-content, and filling the maximum
  * would collapse it to nothing. The image must be the first child so it sits under the content.
+ *
+ * No dimming layer: the black scrim made every wallpaper card look like a grey box, and on the
+ * home page it read as a dark band wherever the card row was wider than the pictures. The
+ * wallpaper is drawn as-is; `dim` is kept for callers whose settings still carry it.
  */
 @Composable
 private fun BoxScope.CardWallpaperLayer(uri: String?, dim: Float, opacity: Float) {
@@ -184,11 +188,6 @@ private fun BoxScope.CardWallpaperLayer(uri: String?, dim: Float, opacity: Float
         modifier = Modifier
             .matchParentSize()
             .alpha(opacity),
-    )
-    Box(
-        modifier = Modifier
-            .matchParentSize()
-            .background(Color.Black.copy(alpha = dim)),
     )
 }
 
@@ -1085,6 +1084,7 @@ private fun HomeGridStatusCards(
                 plain = true,
             )
             HomeTile(
+                modifier = Modifier.padding(top = 12.dp),
                 icon = Icons.Outlined.Security,
                 label = stringResource(R.string.home_selinux_status),
                 value = state.systemInfo.selinuxStatus,
@@ -1132,18 +1132,10 @@ private fun HomeLayoutStats(
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // The status cards sit on their own surface in this layout. Without it they floated on the
-        // page wallpaper, and because a custom background is dimmed for readability that dimmed
-        // strip showed as a dark band above the device-status card - the band disappeared only
-        // because the card below scrolled over it.
-        androidx.compose.material3.Surface(
-            shape = FolkShape.Corner20,
-            color = MaterialTheme.colorScheme.surfaceContainerLow,
-        ) {
-            Box(modifier = Modifier.padding(12.dp)) {
-                HomeGridStatusCards(state, actions)
-            }
-        }
+        // No surface here: the status cards sit directly on the page like the other layouts, and
+        // the dark strip they used to leave is gone because card wallpapers are no longer dimmed
+        // with a black layer (see CardWallpaperLayer).
+        HomeGridStatusCards(state, actions)
 
         if (canSample) {
             SystemMonitoringSection(systemMonitor, timeSeries)

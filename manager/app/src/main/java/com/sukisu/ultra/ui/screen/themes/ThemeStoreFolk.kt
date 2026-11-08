@@ -30,14 +30,22 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
+import coil.compose.rememberAsyncImagePainter
+import coil.request.ImageRequest
 import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.component.folk.FolkScaffold
 import com.sukisu.ultra.ui.component.folk.FolkTitleStyle
@@ -237,13 +245,39 @@ private fun StoreThemeCard(
                     .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 contentAlignment = Alignment.Center,
             ) {
-                if (!theme.previewUrl.isNullOrBlank()) {
-                    AsyncImage(
-                        model = theme.previewUrl,
-                        contentDescription = theme.name,
-                        contentScale = ContentScale.Fit,
-                        modifier = Modifier.fillMaxSize(),
+                val preview = theme.previewUrl
+                if (!preview.isNullOrBlank()) {
+                    // A preview that failed to load used to stay blank forever; a retry button
+                    // re-requests it instead of leaving the card without a picture.
+                    var attempt by remember(theme.tag) { mutableIntStateOf(0) }
+                    val context = LocalContext.current
+                    val painter = rememberAsyncImagePainter(
+                        model = ImageRequest.Builder(context)
+                            .data(preview)
+                            .memoryCacheKey("$preview#$attempt")
+                            .diskCacheKey("$preview#$attempt")
+                            .crossfade(true)
+                            .build(),
                     )
+                    if (painter.state.value is AsyncImagePainter.State.Error) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = stringResource(R.string.theme_store_preview_failed),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            TextButton(onClick = { attempt++ }) {
+                                Text(stringResource(R.string.theme_store_retry))
+                            }
+                        }
+                    } else {
+                        AsyncImage(
+                            painter = painter,
+                            contentDescription = theme.name,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
                 } else {
                     Text(
                         text = theme.name,

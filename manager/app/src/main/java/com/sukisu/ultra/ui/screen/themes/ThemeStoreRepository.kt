@@ -51,6 +51,19 @@ object ThemeStoreRepository {
 
     private val MARKDOWN_IMAGE = Regex("""!\[[^\]]*]\((https?://[^)]+)\)""")
 
+    /**
+     * Public mirrors of a GitHub release asset.
+     *
+     * A theme is a 20MB archive and the release host is slow or unreachable on some networks; the
+     * manager's own update already retries through these, and a theme download benefits the same
+     * way.
+     */
+    private val MIRROR_PREFIXES = listOf(
+        "https://ghfast.top/",
+        "https://gh-proxy.com/",
+        "https://ghproxy.net/",
+    )
+
     private fun cacheFile(context: Context) = File(context.cacheDir, "theme_store/catalog.json")
 
     suspend fun fetchThemes(context: Context, force: Boolean = false): List<StoreTheme> =
@@ -154,35 +167,53 @@ object ThemeStoreRepository {
         val target = File(directory, "${theme.tag.safeFileName()}.fpt")
         val partial = File(directory, "${theme.tag.safeFileName()}.part")
 
-        runCatching {
-            val request = Request.Builder().url(theme.downloadUrl).build()
-            ksuApp.okhttpClient.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) error("HTTP ${response.code}")
-                val body = response.body ?: error("empty response")
-                val total = body.contentLength()
-                var written = 0L
-                partial.outputStream().use { output ->
-                    body.byteStream().use { input ->
-                        val buffer = ByteArray(64 * 1024)
-                        while (true) {
-                            val read = input.read(buffer)
-                            if (read == -1) break
-                            output.write(buffer, 0, read)
-                            written += read
-                            if (total > 0L) {
-                                onProgress(((written * 100L) / total).toInt().coerceIn(0, 100))
-                            }
+        // Direct first, then the mirrors: whichever answers first wins, and progress restarts from
+        // zero on a new attempt so the bar does not jump backwards mid-way.
+        val candidates = listOf(theme.downloadUrl) +
+            MIRROR_PREFIXES.map { prefix -> prefix + theme.downloadUrl }
+
+        var lastError: Throwable? = null
+        for (url in candidates) {
+            val fetched = runCatching { fetch(url, partial, onProgress) }
+                .onFailure { lastError = it }
+                .isSuccess
+            if (!fetched) {
+                partial.delete()
+                continue
+            }
+            if (target.exists()) target.delete()
+            if (!partial.renameTo(target)) error("could not store the archive")
+            return@withContext target
+        }
+
+        Log.w(TAG, "theme download failed: ${theme.downloadUrl}", lastError)
+        partial.delete()
+        null
+    }
+
+    private fun fetch(url: String, partial: File, onProgress: (Int) -> Unit) {
+        val request = Request.Builder().url(url).build()
+        client.newCall(request).execute().use { response ->
+            if (!response.isSuccessful) error("HTTP ${response.code}")
+            val body = response.body ?: error("empty response")
+            val total = body.contentLength()
+            var written = 0L
+            onProgress(0)
+            partial.outputStream().use { output ->
+                body.byteStream().use { input ->
+                    val buffer = ByteArray(64 * 1024)
+                    while (true) {
+                        val read = input.read(buffer)
+                        if (read == -1) break
+                        output.write(buffer, 0, read)
+                        written += read
+                        if (total > 0L) {
+                            onProgress(((written * 100L) / total).toInt().coerceIn(0, 100))
                         }
                     }
                 }
             }
-            if (target.exists()) target.delete()
-            if (!partial.renameTo(target)) error("could not store the archive")
-            target
-        }.onFailure {
-            Log.w(TAG, "theme download failed: ${theme.downloadUrl}", it)
-            partial.delete()
-        }.getOrNull()
+        }
     }
 
     fun localUri(file: File): Uri = Uri.fromFile(file)
