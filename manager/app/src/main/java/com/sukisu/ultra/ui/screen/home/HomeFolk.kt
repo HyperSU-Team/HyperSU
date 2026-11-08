@@ -25,14 +25,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AutoFixHigh
-import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.outlined.Build
-import androidx.compose.material.icons.outlined.Code
 import androidx.compose.material.icons.outlined.Extension
-import androidx.compose.material.icons.outlined.Memory
-import androidx.compose.material.icons.outlined.PhoneAndroid
-import androidx.compose.material.icons.outlined.Shield
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Layers
@@ -869,34 +863,34 @@ private fun HomeFacts(state: HomeUiState) {
     )
 
     FolkFactsGroup {
-        fact(stringResource(R.string.home_manager_version), systemInfo.managerVersion, icon = Icons.Outlined.Info)
-        fact(stringResource(R.string.home_kernel), systemInfo.kernelVersion, icon = Icons.Outlined.Memory)
+        fact(stringResource(R.string.home_manager_version), systemInfo.managerVersion)
+        fact(stringResource(R.string.home_kernel), systemInfo.kernelVersion)
 
         if (state.showFullStatus) {
             if (!systemInfo.kernelFullVersion.isNullOrBlank()) {
-                fact(stringResource(R.string.home_kernel_full_version), systemInfo.kernelFullVersion, icon = Icons.Outlined.Build)
+                fact(stringResource(R.string.home_kernel_full_version), systemInfo.kernelFullVersion)
             }
             if (isSusfsSupported) {
-                fact(stringResource(R.string.home_susfs_version), susfsInfo.detail, icon = Icons.Outlined.Layers)
+                fact(stringResource(R.string.home_susfs_version), susfsInfo.detail)
             } else if (!hookTypeLabel.isNullOrBlank()) {
-                fact(stringResource(R.string.hook_type), hookTypeLabel, icon = Icons.Outlined.Code)
+                fact(stringResource(R.string.hook_type), hookTypeLabel)
             }
             if (!systemInfo.zygiskImplementation.isNullOrBlank()) {
-                fact(stringResource(R.string.home_zygisk_implementation), systemInfo.zygiskImplementation, icon = Icons.Outlined.Extension)
+                fact(stringResource(R.string.home_zygisk_implementation), systemInfo.zygiskImplementation)
             }
         }
 
         if (state.showHomeDeviceModel) {
-            fact(stringResource(R.string.home_device_model), systemInfo.deviceModel, icon = Icons.Outlined.PhoneAndroid)
+            fact(stringResource(R.string.home_device_model), systemInfo.deviceModel)
         }
         if (state.showHomeFingerprint) {
-            fact(stringResource(R.string.home_fingerprint), systemInfo.fingerprint, icon = Icons.Filled.Fingerprint)
+            fact(stringResource(R.string.home_fingerprint), systemInfo.fingerprint)
         }
         if (state.showHomeSelinux) {
-            fact(stringResource(R.string.home_selinux_status), selinuxDisplay, icon = Icons.Outlined.Shield)
+            fact(stringResource(R.string.home_selinux_status), selinuxDisplay)
         }
         if (state.showHomeSeccomp) {
-            fact(stringResource(R.string.home_seccomp_status), seccompDisplay, icon = Icons.Outlined.Security)
+            fact(stringResource(R.string.home_seccomp_status), seccompDisplay)
         }
     }
 }
