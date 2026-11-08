@@ -6,7 +6,6 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.ContentValues
 import android.content.Intent
-import android.util.Log
 import android.content.pm.ServiceInfo
 import android.net.Uri
 import android.os.Build
