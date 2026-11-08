@@ -98,26 +98,29 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.15 - a theme store, and .fpt imports that keep music and the bottom bar.
+            HyperSU v4.2.16 - a faster theme store, downloaded themes, and a music button.
 
             ## Theme store
 
-            FolkPatch has one; this manager only had save/import/reset. **Appearance → Theme store** now lists the themes published as releases of `1542296180/FolkPatch-`: one release is one theme, its name is the title, its single `.fpt` asset is the archive, and the release body carries the preview screenshot.
+            - **Opens immediately.** The catalogue is cached on disk and refreshed at most every ten minutes; the screen shows the last list while a stale one is replaced.
+            - **Search** by theme name or release tag.
+            - **Downloaded tab** with every theme that is on the device: Apply or Delete. The store used to delete the archive right after importing it, so a theme could not be applied twice without downloading it again; a manual `.fpt` import is kept there too.
+            - **Previews are fitted whole.** They are phone screenshots, and cropping them to a fixed height showed only the middle of each theme.
 
-            - One card per theme with its preview, tag, size and download count.
-            - Downloading shows a progress bar; the finished archive goes through the same importer as a hand-picked `.fpt`, after a confirmation naming the theme's author and version. The temporary file is deleted afterwards.
-            - A failed download says so, and a retry overwrites the half-finished cache file.
+            ## Home
 
-            ## Theme import fixes
+            - A play/pause button appears in the top bar when a background track is configured, so the music can be stopped without opening settings.
 
-            Two parts of a FolkPatch `.fpt` never took effect:
+            ## Bottom-bar icons
 
-            - **Music and sound effects.** FolkPatch packs those files at the archive root, while this app keeps them in `music/` and `sound_effects/`; the extractor only looked in those directories, dropped the files, then found nothing to enable and left the theme's music off.
-            - **Bottom-bar icons.** The icon files were extracted but never applied: this app needs both the file, a per-destination preference pointing at it, and the switch that enables custom icons. Only the file was restored.
+            A theme names its module icon `KModule` or `AModule`, FolkPatch's two module tabs, while this app has a single `Module` tab - so the file never matched and the module tab kept its built-in glyph. The names are now mapped on import and at lookup, and the archive extractor no longer drops them.
 
-            Both are fixed, the icon switch is restored from the theme, and music reloads on the main thread after an import so the new track is picked up.
+            ## From v4.2.15
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.14...v4.2.15
+            - Theme store backed by the community theme repository.
+            - `.fpt` imports keep music, sound effects and bottom-bar icons (FolkPatch packs media at the archive root).
+
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.15...v4.2.16
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
