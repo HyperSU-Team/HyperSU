@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.Security
@@ -75,14 +74,16 @@ fun DynamicManagerFolk(
                                 )
                             }
                         } else {
-                            items(state.apps, key = { it.packageName }) { app ->
-                                FolkNavigationPreference(
-                                    title = app.label,
-                                    summary = app.packageName,
-                                    icon = Icons.Rounded.Security,
-                                    enabled = !state.submitting,
-                                    onClick = { actions.onSelectApp(app) },
-                                )
+                            state.apps.forEach { app ->
+                                item(key = app.packageName) {
+                                    FolkNavigationPreference(
+                                        title = app.label,
+                                        summary = app.packageName,
+                                        icon = Icons.Rounded.Security,
+                                        enabled = !state.submitting,
+                                        onClick = { actions.onSelectApp(app) },
+                                    )
+                                }
                             }
                         }
                     }
