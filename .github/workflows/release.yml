@@ -98,13 +98,24 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.13 - a version-code bump.
+            HyperSU v4.2.14 - the two readings line up with the home tile.
 
-            No functional change. This release exists so a manager installed from v4.2.12 can exercise the fixed in-app updater end to end: v4.2.12 retries the APK through public mirrors, widens the download timeouts, and reports a failed transfer to the dialog - but there was no newer release for it to find.
+            ## Home
 
-            If the update from v4.2.12 works, you will land here. If it does not, the notification still carries the reason (HTTP status, timeout, DNS) and the dialog opens this page.
+            On the Grid layout the kernel and SELinux readings were laid out as two equal slots stretched to the row, so their labels started at the row's top edge and sat above the wallpaper tile. They are one pair, not two slots: the column now centres them against the tile, which moves the pair down slightly and lines it up with the picture.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.12...v4.2.13
+            ## From v4.2.12
+
+            - The in-app update retries the APK through public mirrors, allows a longer download, and reports a failed transfer to the dialog (which then opens the release page).
+            - The updater never downloads the `-spoofed` APK.
+            - The Grid wallpaper tile is a 144dp square, as in the reference layout.
+            - GPU load reads the vendor counter family that exists and no longer turns a real 0% into `--`.
+            - Multi-manager support with icons, Built-in / Dynamic / Not authorized state and a risk confirmation before granting.
+            - The module flash success page stays; downloaded zips open the confirmation; the module list reloads after an install started elsewhere.
+            - SUSFS backup and restore no longer freeze the app.
+            - Zygisk providers no longer stick on "reboot required".
+
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.13...v4.2.14
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
