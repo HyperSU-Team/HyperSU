@@ -8,6 +8,8 @@
 
 #include <android/log.h>
 #include <cstring>
+#include <cstdlib>
+#include <vector>
 
 #include "ksu.h"
 #include "logging.h"
@@ -43,6 +45,29 @@ Java_com_sukisu_ultra_Natives_getSuperuserCount(JNIEnv *env, jobject) {
     };
     bool result = get_allow_list(&cmd);
     return result ? cmd.total_count : 0;
+}
+
+// Flat pairs: uid, signature_index, uid, signature_index, ...
+// The Kotlin side maps uid % PER_USER_RANGE to the index so an app can be labelled as a manager.
+extern "C"
+JNIEXPORT jintArray JNICALL
+Java_com_sukisu_ultra_Natives_getManagers(JNIEnv *env, jobject) {
+    struct ksu_get_managers_cmd *cmd = nullptr;
+    if (!get_managers_list(&cmd)) {
+        return nullptr;
+    }
+    std::vector<jint> flat;
+    flat.reserve(static_cast<size_t>(cmd->count) * 2);
+    for (int i = 0; i < cmd->count; i++) {
+        flat.push_back(static_cast<jint>(cmd->managers[i].uid));
+        flat.push_back(static_cast<jint>(cmd->managers[i].signature_index));
+    }
+    jintArray result = env->NewIntArray(static_cast<jsize>(flat.size()));
+    if (result != nullptr && !flat.empty()) {
+        env->SetIntArrayRegion(result, 0, static_cast<jsize>(flat.size()), flat.data());
+    }
+    free(cmd);
+    return result;
 }
 
 extern "C"

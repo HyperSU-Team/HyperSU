@@ -555,6 +555,14 @@
     <string name="dynamic_manager_set_failed">设置动态签名失败</string>
     <string name="dynamic_manager_cleared">已清除动态签名</string>
     <string name="dynamic_manager_clear_failed">清除动态签名失败</string>
+    <string name="dynamic_manager_status_builtin">内置已授权</string>
+    <string name="dynamic_manager_status_dynamic">动态已授权</string>
+    <string name="dynamic_manager_status_none">未授权</string>
+    <string name="dynamic_manager_grant_confirm_title">授权管理器</string>
+    <string name="dynamic_manager_grant_confirm_message">把「%1$s」加入内核的管理器签名？</string>
+    <string name="dynamic_manager_clear_confirm_title">清除动态签名</string>
+    <string name="dynamic_manager_clear_confirm_message">清除后，通过动态签名识别的管理器需要重新授权。</string>
+
 
     <string name="susfs_config_description">配置说明</string>
     <string name="susfs_config_description_text">此功能允许您自定义 SuSFS 的 uname 值和构建时间伪装。输入您想要设置的值，点击应用即可生效</string>

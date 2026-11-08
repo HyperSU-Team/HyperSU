@@ -105,6 +105,30 @@ bool get_allow_list(struct ksu_new_get_allow_list_cmd *cmd) {
     return ksuctl(KSU_IOCTL_NEW_GET_ALLOW_LIST, cmd) == 0;
 }
 
+// The kernel reports which uids it currently treats as managers, and with which signature slot
+// each of them matched (255 is the dynamic one). Ask for the count first, then for the array:
+// the ioctl copies at most `count` entries into the flexible array.
+bool get_managers_list(struct ksu_get_managers_cmd **out_cmd) {
+    struct ksu_get_managers_cmd probe = {};
+    probe.count = 0;
+    if (ksuctl(KSU_IOCTL_GET_MANAGERS, &probe) != 0 || probe.total_count == 0) {
+        return false;
+    }
+    const size_t entries_size = sizeof(struct ksu_manager_entry) * probe.total_count;
+    auto *cmd = static_cast<struct ksu_get_managers_cmd *>(
+            calloc(1, sizeof(struct ksu_get_managers_cmd) + entries_size));
+    if (cmd == nullptr) {
+        return false;
+    }
+    cmd->count = probe.total_count;
+    if (ksuctl(KSU_IOCTL_GET_MANAGERS, cmd) != 0) {
+        free(cmd);
+        return false;
+    }
+    *out_cmd = cmd;
+    return true;
+}
+
 bool is_safe_mode() {
     struct ksu_check_safemode_cmd cmd = {};
     ksuctl(KSU_IOCTL_CHECK_SAFEMODE, &cmd);

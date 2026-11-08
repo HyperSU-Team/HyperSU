@@ -133,6 +133,12 @@ object Natives {
 
     external fun getSuperuserCount(): Int
 
+    /**
+     * Uids the kernel currently accepts as managers, as flat pairs of
+     * (uid, signatureIndex). Signature index 255 is the dynamic manager slot.
+     */
+    external fun getManagers(): IntArray?
+
     external fun getHookType(): String
 
     private const val NON_ROOT_DEFAULT_PROFILE_KEY = "$"

@@ -60,6 +60,8 @@ bool is_mount_hide_enabled();
 
 bool get_allow_list(struct ksu_new_get_allow_list_cmd *);
 
+bool get_managers_list(struct ksu_get_managers_cmd **out_cmd);
+
 bool get_full_version(char* buff);
 bool get_hook_type(char *buff);
 
