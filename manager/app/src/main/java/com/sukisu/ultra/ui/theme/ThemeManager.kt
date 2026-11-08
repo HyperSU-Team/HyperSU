@@ -1080,6 +1080,10 @@ object ThemeManager {
                     remove("home_layout_style")
                 }
                 background.edit { clear() }
+                // The bar's icons are files plus preferences, and clearing the preferences alone
+                // left both the files and the bar's cached revision behind: a reset theme kept
+                // showing the imported icons.
+                BottomBarIconConfig.clearAll(context)
                 // 字体/音乐/音效的 clear* 会同时删掉文件、清偏好并把内存态复位，
                 // 比手工清三份偏好再调 load 更不容易漏。
                 FontConfig.clearFont(context)
@@ -1103,7 +1107,13 @@ object ThemeManager {
             }
         }.also { success ->
             // Same reason as the import: the reset writes preferences behind the ViewModels' backs.
-            if (success) withContext(Dispatchers.Main) { ThemeImportSignal.notifyImported() }
+            if (success) withContext(Dispatchers.Main) {
+                ThemeImportSignal.notifyImported()
+                // Clearing the music config stops the next playback but not the one already
+                // running; reload stops it and honours the cleared settings.
+                runCatching { MusicManager.reload() }
+                    .onFailure { Log.w(TAG, "failed to reload music after reset", it) }
+            }
         }
     }
 

@@ -10,6 +10,7 @@ import okhttp3.Request
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
+import java.util.concurrent.TimeUnit
 
 /** One theme offered by the store: a release whose single asset is the `.fpt` archive. */
 data class StoreTheme(
@@ -36,8 +37,17 @@ object ThemeStoreRepository {
 
     private const val TAG = "ThemeStore"
     private const val RELEASES_URL = "https://api.github.com/repos/1542296180/FolkPatch-/releases"
-    private const val PER_PAGE = 100
+    private const val PER_PAGE = 30
     private const val CACHE_TTL_MS = 10 * 60 * 1000L
+
+    // The shared client's 10s connect timeout is short for a mobile connection and a 100-release
+    // response; the catalogue request gets a little more room before the screen declares failure.
+    private val client by lazy {
+        ksuApp.okhttpClient.newBuilder()
+            .connectTimeout(20, TimeUnit.SECONDS)
+            .readTimeout(40, TimeUnit.SECONDS)
+            .build()
+    }
 
     private val MARKDOWN_IMAGE = Regex("""!\[[^\]]*]\((https?://[^)]+)\)""")
 
@@ -52,10 +62,17 @@ object ThemeStoreRepository {
 
             val fresh = runCatching { fetchPage(1) }
                 .onFailure { Log.w(TAG, "could not load the theme catalogue", it) }
-                .getOrNull() ?: return@withContext readCache(cache).orEmpty()
+                .getOrNull()
 
-            writeCache(cache, fresh)
-            fresh
+            if (fresh != null) {
+                writeCache(cache, fresh)
+                return@withContext fresh
+            }
+
+            // Any cached list beats an error screen, even a stale one; only when there is nothing
+            // cached at all does the screen show its failure state.
+            readCache(cache)?.let { return@withContext it }
+            error("theme catalogue unavailable")
         }
 
     private fun readCache(file: File): List<StoreTheme>? = runCatching {
@@ -99,7 +116,7 @@ object ThemeStoreRepository {
             .header("Accept", "application/vnd.github+json")
             .build()
 
-        ksuApp.okhttpClient.newCall(request).execute().use { response ->
+        client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) error("GitHub returned ${response.code}")
             val array = JSONArray(response.body?.string().orEmpty())
             return (0 until array.length()).mapNotNull { index ->
