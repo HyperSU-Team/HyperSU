@@ -943,6 +943,17 @@
     <string name="theme_import_confirm">要应用此主题吗？</string>
     <string name="theme_import_action">导入</string>
     <string name="theme_import_invalid">不是有效的主题文件</string>
+    <string name="theme_store">主题商店</string>
+    <string name="theme_store_summary">浏览并安装社区发布的主题</string>
+    <string name="theme_store_empty">暂无可用主题</string>
+    <string name="theme_store_error">无法加载主题列表，请检查网络后重试。</string>
+    <string name="theme_store_retry">重试</string>
+    <string name="theme_store_install">下载并应用</string>
+    <string name="theme_store_downloads">%1$d 次下载</string>
+    <string name="theme_store_download_failed">主题下载失败</string>
+    <string name="theme_store_install_confirm_title">应用这个主题？</string>
+    <string name="theme_store_install_confirm_message">%1$s\n作者：%2$s\n版本：%3$s</string>
+
 
     <!-- 首页布局（此前 zh 缺失，界面会回退成英文） -->
     <string name="home_layout">首页布局</string>

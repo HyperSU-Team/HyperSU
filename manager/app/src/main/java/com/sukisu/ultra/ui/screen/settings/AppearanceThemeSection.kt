@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.RestartAlt
+import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -38,6 +39,8 @@ import com.sukisu.ultra.ui.component.dialog.rememberConfirmDialog
 import com.sukisu.ultra.ui.component.folk.FolkAlertDialog
 import com.sukisu.ultra.ui.component.folk.FolkButtonDefaults
 import com.sukisu.ultra.ui.component.folk.FolkSettingsSectionGroup
+import com.sukisu.ultra.ui.navigation3.LocalNavigator
+import com.sukisu.ultra.ui.navigation3.Route
 import com.sukisu.ultra.ui.component.folk.FolkValuePreference
 import com.sukisu.ultra.ui.theme.ThemeManager
 import com.sukisu.ultra.ui.theme.tokens.FolkType
@@ -58,6 +61,7 @@ fun AppearanceThemeSection(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val navigator = LocalNavigator.current
 
     val showMessage: (Int) -> Unit = { resId ->
         val message = context.getString(resId)
@@ -131,6 +135,15 @@ fun AppearanceThemeSection(
     )
 
     FolkSettingsSectionGroup(title = stringResource(R.string.settings_appearance_theme)) {
+        item(key = "appearance_theme_store") {
+            FolkValuePreference(
+                title = stringResource(R.string.theme_store),
+                summary = stringResource(R.string.theme_store_summary),
+                icon = Icons.Outlined.Storefront,
+                onClick = { navigator.push(Route.ThemeStore) },
+            )
+        }
+
         item(key = "appearance_save_theme") {
             FolkValuePreference(
                 title = stringResource(R.string.settings_save_theme),
