@@ -12,12 +12,19 @@ import org.json.JSONObject
  * What a release offers, once it is known to be newer than this build.
  *
  * @param versionName the tag, with any leading `v` removed.
- * @param apkUrl the asset to install, or null when the release carries no APK.
+ * @param apkUrls the asset and its mirrors, in the order they should be tried. Empty when the
+ *                release carries no APK.
  * @param pageUrl the release page, used when there is nothing to download.
  */
 data class ManagerUpdate(
     val versionName: String,
-    val apkUrl: String?,
+    /**
+     * Every URL that serves the same APK, in the order they should be tried: the release asset
+     * first, then mirrors of it. The asset host is a different host from the API one and is not
+     * reachable everywhere the API is - a `timeout` there is common enough that a single URL is
+     * not a working update path.
+     */
+    val apkUrls: List<String>,
     val pageUrl: String,
     val notes: String,
 )
@@ -86,7 +93,7 @@ object ManagerUpdateChecker {
 
                 ManagerUpdate(
                     versionName = tag.removePrefix("v"),
-                    apkUrl = apkAssetOf(assets),
+                    apkUrls = downloadableUrls(apkAssetOf(assets)),
                     pageUrl = json.optString("html_url"),
                     // `optString` turns a JSON null into the four-character string "null", which
                     // is what a release with no body written yet actually contains - and the
@@ -146,5 +153,22 @@ object ManagerUpdateChecker {
             ?: apks.firstOrNull()
             ?: return null
         return preferred.optString("browser_download_url").takeIf { it.isNotEmpty() }
+    }
+
+    /**
+     * Public mirrors of a GitHub release asset.
+     *
+     * `api.github.com` answering while the release-asset host times out is the normal failure on
+     * networks that only partly reach GitHub, so a mirror is tried when the direct URL fails.
+     */
+    private val MIRROR_PREFIXES = listOf(
+        "https://ghfast.top/",
+        "https://gh-proxy.com/",
+        "https://ghproxy.net/",
+    )
+
+    private fun downloadableUrls(assetUrl: String?): List<String> {
+        if (assetUrl.isNullOrEmpty()) return emptyList()
+        return listOf(assetUrl) + MIRROR_PREFIXES.map { prefix -> prefix + assetUrl }
     }
 }

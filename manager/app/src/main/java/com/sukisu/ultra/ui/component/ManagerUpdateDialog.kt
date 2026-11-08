@@ -57,7 +57,7 @@ fun ManagerUpdateDialog(
     onInstall: () -> Unit,
     onOpenPage: () -> Unit,
 ) {
-    val hasApk = update.apkUrl != null
+    val hasApk = update.apkUrls.isNotEmpty()
     val notes = update.notes.trim()
 
     FolkAlertDialog(onDismissRequest = onDismiss) {

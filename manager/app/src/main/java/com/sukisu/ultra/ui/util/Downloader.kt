@@ -34,6 +34,14 @@ suspend fun download(
             status == DownloadManager.Status.COMPLETED ||
                 status == DownloadManager.Status.FAILED
         }
+
+    // A failed download used to return normally: the caller's runCatching never ran, so the user
+    // saw a "download failed" notification and nothing in the app. Report it as an exception so
+    // the caller can retry a mirror or explain what happened.
+    val failure = DownloadManager.downloads.value[downloadId]
+    if (failure?.status == DownloadManager.Status.FAILED) {
+        throw java.io.IOException(failure.error ?: "download failed")
+    }
 }
 
 internal suspend fun isDownloadAvailable(uri: Uri): Boolean = withContext(Dispatchers.IO) {

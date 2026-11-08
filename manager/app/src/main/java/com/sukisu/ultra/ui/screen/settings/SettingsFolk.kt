@@ -1,6 +1,7 @@
 package com.sukisu.ultra.ui.screen.settings
 
 import android.content.Intent
+import android.util.Log
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -101,24 +102,31 @@ fun SettingPagerFolk(
             update = available,
             onDismiss = { update = null },
             onInstall = {
-                val url = available.apkUrl
+                val urls = available.apkUrls
                 update = null
-                if (url != null) {
+                if (urls.isNotEmpty()) {
                     scope.launch {
                         loadingDialog.show()
-                        runCatching {
-                            download(
-                                url,
-                                "HyperSU-${available.versionName}.apk",
-                                onDownloaded = { uri -> installApk(context, uri) },
-                            )
-                        }.onFailure {
+                        // The release-asset host and its mirrors are different hosts; a timeout on
+                        // the first one is the usual failure on a partly-reachable network, so the
+                        // rest are tried before giving up.
+                        var lastError: Throwable? = null
+                        val installed = urls.any { url ->
+                            runCatching {
+                                download(
+                                    url,
+                                    "HyperSU-${available.versionName}.apk",
+                                    onDownloaded = { uri -> installApk(context, uri) },
+                                )
+                            }.onFailure { lastError = it }.isSuccess
+                        }
+                        if (!installed) {
+                            Log.w("SettingsFolk", "manager update download failed", lastError)
                             snackBarHost.showSnackbar(
                                 context.getString(R.string.settings_manager_update_failed),
                             )
-                            // The in-app download can fail where the API request succeeded - the
-                            // asset host is a different one. Falling back to the release page at
-                            // least leaves the user with a working way to get the build.
+                            // Falling back to the release page at least leaves the user with a
+                            // working way to get the build.
                             runCatching {
                                 context.startActivity(
                                     Intent(Intent.ACTION_VIEW, available.pageUrl.toUri()),

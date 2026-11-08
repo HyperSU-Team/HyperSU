@@ -31,6 +31,7 @@ import okhttp3.Call
 import okhttp3.Request
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
 
 class DownloadService : Service() {
 
@@ -116,7 +117,14 @@ class DownloadService : Service() {
             var pendingUri: Uri? = null
             var displayName = fileName
             try {
-                val call = ksuApp.okhttpClient.newCall(Request.Builder().url(url).build())
+                // A release asset redirects to a CDN and is tens of megabytes: the shared client's
+                // default 10s connect timeout is what turns a slow-but-working network into
+                // "timeout" on the very first attempt.
+                val client = ksuApp.okhttpClient.newBuilder()
+                    .connectTimeout(20, TimeUnit.SECONDS)
+                    .readTimeout(60, TimeUnit.SECONDS)
+                    .build()
+                val call = client.newCall(Request.Builder().url(url).build())
                 activeCalls[id] = call
                 ensureActive()
                 val uri = call.execute()
