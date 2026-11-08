@@ -98,32 +98,13 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.12 - a smaller home tile, and an update that survives a blocked host.
+            HyperSU v4.2.13 - a version-code bump.
 
-            ## Settings: manager update
+            No functional change. This release exists so a manager installed from v4.2.12 can exercise the fixed in-app updater end to end: v4.2.12 retries the APK through public mirrors, widens the download timeouts, and reports a failed transfer to the dialog - but there was no newer release for it to find.
 
-            The update check reached `api.github.com` while the APK download timed out, because the release asset lives on a different host. The download now:
+            If the update from v4.2.12 works, you will land here. If it does not, the notification still carries the reason (HTTP status, timeout, DNS) and the dialog opens this page.
 
-            - tries the asset URL and then three public mirrors of it;
-            - widens the connect and read timeouts for the transfer (the shared client's 10s connect timeout was the first thing to trip on a slow CDN);
-            - reports a failed transfer to the dialog instead of returning as if it had succeeded, so the dialog opens the release page rather than leaving only a notification behind.
-
-            A failing download also keeps the reason in its notification (HTTP status, timeout, DNS).
-
-            ## Home
-
-            The Grid working-status card with a wallpaper was changed twice: first it was a short wide strip and the picture looked squeezed, then it filled half the row and looked noticeably larger than in the reference layout. It is now a square 144dp tile beside the two info tiles, with 16dp content padding instead of 24dp.
-
-            ## From v4.2.10
-
-            - The updater never downloads the `-spoofed` APK.
-            - GPU load reads the vendor counter family that exists and no longer turns a real 0% into `--`.
-            - Multi-manager support with icons, Built-in / Dynamic / Not authorized state and a risk confirmation before granting.
-            - The module flash success page stays; downloaded zips open the confirmation; the module list reloads after an install started elsewhere.
-            - SUSFS backup and restore no longer freeze the app.
-            - Zygisk providers no longer stick on "reboot required".
-
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.11...v4.2.12
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.12...v4.2.13
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
