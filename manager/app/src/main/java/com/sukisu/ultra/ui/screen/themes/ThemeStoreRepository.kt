@@ -181,9 +181,18 @@ object ThemeStoreRepository {
                 partial.delete()
                 continue
             }
-            if (target.exists()) target.delete()
-            if (!partial.renameTo(target)) error("could not store the archive")
-            return@withContext target
+
+            // `renameTo` reports failure on some storage configurations even though the file is
+            // there, and the failure surfaced as an IllegalStateException that crashed the app.
+            // Copying is one extra pass over a file that is about to be read again anyway, and the
+            // only thing it can fail on is real (no space, read-only storage), so it is used here.
+            val stored = runCatching {
+                target.delete()
+                partial.copyTo(target, overwrite = true)
+            }.onFailure { lastError = it }.isSuccess
+            partial.delete()
+            if (stored) return@withContext target
+            break
         }
 
         Log.w(TAG, "theme download failed: ${theme.downloadUrl}", lastError)

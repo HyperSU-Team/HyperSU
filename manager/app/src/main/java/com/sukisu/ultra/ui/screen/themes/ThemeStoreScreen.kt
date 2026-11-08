@@ -1,5 +1,6 @@
 package com.sukisu.ultra.ui.screen.themes
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -97,9 +98,11 @@ fun ThemeStoreScreen() {
         if (state.busyKey != null) return
         scope.launch {
             state = state.copy(busyKey = theme.tag, progress = state.progress + (theme.tag to 0))
-            val archive = ThemeStoreRepository.download(context, theme) { percent ->
-                state = state.copy(progress = state.progress + (theme.tag to percent))
-            }
+            val archive = runCatching {
+                ThemeStoreRepository.download(context, theme) { percent ->
+                    state = state.copy(progress = state.progress + (theme.tag to percent))
+                }
+            }.onFailure { Log.w("ThemeStore", "download failed", it) }.getOrNull()
             if (archive == null) {
                 state = state.copy(busyKey = null)
                 toast(R.string.theme_store_download_failed)
