@@ -79,6 +79,13 @@ fun DynamicManagerFolk(
                         }
                     }
 
+                    Text(
+                        text = stringResource(R.string.dynamic_manager_risk_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+                    )
+
                     FolkSettingsSectionGroup(title = stringResource(R.string.dynamic_manager_apps)) {
                         if (state.apps.isEmpty()) {
                             item {

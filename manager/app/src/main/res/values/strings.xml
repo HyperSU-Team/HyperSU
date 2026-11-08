@@ -582,8 +582,10 @@
     <string name="dynamic_manager_status_builtin">Built-in</string>
     <string name="dynamic_manager_status_dynamic">Dynamic</string>
     <string name="dynamic_manager_status_none">Not authorized</string>
-    <string name="dynamic_manager_grant_confirm_title">Grant manager</string>
-    <string name="dynamic_manager_grant_confirm_message">Add "%1$s" as an authorized manager signature?</string>
+    <string name="dynamic_manager_grant_confirm_title">Confirm granting manager access?</string>
+    <string name="dynamic_manager_grant_confirm_message">"%1$s" will become a manager the kernel accepts. A manager holds the highest privilege on this device: it can read and write the system, install modules, grant root to apps and run arbitrary code.\n\nGrant only a manager you fully trust and whose source you can verify. A malicious manager that is granted can take complete control of the device, and its actions are hard to notice.\n\nIf a dynamic manager is already set, it is replaced immediately.\n\nIf you are not sure what this means, cancel.</string>
+    <string name="dynamic_manager_grant_confirm_action">Grant anyway</string>
+    <string name="dynamic_manager_risk_hint">Only authorize managers you trust: a manager holds the highest privilege on this device.</string>
     <string name="dynamic_manager_clear_confirm_title">Clear dynamic signature</string>
     <string name="dynamic_manager_clear_confirm_message">Managers recognized through the dynamic signature will need to be authorized again.</string>
 

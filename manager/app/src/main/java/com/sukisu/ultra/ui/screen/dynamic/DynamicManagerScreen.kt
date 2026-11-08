@@ -63,7 +63,7 @@ fun DynamicManagerScreen() {
             val confirmed = confirmDialog.awaitConfirm(
                 title = context.getString(R.string.dynamic_manager_grant_confirm_title),
                 content = context.getString(R.string.dynamic_manager_grant_confirm_message, app.label),
-                confirm = context.getString(android.R.string.ok),
+                confirm = context.getString(R.string.dynamic_manager_grant_confirm_action),
             )
             if (confirmed != ConfirmResult.Confirmed) return@launch
             state = state.copy(submitting = true)

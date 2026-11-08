@@ -558,8 +558,10 @@
     <string name="dynamic_manager_status_builtin">内置已授权</string>
     <string name="dynamic_manager_status_dynamic">动态已授权</string>
     <string name="dynamic_manager_status_none">未授权</string>
-    <string name="dynamic_manager_grant_confirm_title">授权管理器</string>
-    <string name="dynamic_manager_grant_confirm_message">把「%1$s」加入内核的管理器签名？</string>
+    <string name="dynamic_manager_grant_confirm_title">确认授予管理器权限？</string>
+    <string name="dynamic_manager_grant_confirm_message">「%1$s」将成为内核认可的管理器。管理器拥有本设备的最高权限：可以读写系统、安装模块、给应用授予 root、执行任意代码。\n\n请只授权你完全信任、能确认来源的管理器。恶意管理器一旦被授权，就能完全控制设备，而且其行为很难被发现。\n\n若已有动态管理器，它会被立即替换。\n\n如果你不确定这意味着什么，请取消。</string>
+    <string name="dynamic_manager_grant_confirm_action">仍然授权</string>
+    <string name="dynamic_manager_risk_hint">只授权可信来源的管理器：管理器拥有本设备的最高权限。</string>
     <string name="dynamic_manager_clear_confirm_title">清除动态签名</string>
     <string name="dynamic_manager_clear_confirm_message">清除后，通过动态签名识别的管理器需要重新授权。</string>
 
