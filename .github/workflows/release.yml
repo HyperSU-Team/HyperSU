@@ -98,24 +98,26 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.14 - the two readings line up with the home tile.
+            HyperSU v4.2.15 - a theme store, and .fpt imports that keep music and the bottom bar.
 
-            ## Home
+            ## Theme store
 
-            On the Grid layout the kernel and SELinux readings were laid out as two equal slots stretched to the row, so their labels started at the row's top edge and sat above the wallpaper tile. They are one pair, not two slots: the column now centres them against the tile, which moves the pair down slightly and lines it up with the picture.
+            FolkPatch has one; this manager only had save/import/reset. **Appearance → Theme store** now lists the themes published as releases of `1542296180/FolkPatch-`: one release is one theme, its name is the title, its single `.fpt` asset is the archive, and the release body carries the preview screenshot.
 
-            ## From v4.2.12
+            - One card per theme with its preview, tag, size and download count.
+            - Downloading shows a progress bar; the finished archive goes through the same importer as a hand-picked `.fpt`, after a confirmation naming the theme's author and version. The temporary file is deleted afterwards.
+            - A failed download says so, and a retry overwrites the half-finished cache file.
 
-            - The in-app update retries the APK through public mirrors, allows a longer download, and reports a failed transfer to the dialog (which then opens the release page).
-            - The updater never downloads the `-spoofed` APK.
-            - The Grid wallpaper tile is a 144dp square, as in the reference layout.
-            - GPU load reads the vendor counter family that exists and no longer turns a real 0% into `--`.
-            - Multi-manager support with icons, Built-in / Dynamic / Not authorized state and a risk confirmation before granting.
-            - The module flash success page stays; downloaded zips open the confirmation; the module list reloads after an install started elsewhere.
-            - SUSFS backup and restore no longer freeze the app.
-            - Zygisk providers no longer stick on "reboot required".
+            ## Theme import fixes
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.13...v4.2.14
+            Two parts of a FolkPatch `.fpt` never took effect:
+
+            - **Music and sound effects.** FolkPatch packs those files at the archive root, while this app keeps them in `music/` and `sound_effects/`; the extractor only looked in those directories, dropped the files, then found nothing to enable and left the theme's music off.
+            - **Bottom-bar icons.** The icon files were extracted but never applied: this app needs both the file, a per-destination preference pointing at it, and the switch that enables custom icons. Only the file was restored.
+
+            Both are fixed, the icon switch is restored from the theme, and music reloads on the main thread after an import so the new track is picked up.
+
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.14...v4.2.15
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
