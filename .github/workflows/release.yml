@@ -98,25 +98,23 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.5 - fixes on top of v4.2.4.
+            HyperSU v4.2.6 - the multi-manager entry, on top of v4.2.5.
 
-            ## Module install
+            ## Multi-manager support (dynamic signature)
 
-            - The success page no longer disappears: a finished flash used to close the activity a second later when the app had been opened from a file, taking the reboot button with it.
-            - Opening a downloaded module actually asks for confirmation again. The intent handler read `activity.intent` once, so a second intent (the manager already running) was dropped; it now consumes every zip/apk intent.
-            - Downloads and browser uris carry no file name (`content://.../document/msf%3A42`), so the old suffix test discarded them before the prompt. The archive MIME type and the resolved display name are accepted too.
-            - The notification's Install action for a module zip reaches the same confirmation instead of an action nothing handled.
-            - A module installed from outside the module screen shows up straight away: flashes ask the list to reload on its next resume.
+            BakaSU lets you pick another manager whose signature the kernel should accept; this manager never offered that entry. The kernel side was already here (`feature/dynamic_manager.c` registers `KSU_SIGNATURE_INDEX_DYNAMIC_MANAGER`, `apk_sign.c` accepts it) and so was the CLI (`ksud kernel dynamic-manager get|set|set-apk|clear`).
 
-            ## SUSFS
+            Settings now has **Multi-manager support**: it shows the signature the kernel currently accepts, lets you clear it, and lists the installed apps that ship `libksud.so` - the managers - so one of them can be chosen. `ksud` reads the signature out of the chosen APK, so the app never parses it.
 
-            - Backup and restore no longer freeze the app. The backup ran fifteen `ksud` calls under `runBlocking` from a main-dispatcher coroutine, so the window was blocked until every process had exited; it is a suspend function now.
+            ## From v4.2.5
 
-            ## Zygisk
+            - The module flash success page stays, with its reboot button.
+            - Downloaded module zips and the notification's Install action open the confirmation again.
+            - A module installed from outside the module screen shows up right away.
+            - SUSFS backup and restore no longer freeze the app.
+            - Zygisk providers no longer stick on "reboot required".
 
-            - "Reboot required" no longer sticks when the provider is running: the daemon check also accepts a process whose executable or command line lives inside the provider's module directory, and `zygisk-next` is recognised as a provider id.
-
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.4...v4.2.5
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.5...v4.2.6
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
