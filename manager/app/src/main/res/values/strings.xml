@@ -569,7 +569,7 @@
     <string name="susfs_config_title">SuSFS Configuration</string>
     <string name="susfs_config_summary">Configure SuSFS module settings</string>
     <string name="dynamic_manager">Multi-manager support</string>
-    <string name="dynamic_manager_summary">Accept another manager's signature as well</string>
+    <string name="dynamic_manager_summary">Accept another manager\'s signature as well</string>
     <string name="dynamic_manager_current">Current dynamic signature</string>
     <string name="dynamic_manager_not_set">Not set</string>
     <string name="dynamic_manager_clear">Clear dynamic signature</string>
