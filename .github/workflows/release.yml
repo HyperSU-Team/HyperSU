@@ -98,29 +98,28 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.16 - a faster theme store, downloaded themes, and a music button.
+            HyperSU v4.2.17 - theme store reliability, a persisted pause, and a reset that resets.
 
             ## Theme store
 
-            - **Opens immediately.** The catalogue is cached on disk and refreshed at most every ten minutes; the screen shows the last list while a stale one is replaced.
-            - **Search** by theme name or release tag.
-            - **Downloaded tab** with every theme that is on the device: Apply or Delete. The store used to delete the archive right after importing it, so a theme could not be applied twice without downloading it again; a manual `.fpt` import is kept there too.
-            - **Previews are fitted whole.** They are phone screenshots, and cropping them to a fixed height showed only the middle of each theme.
+            - Opening uses the cached catalogue first; a failed refresh now falls back to the last list instead of the error screen. The request asks for 30 releases with a longer timeout.
+            - Manually imported `.fpt` files are kept: the import archives the picked file first and imports that copy, so it always appears under **Downloaded**. The library also scans its directory, so an archive that was copied without being indexed is listed too.
+            - The import's loading dialog is hidden in a `finally`, so an early exit no longer leaves a "processing" dialog to dismiss by hand.
+            - A theme moved into the library is renamed rather than copied again, so a 20MB theme is not written twice.
 
-            ## Home
+            ## Home music
 
-            - A play/pause button appears in the top bar when a background track is configured, so the music can be stopped without opening settings.
+            - A manual pause is remembered: reopening the app no longer resumes a track the user stopped. The pause button still works from the home top bar, and a theme import or reset clears the flag.
 
-            ## Bottom-bar icons
+            ## Theme reset
 
-            A theme names its module icon `KModule` or `AModule`, FolkPatch's two module tabs, while this app has a single `Module` tab - so the file never matched and the module tab kept its built-in glyph. The names are now mapped on import and at lookup, and the archive extractor no longer drops them.
+            - Reset now deletes the bottom-bar icon files and notifies the bar (clearing the preference alone left the imported icons on screen) and reloads the player, which stops a track that is still running.
 
-            ## From v4.2.15
+            ## Home stats layout
 
-            - Theme store backed by the community theme repository.
-            - `.fpt` imports keep music, sound effects and bottom-bar icons (FolkPatch packs media at the archive root).
+            - The status cards sit on their own surface: the dimmed wallpaper strip above the device-status card no longer reads as a dark band that only went away when the card scrolled over it.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.15...v4.2.16
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.16...v4.2.17
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
