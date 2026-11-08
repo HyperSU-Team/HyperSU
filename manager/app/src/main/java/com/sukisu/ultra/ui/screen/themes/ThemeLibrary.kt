@@ -65,7 +65,11 @@ object ThemeLibrary {
             val id = "${System.currentTimeMillis()}"
             val fileName = "theme_$id.fpt"
             val target = File(directory(context), fileName)
-            archive.copyTo(target, overwrite = true)
+            // The callers hand over a fresh temporary file, and cache and files share a partition,
+            // so a rename avoids copying a 20MB archive a second time; the copy is the fallback.
+            if (!archive.renameTo(target)) {
+                archive.copyTo(target, overwrite = true)
+            }
 
             val theme = LocalTheme(
                 id = id,

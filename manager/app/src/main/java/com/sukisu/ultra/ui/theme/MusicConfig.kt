@@ -22,6 +22,7 @@ object MusicConfig {
     private const val KEY_AUTO_PLAY = "auto_play"
     private const val KEY_LOOPING_ENABLED = "looping_enabled"
     private const val KEY_VOLUME = "volume"
+    private const val KEY_USER_PAUSED = "music_user_paused"
     private const val TAG = "MusicConfig"
 
     var isMusicEnabled: Boolean by mutableStateOf(false)
@@ -39,8 +40,18 @@ object MusicConfig {
     var volume: Float by mutableFloatStateOf(1.0f)
         private set
 
+    /**
+     * Whether the user paused the music themselves, as opposed to the app pausing it when it went
+     * to the background. Only this flag is persisted: reopening the app must not resume a track
+     * the user deliberately stopped, but must resume one that was interrupted.
+     */
+    var isUserPaused: Boolean by mutableStateOf(false)
+        private set
+
     fun setMusicEnabledState(enabled: Boolean) {
         isMusicEnabled = enabled
+        // Turning music back on is an explicit request to hear it.
+        if (enabled) isUserPaused = false
     }
 
     fun setAutoPlayEnabledState(enabled: Boolean) {
@@ -57,6 +68,10 @@ object MusicConfig {
 
     fun setVolumeValue(value: Float) {
         volume = value
+    }
+
+    fun setUserPausedState(paused: Boolean) {
+        isUserPaused = paused
     }
 
     fun getMusicDir(context: Context): File {
@@ -77,6 +92,7 @@ object MusicConfig {
         isAutoPlayEnabled = prefs.booleanPref(KEY_AUTO_PLAY, false)
         isLoopingEnabled = prefs.booleanPref(KEY_LOOPING_ENABLED, false)
         volume = prefs.floatPref(KEY_VOLUME, 1.0f)
+        isUserPaused = prefs.booleanPref(KEY_USER_PAUSED, false)
 
         // A config pointing at a file that is no longer there must not leave the toggle on.
         if (isMusicEnabled && musicFilename != null) {
@@ -97,6 +113,7 @@ object MusicConfig {
             .putBoolean(KEY_AUTO_PLAY, isAutoPlayEnabled)
             .putBoolean(KEY_LOOPING_ENABLED, isLoopingEnabled)
             .putFloat(KEY_VOLUME, volume)
+            .putBoolean(KEY_USER_PAUSED, isUserPaused)
             .apply()
     }
 
@@ -135,6 +152,7 @@ object MusicConfig {
         musicFilename?.let { File(getMusicDir(context), it).delete() }
         isMusicEnabled = false
         musicFilename = null
+        isUserPaused = false
         save(context)
     }
 

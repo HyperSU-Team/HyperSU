@@ -96,6 +96,12 @@ object MusicManager {
 
     private fun onAppForeground() {
         if (!MusicConfig.isMusicEnabled) return
+        // A track the user paused stays paused across app restarts; only an interruption by the
+        // app going to the background is resumed.
+        if (MusicConfig.isUserPaused) {
+            pausedByBackground = false
+            return
+        }
         // Resume what was interrupted, or start fresh when auto-play is on. Auto-play alone
         // would leave a track the user just started silent after every trip to the background.
         if (pausedByBackground || MusicConfig.isAutoPlayEnabled) {
@@ -106,7 +112,7 @@ object MusicManager {
 
     private fun onAppBackground() {
         pausedByBackground = _isPlaying.value
-        pause()
+        pauseInternal()
     }
 
     private fun startProgressUpdater() {
@@ -162,6 +168,7 @@ object MusicManager {
     }
 
     fun play() {
+        markUserPaused(false)
         if (mediaPlayer == null) {
             prepareAndPlay()
         } else {
@@ -189,6 +196,12 @@ object MusicManager {
     }
 
     fun pause() {
+        markUserPaused(true)
+        pauseInternal()
+    }
+
+    /** Pauses without recording it as the user's decision (used when the app leaves the screen). */
+    private fun pauseInternal() {
         try {
             if (mediaPlayer?.isPlaying == true) {
                 mediaPlayer?.pause()
@@ -197,6 +210,13 @@ object MusicManager {
         } catch (e: Exception) {
             Log.e(TAG, "Error in pause()", e)
         }
+    }
+
+    /** Remembers whether the pause came from the user, so reopening the app does not resume it. */
+    private fun markUserPaused(paused: Boolean) {
+        if (MusicConfig.isUserPaused == paused) return
+        MusicConfig.setUserPausedState(paused)
+        appContext?.let { MusicConfig.save(it) }
     }
 
     fun toggle() {
@@ -243,7 +263,10 @@ object MusicManager {
     fun reload() {
         val wasPlaying = _isPlaying.value
         stop()
-        if (MusicConfig.isMusicEnabled && (MusicConfig.isAutoPlayEnabled || wasPlaying)) {
+        if (!MusicConfig.isUserPaused &&
+            MusicConfig.isMusicEnabled &&
+            (MusicConfig.isAutoPlayEnabled || wasPlaying)
+        ) {
             prepareAndPlay()
         }
     }

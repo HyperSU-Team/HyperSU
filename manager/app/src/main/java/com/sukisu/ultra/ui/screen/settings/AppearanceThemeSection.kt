@@ -112,15 +112,18 @@ fun AppearanceThemeSection(
         if (uri != null) {
             scope.launch {
                 loadingDialog.show()
-                val metadata = ThemeManager.readThemeMetadata(context, uri)
-                loadingDialog.hide()
-                if (metadata == null) {
-                    // Not a theme archive: nothing to confirm, report it as invalid.
-                    showMessage(R.string.theme_import_invalid)
-                } else {
-                    pendingImportUri = uri
-                    pendingImport = metadata
-                    showImportDialog = true
+                try {
+                    val metadata = ThemeManager.readThemeMetadata(context, uri)
+                    if (metadata == null) {
+                        // Not a theme archive: nothing to confirm, report it as invalid.
+                        showMessage(R.string.theme_import_invalid)
+                    } else {
+                        pendingImportUri = uri
+                        pendingImport = metadata
+                        showImportDialog = true
+                    }
+                } finally {
+                    loadingDialog.hide()
                 }
             }
         }
@@ -214,26 +217,29 @@ fun AppearanceThemeSection(
                 pendingImportUri = null
                 if (uri != null) {
                     scope.launch {
-                        loadingDialog.show()
-                        // Copy into the library first: the picker's uri is the only copy, so
-                        // keeping it is what makes the theme applyable again from the store's
-                        // downloaded tab. Importing the archived copy also means both views work
-                        // from the same bytes.
-                        val local = copyToThemeLibrary(context, uri)
-                        val success = if (local != null) {
-                            ThemeManager.importTheme(
-                                context,
-                                ThemeStoreRepository.localUri(ThemeLibrary.file(context, local)),
-                            )
-                        } else {
-                            ThemeManager.importTheme(context, uri)
-                        }
-                        loadingDialog.hide()
-                        showMessage(
-                            if (success) R.string.settings_theme_imported
-                            else R.string.settings_theme_import_failed,
+                loadingDialog.show()
+                try {
+                    // Copy into the library first: the picker's uri is the only copy, so
+                    // keeping it is what makes the theme applyable again from the store's
+                    // downloaded tab. Importing the archived copy also means both views work
+                    // from the same bytes.
+                    val local = copyToThemeLibrary(context, uri)
+                    val success = if (local != null) {
+                        ThemeManager.importTheme(
+                            context,
+                            ThemeStoreRepository.localUri(ThemeLibrary.file(context, local)),
                         )
+                    } else {
+                        ThemeManager.importTheme(context, uri)
                     }
+                    showMessage(
+                        if (success) R.string.settings_theme_imported
+                        else R.string.settings_theme_import_failed,
+                    )
+                } finally {
+                    loadingDialog.hide()
+                }
+            }
                 }
             },
         )
