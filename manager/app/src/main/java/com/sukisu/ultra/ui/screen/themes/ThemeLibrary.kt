@@ -28,6 +28,10 @@ data class LocalTheme(
  * downloaded and applied was gone and there was no way to apply it again without downloading it.
  * The archive now stays in `filesDir/themes`, with a small JSON index of what each file is, and
  * the store lists them under a second tab.
+ *
+ * The listing also scans the directory rather than trusting the index alone: an import that
+ * copied its archive but failed to record it - or a file put there by an older version - would
+ * otherwise be invisible in the library.
  */
 object ThemeLibrary {
 
@@ -35,37 +39,14 @@ object ThemeLibrary {
     private const val DIR = "themes"
     private const val INDEX = "index.json"
 
-    private fun directory(context: Context): File =
-        File(context.filesDir, DIR).apply { mkdirs() }
+    private fun directory(context: Context): File = File(context.filesDir, DIR).apply { mkdirs() }
 
     private fun indexFile(context: Context) = File(directory(context), INDEX)
 
-    fun file(context: Context, theme: LocalTheme): File =
-        File(directory(context), theme.fileName)
+    fun file(context: Context, theme: LocalTheme): File = File(directory(context), theme.fileName)
 
     suspend fun list(context: Context): List<LocalTheme> = withContext(Dispatchers.IO) {
-        runCatching {
-            val raw = indexFile(context).takeIf { it.isFile }?.readText().orEmpty()
-            if (raw.isBlank()) return@runCatching emptyList()
-            val array = JSONArray(raw)
-            (0 until array.length()).mapNotNull { index ->
-                val item = array.optJSONObject(index) ?: return@mapNotNull null
-                val theme = LocalTheme(
-                    id = item.optString("id"),
-                    fileName = item.optString("fileName"),
-                    name = item.optString("name"),
-                    author = item.optString("author"),
-                    version = item.optString("version"),
-                    sizeBytes = item.optLong("sizeBytes"),
-                    addedAt = item.optLong("addedAt"),
-                )
-                // A file the user deleted from storage should not linger in the index.
-                theme.takeIf { file(context, it).isFile }
-            }
-        }.getOrElse {
-            Log.w(TAG, "could not read the theme index", it)
-            emptyList()
-        }
+        scan(context)
     }
 
     /**
@@ -86,12 +67,6 @@ object ThemeLibrary {
             val target = File(directory(context), fileName)
             archive.copyTo(target, overwrite = true)
 
-            val existing = list(context).filter {
-                it.name == (metadata?.name ?: fallbackName) &&
-                    it.version == (metadata?.version ?: "")
-            }
-            existing.forEach { deleteInternal(context, it) }
-
             val theme = LocalTheme(
                 id = id,
                 fileName = fileName,
@@ -101,7 +76,14 @@ object ThemeLibrary {
                 sizeBytes = target.length(),
                 addedAt = System.currentTimeMillis(),
             )
-            writeIndex(context, list(context) + theme)
+
+            // Replace an identical theme, judged from the index rather than from the directory:
+            // the file just copied would otherwise be seen as its own duplicate.
+            val indexed = readIndex(context)
+            val duplicates = indexed.filter { it.name == theme.name && it.version == theme.version }
+            duplicates.forEach { file(context, it).takeIf { f -> f.exists() }?.delete() }
+
+            writeIndex(context, indexed - duplicates.toSet() + theme)
             theme
         }.getOrElse {
             Log.w(TAG, "could not add a theme to the library", it)
@@ -110,22 +92,47 @@ object ThemeLibrary {
     }
 
     suspend fun delete(context: Context, theme: LocalTheme) = withContext(Dispatchers.IO) {
-        runCatching { deleteInternal(context, theme) }
-            .onFailure { Log.w(TAG, "could not delete ${theme.fileName}", it) }
+        runCatching {
+            file(context, theme).takeIf { it.exists() }?.delete()
+            writeIndex(context, readIndex(context) - theme)
+        }.onFailure { Log.w(TAG, "could not delete ${theme.fileName}", it) }
         Unit
     }
 
-    private fun deleteInternal(context: Context, theme: LocalTheme) {
-        file(context, theme).takeIf { it.exists() }?.delete()
-        writeIndex(context, listFresh(context) - theme)
+    /** Index entries whose archive still exists, plus archives the index does not mention. */
+    private fun scan(context: Context): List<LocalTheme> {
+        val indexed = readIndex(context).filter { file(context, it).isFile }
+        val known = indexed.map { it.fileName }.toSet()
+        val orphans = directory(context)
+            .listFiles { file -> file.isFile && file.name.endsWith(".fpt", ignoreCase = true) }
+            ?.filterNot { it.name in known }
+            ?.mapNotNull { archive -> describe(context, archive) }
+            .orEmpty()
+
+        val merged = (indexed + orphans).sortedByDescending { it.addedAt }
+        // Recording the discovered files makes the next listing cheaper and keeps the names.
+        if (orphans.isNotEmpty()) writeIndex(context, merged)
+        return merged
     }
 
-    /** The index without filtering: used while rewriting it, where deletion is intended. */
-    private fun listFresh(context: Context): List<LocalTheme> {
+    private fun describe(context: Context, archive: File): LocalTheme? = runCatching {
+        val metadata = ThemeManager.readThemeMetadata(context, Uri.fromFile(archive))
+        LocalTheme(
+            id = archive.nameWithoutExtension,
+            fileName = archive.name,
+            name = metadata?.name ?: archive.nameWithoutExtension,
+            author = metadata?.author.orEmpty(),
+            version = metadata?.version.orEmpty(),
+            sizeBytes = archive.length(),
+            addedAt = archive.lastModified(),
+        )
+    }.onFailure { Log.w(TAG, "could not read ${archive.name}", it) }.getOrNull()
+
+    private fun readIndex(context: Context): List<LocalTheme> = runCatching {
         val raw = indexFile(context).takeIf { it.isFile }?.readText().orEmpty()
         if (raw.isBlank()) return emptyList()
         val array = JSONArray(raw)
-        return (0 until array.length()).mapNotNull { index ->
+        (0 until array.length()).mapNotNull { index ->
             val item = array.optJSONObject(index) ?: return@mapNotNull null
             LocalTheme(
                 id = item.optString("id"),
@@ -137,6 +144,9 @@ object ThemeLibrary {
                 addedAt = item.optLong("addedAt"),
             )
         }
+    }.getOrElse {
+        Log.w(TAG, "could not read the theme index", it)
+        emptyList()
     }
 
     private fun writeIndex(context: Context, themes: List<LocalTheme>) {

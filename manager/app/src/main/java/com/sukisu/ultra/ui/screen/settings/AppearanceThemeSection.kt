@@ -43,6 +43,7 @@ import com.sukisu.ultra.ui.component.folk.FolkSettingsSectionGroup
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
 import com.sukisu.ultra.ui.navigation3.Route
 import com.sukisu.ultra.ui.screen.themes.ThemeLibrary
+import com.sukisu.ultra.ui.screen.themes.ThemeStoreRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -214,11 +215,18 @@ fun AppearanceThemeSection(
                 if (uri != null) {
                     scope.launch {
                         loadingDialog.show()
-                        val success = ThemeManager.importTheme(context, uri)
-                        // Keep a copy in the on-device library so an imported theme can be applied
-                        // again later from the store's "downloaded" tab without the original file.
-                        if (success) {
-                            runCatching { copyToThemeLibrary(context, uri) }
+                        // Copy into the library first: the picker's uri is the only copy, so
+                        // keeping it is what makes the theme applyable again from the store's
+                        // downloaded tab. Importing the archived copy also means both views work
+                        // from the same bytes.
+                        val local = copyToThemeLibrary(context, uri)
+                        val success = if (local != null) {
+                            ThemeManager.importTheme(
+                                context,
+                                ThemeStoreRepository.localUri(ThemeLibrary.file(context, local)),
+                            )
+                        } else {
+                            ThemeManager.importTheme(context, uri)
                         }
                         loadingDialog.hide()
                         showMessage(
@@ -238,19 +246,22 @@ fun AppearanceThemeSection(
  * The picker hands over a content uri that may stop being readable once the activity is gone, so
  * the bytes are copied into a temporary file first and the library takes it from there.
  */
-private suspend fun copyToThemeLibrary(context: android.content.Context, uri: Uri) {
-    withContext(Dispatchers.IO) {
-        val temp = File(context.cacheDir, "theme_library_import.fpt")
-        runCatching {
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                temp.outputStream().use { output -> input.copyTo(output) }
-            } ?: return@runCatching
-            if (temp.isFile) {
-                ThemeLibrary.add(context, temp, temp.name)
-            }
-        }.onFailure { Log.w("AppearanceThemeSection", "could not keep a copy of the theme", it) }
-        temp.delete()
-    }
+private suspend fun copyToThemeLibrary(
+    context: android.content.Context,
+    uri: Uri,
+): com.sukisu.ultra.ui.screen.themes.LocalTheme? = withContext(Dispatchers.IO) {
+    val temp = File(context.cacheDir, "theme_library_import.fpt")
+    val added = runCatching {
+        context.contentResolver.openInputStream(uri)?.use { input ->
+            temp.outputStream().use { output -> input.copyTo(output) }
+        } ?: return@runCatching null
+        if (!temp.isFile) return@runCatching null
+        ThemeLibrary.add(context, temp, temp.nameWithoutExtension)
+    }.onFailure {
+        Log.w("AppearanceThemeSection", "could not keep a copy of the theme", it)
+    }.getOrNull()
+    temp.delete()
+    added
 }
 
 /**
