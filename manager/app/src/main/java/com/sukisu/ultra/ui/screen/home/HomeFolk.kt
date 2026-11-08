@@ -156,12 +156,13 @@ private const val WALLPAPER_LIGHT_THRESHOLD = 0.5f
 private val WorkingCardMinHeight = 120.dp
 
 /**
- * Height the Grid layout's hero card keeps once it carries a wallpaper.
+ * Size the Grid layout's hero card takes once it carries a wallpaper.
  *
- * The card is roughly half the screen wide, so a portrait image needs a portrait-ish card: at the
- * tiles' height it was cropped into a strip and the character read as squeezed.
+ * It is a square tile beside the two info tiles, the way the reference manager lays it out. Letting
+ * the card take half the row made the picture noticeably larger than the same image in that app;
+ * letting the tiles decide the height cropped it into a strip.
  */
-private val GridHeroMinHeightWithWallpaper = 224.dp
+private val GridHeroSizeWithWallpaper = 144.dp
 
 /**
  * The wallpaper layer, sized to whatever the card measures to.
@@ -636,7 +637,10 @@ private fun HomeWorkingCard(
                 dim = dim,
                 opacity = opacity,
             )
-            Column(modifier = Modifier.padding(24.dp)) {
+            // The square wallpaper tile is much smaller than a half-row card, so the content keeps
+            // a little more of its width instead of wrapping against 24dp of padding on each side.
+            val contentPadding = if (gridStyle && wallpaperUri != null) 16.dp else 24.dp
+            Column(modifier = Modifier.padding(contentPadding)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (showCheck) {
                         // Outlined, as FolkPatch draws this card. The rounded one is a solid disc
@@ -1017,13 +1021,9 @@ private fun HomeGridStatusCards(
         modifier = Modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Max)
-            // FolkPatch's GridUI gives the left card enough room for its wallpaper to read as a
-            // picture. Ours let the two small tiles decide the row height, so a portrait working-card
-            // image was cropped into a wide, short band and the character looked squeezed. With a
-            // wallpaper the row keeps a portrait-ish height instead; without one it stays as it was.
             .then(
                 if (heroWallpaper != null) {
-                    Modifier.heightIn(min = GridHeroMinHeightWithWallpaper)
+                    Modifier.heightIn(min = GridHeroSizeWithWallpaper)
                 } else {
                     Modifier
                 }
@@ -1032,7 +1032,15 @@ private fun HomeGridStatusCards(
     ) {
         Box(
             modifier = Modifier
-                .weight(1f)
+                .then(
+                    if (heroWallpaper != null) {
+                        // A square tile, as the reference layout draws it: half the row made the
+                        // same picture about a third larger than in that app.
+                        Modifier.width(GridHeroSizeWithWallpaper)
+                    } else {
+                        Modifier.weight(1f)
+                    }
+                )
                 .fillMaxHeight(),
         ) {
             HomeHeroCard(
