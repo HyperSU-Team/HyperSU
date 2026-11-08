@@ -99,7 +99,7 @@ VERSION_BASE   := 40000
 VERSION_OFFSET := 2815
 KSU_VERSION := $(if $(KSU_LOCAL_VERSION),$(shell expr $(VERSION_BASE) + $(KSU_LOCAL_VERSION) - $(VERSION_OFFSET)),$(VERSION_BASE))
 
-KSU_TAG_NAME    := $(shell cd $(KSU_SRC); $(GIT_BIN) describe --abbrev=0 --tags 2>/dev/null || echo "v4.2.9")
+KSU_TAG_NAME    := $(shell cd $(KSU_SRC); $(GIT_BIN) describe --abbrev=0 --tags 2>/dev/null || echo "v4.2.10")
 KSU_COMMIT_SHA  := $(shell cd $(KSU_SRC); $(GIT_BIN) rev-parse --short=8 HEAD 2>/dev/null || echo "unknown")
 ifneq ($(shell cd $(KSU_SRC); $(GIT_BIN) diff-index --quiet HEAD; echo $$?),0)
 KSU_COMMIT_SHA  := $(KSU_COMMIT_SHA)-dirty

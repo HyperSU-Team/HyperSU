@@ -98,25 +98,25 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.9 - the Grid home card, back to FolkPatch's proportions.
+            HyperSU v4.2.10 - the in-app update, fixed.
 
-            ## Home
+            ## Settings: manager update
 
-            On the Grid layout the working-status card carried its wallpaper in a card that was roughly half the screen wide but only as tall as the two small tiles beside it. A portrait working-card image was therefore cropped into a wide, short strip and the character looked squeezed next to the same image in FolkPatch.
+            Two faults made the update fail:
 
-            With a wallpaper the row now keeps a portrait-ish minimum height (224dp) and the status card fills it, so the picture has the shape it has in FolkPatch. Without a wallpaper the row is unchanged.
+            - **The updater downloaded the wrong APK.** A release carries both `...-release.apk` and `...-release-spoofed.apk`, and the updater took the first `.apk` asset - which, because "release-spoofed" sorts before "release.", was the spoofed build. It now prefers the plain `-release.apk` and never falls back to a spoofed asset.
+            - **A failed download had no explanation and no way out.** The version check talks to `api.github.com`, but the APK comes from the release-asset host, and one being unreachable while the other works is common. The failure notification now carries the reason (HTTP status, timeout, DNS), and the dialog opens the release page instead of leaving the update dead.
 
-            ## From v4.2.8
+            ## From v4.2.9
 
-            - GPU load reads the vendor counter family that actually exists, reads sysfs directly with a shell fallback, keeps the last good value across a failed sample, and a real 0% no longer draws as `--`.
+            - Grid home: the working-status card keeps a portrait-ish height when it carries a wallpaper, so the picture is no longer cropped into a short wide strip.
+            - GPU load reads the vendor counter family that exists, keeps the last good value across a failed sample, and a real 0% no longer draws as `--`.
             - Multi-manager support with icons and Built-in / Dynamic / Not authorized state from the kernel manager table, plus an explicit risk confirmation before granting.
-            - The module flash success page stays, with its reboot button.
-            - Downloaded module zips and the notification's Install action open the confirmation again.
-            - A module installed from outside the module screen shows up right away.
+            - The module flash success page stays; downloaded zips and the notification's Install action open the confirmation; the module list reloads after an install started elsewhere.
             - SUSFS backup and restore no longer freeze the app.
             - Zygisk providers no longer stick on "reboot required".
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.8...v4.2.9
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.9...v4.2.10
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
