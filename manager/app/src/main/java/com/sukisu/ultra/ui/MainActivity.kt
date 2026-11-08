@@ -93,6 +93,7 @@ import com.sukisu.ultra.ui.screen.install.InstallScreen
 import com.sukisu.ultra.ui.screen.module.ModulePager
 import com.sukisu.ultra.ui.screen.modulerepo.ModuleRepoDetailScreen
 import com.sukisu.ultra.ui.screen.modulerepo.ModuleRepoScreen
+import com.sukisu.ultra.ui.screen.dynamic.DynamicManagerScreen
 import com.sukisu.ultra.ui.screen.settings.LanguagePickerScreen
 import com.sukisu.ultra.ui.screen.settings.SettingPager
 import com.sukisu.ultra.ui.screen.settings.tools.ToolsScreen
@@ -371,6 +372,7 @@ class MainActivity : ComponentActivity() {
                                     )
                                 }
                                 entry<Route.SuSFS>(swipeDismiss = swipeDismiss) { SuSFSScreen() }
+                entry<Route.DynamicManager>(swipeDismiss = swipeDismiss) { DynamicManagerScreen() }
                                 entry<Route.Tool>(swipeDismiss = swipeDismiss) { ToolsScreen() }
                                 entry<Route.UmountManager>(swipeDismiss = swipeDismiss) { UmountManagerScreen() }
                                 entry<Route.Language>(swipeDismiss = swipeDismiss) {

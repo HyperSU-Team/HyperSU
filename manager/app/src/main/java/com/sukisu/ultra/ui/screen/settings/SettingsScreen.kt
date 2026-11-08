@@ -77,6 +77,7 @@ fun SettingPager(
             onSetAlternativeIcon = { enabled -> viewModel.setAlternativeIcon(context, enabled) },
             onOpenTools = { navigator.push(Route.Tool) },
             onOpenSusfsConfig = { navigator.push(Route.SuSFS) },
+            onOpenDynamicManager = { navigator.push(Route.DynamicManager) },
         )
     }
 

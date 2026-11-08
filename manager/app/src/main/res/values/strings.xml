@@ -568,6 +568,18 @@
     <!-- SuSFS Configuration -->
     <string name="susfs_config_title">SuSFS Configuration</string>
     <string name="susfs_config_summary">Configure SuSFS module settings</string>
+    <string name="dynamic_manager">Multi-manager support</string>
+    <string name="dynamic_manager_summary">Accept another manager's signature as well</string>
+    <string name="dynamic_manager_current">Current dynamic signature</string>
+    <string name="dynamic_manager_not_set">Not set</string>
+    <string name="dynamic_manager_clear">Clear dynamic signature</string>
+    <string name="dynamic_manager_apps">Manager apps</string>
+    <string name="dynamic_manager_no_apps">No installed app ships libksud.so</string>
+    <string name="dynamic_manager_set_success">Dynamic signature set</string>
+    <string name="dynamic_manager_set_failed">Failed to set the dynamic signature</string>
+    <string name="dynamic_manager_cleared">Dynamic signature cleared</string>
+    <string name="dynamic_manager_clear_failed">Failed to clear the dynamic signature</string>
+
     <string name="susfs_config_description">Configuration Description</string>
     <string name="susfs_config_description_text">This feature allows you to customize the SuSFS uname value and build time spoofing. Enter the values you want to set and click Apply to take effect</string>
     <string name="susfs_uname_label">Kernel Release</string>

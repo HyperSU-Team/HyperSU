@@ -862,3 +862,37 @@ private fun parseQuotedValue(value: String): String {
         trimmed
     }
 }
+
+/** Signature the kernel currently accepts as the dynamic (multi-manager) one. */
+data class DynamicManagerConfig(val size: Int, val hash: String)
+
+/**
+ * Read the dynamic manager signature from the kernel.
+ *
+ * The kernel keeps it in memory only; `ksud kernel dynamic-manager get` prints it as JSON and
+ * answers with a non-zero exit code when nothing is set.
+ */
+suspend fun getDynamicManagerConfig(): DynamicManagerConfig? = withContext(Dispatchers.IO) {
+    val shell = getRootShell()
+    val result = shell.newJob()
+        .add("${getKsuDaemonPath()} kernel dynamic-manager get --internal true")
+        .to(mutableListOf<String>(), null)
+        .exec()
+    if (!result.isSuccess) return@withContext null
+    runCatching {
+        val obj = org.json.JSONObject(result.out.joinToString("\n"))
+        val size = obj.optInt("size", 0)
+        val hash = obj.optString("hash", "")
+        if (size > 0 && hash.length == 64) DynamicManagerConfig(size, hash) else null
+    }.getOrNull()
+}
+
+/** Accept the signature of the manager installed at [apkPath]; `ksud` reads it out of the APK. */
+fun setDynamicManagerApk(apkPath: String): Boolean {
+    val quoted = "'${apkPath.replace("'", "'\\''")}'"
+    return execKsud("kernel dynamic-manager set-apk $quoted", true)
+}
+
+/** Forget the dynamic signature. */
+fun clearDynamicManager(): Boolean = execKsud("kernel dynamic-manager clear", true)
+

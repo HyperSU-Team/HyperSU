@@ -544,6 +544,18 @@
     <!-- SuSFS Configuration -->
     <string name="susfs_config_title">SuSFS 配置</string>
     <string name="susfs_config_summary">配置SuSFS模块设置</string>
+    <string name="dynamic_manager">多管理器适配</string>
+    <string name="dynamic_manager_summary">允许内核接受另一个管理器的签名</string>
+    <string name="dynamic_manager_current">当前动态签名</string>
+    <string name="dynamic_manager_not_set">未设置</string>
+    <string name="dynamic_manager_clear">清除动态签名</string>
+    <string name="dynamic_manager_apps">管理器应用</string>
+    <string name="dynamic_manager_no_apps">未找到已安装的管理器应用</string>
+    <string name="dynamic_manager_set_success">已设置动态签名</string>
+    <string name="dynamic_manager_set_failed">设置动态签名失败</string>
+    <string name="dynamic_manager_cleared">已清除动态签名</string>
+    <string name="dynamic_manager_clear_failed">清除动态签名失败</string>
+
     <string name="susfs_config_description">配置说明</string>
     <string name="susfs_config_description_text">此功能允许您自定义 SuSFS 的 uname 值和构建时间伪装。输入您想要设置的值，点击应用即可生效</string>
     <string name="susfs_uname_label">Uname 值</string>

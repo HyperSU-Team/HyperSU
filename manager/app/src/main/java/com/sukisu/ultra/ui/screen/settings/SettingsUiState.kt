@@ -102,4 +102,5 @@ data class SettingsScreenActions(
     val onSetAlternativeIcon: (Boolean) -> Unit,
     val onOpenTools: () -> Unit,
     val onOpenSusfsConfig: () -> Unit,
+    val onOpenDynamicManager: () -> Unit,
 )

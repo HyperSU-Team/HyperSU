@@ -301,6 +301,22 @@ fun SettingPagerFolk(
                 }
             }
 
+            // Multi-manager adaptation: the extra signature the kernel accepts beside ours.
+            item {
+                KsuIsValid {
+                    FolkSettingsSectionGroup(title = stringResource(R.string.dynamic_manager)) {
+                        item {
+                            FolkNavigationPreference(
+                                title = stringResource(R.string.dynamic_manager),
+                                summary = stringResource(R.string.dynamic_manager_summary),
+                                icon = Icons.Filled.AdminPanelSettings,
+                                onClick = actions.onOpenDynamicManager,
+                            )
+                        }
+                    }
+                }
+            }
+
             // Kernel features (KSU only).
             item {
                 KsuIsValid {
