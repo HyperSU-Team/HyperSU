@@ -88,8 +88,12 @@ class DashboardViewModel : ViewModel() {
                 runCatching {
                     val gpu = HardwareMonitor.getGpuUsage()
                     _systemMonitor.update { it.copy(gpuUsage = gpu) }
-                    _timeSeries.update {
-                        it.copy(gpuHistory = (it.gpuHistory + gpu.toFloat()).takeLast(TimeSeriesData.MAX_POINTS))
+                    // -1 means "no usable GPU counter on this device"; putting it in the history
+                    // would draw a permanent 0% line instead of leaving the chart out.
+                    if (gpu >= 0) {
+                        _timeSeries.update {
+                            it.copy(gpuHistory = (it.gpuHistory + gpu.toFloat()).takeLast(TimeSeriesData.MAX_POINTS))
+                        }
                     }
                 }.onFailure { Log.w(TAG, "GPU sample failed", it) }
                 delay(GPU_INTERVAL_MS)

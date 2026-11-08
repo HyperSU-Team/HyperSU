@@ -3,6 +3,7 @@ package com.sukisu.ultra.ui.util
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
 
 /**
  * Reads the hardware counters the stats layout displays.
@@ -26,12 +27,31 @@ object HardwareMonitor {
     private var prevGpuTotal = 0L
     private var lastGpuUpdateTime = 0L
     private var smoothedGpuUsage = -1f
+
+    // Which counter this device actually publishes. Probed once, then re-probed when a read
+    // starts failing: the paths differ per vendor, and a wrong guess used to mean a permanent 0.
+    private var gpuSource: GpuSource? = null
+    private var gpuSourceProbed = false
+
+    // Last good percentage. A single unreadable sample keeps it instead of dropping to 0, which
+    // used to make the chart fall back to "--" for a tick.
+    private var lastGpuValue = -1
+
     private const val GPU_EMA_ALPHA = 0.3f
 
     private const val ADRENO_PERCENT_PATH = "/sys/class/kgsl/kgsl-3d0/gpu_busy_percentage"
     private const val ADRENO_PATH = "/sys/class/kgsl/kgsl-3d0/gpubusy"
     private const val MALI_PATH = "/sys/class/misc/mali0/device/utilization"
+    private const val MALI_PLATFORM_COMMAND = "cat /sys/devices/platform/*.mali/utilisation 2>/dev/null"
     private const val GENERIC_GPU_PATH = "/sys/kernel/gpu/gpu_busy"
+
+    private enum class GpuSource {
+        ADRENO_PERCENT,
+        ADRENO_COUNTERS,
+        MALI_UTILIZATION,
+        MALI_PLATFORM,
+        GENERIC_BUSY,
+    }
 
     data class MemoryInfo(
         val ramTotal: Long,
@@ -109,56 +129,104 @@ object HardwareMonitor {
     }
 
     /**
-     * GPU load as a percentage, or 0 when the device exposes no counter.
+     * GPU load as a percentage, or -1 while the device does not publish a usable counter.
      *
-     * Three families are tried in turn: Adreno's direct percentage, Adreno's cumulative counters,
-     * then Mali's utilisation. A device with none of them reports 0 rather than an error, because
-     * "this GPU does not publish its load" is a normal answer.
+     * The counter families differ per vendor and per kernel, so the working one is probed once and
+     * remembered: Adreno either exposes a direct percentage or a pair of cumulative counters, Mali
+     * a utilisation node, and some vendor kernels a generic `gpu_busy`. The node is read directly
+     * first and through the root shell only as a fallback, so a readable sysfs file costs no
+     * process per sample. A read that suddenly fails re-probes the families instead of pinning the
+     * reading at 0, and a value that is momentarily unavailable keeps the last good one.
      */
     suspend fun getGpuUsage(): Int {
-        directPercentage()?.let { return it }
-        cumulative()?.let { return it }
-        return 0
+        if (!gpuSourceProbed) {
+            val detected = detectGpuSource()
+            if (detected != gpuSource) resetGpuSampling()
+            gpuSource = detected
+            gpuSourceProbed = true
+        }
+        val source = gpuSource ?: return lastGpuValue
+        val value = readGpuSource(source)
+        if (value == null) {
+            gpuSource = null
+            gpuSourceProbed = false
+            return lastGpuValue
+        }
+        lastGpuValue = value
+        return value
     }
 
-    private suspend fun directPercentage(): Int? {
-        val out = runShell("cat $ADRENO_PERCENT_PATH")
-        if (out.isEmpty()) return null
-        val value = out[0].trim().replace("%", "").toIntOrNull() ?: return null
-        smoothedGpuUsage = value.toFloat()
-        return value.coerceIn(0, 100)
+    /** A new counter family means new units: the old baseline and smoothing do not carry over. */
+    private fun resetGpuSampling() {
+        prevGpuUsage = 0L
+        prevGpuTotal = 0L
+        lastGpuUpdateTime = 0L
+        smoothedGpuUsage = -1f
+        lastGpuValue = -1
     }
 
-    private suspend fun cumulative(): Int? {
-        // Adreno: two cumulative counters, busy then total.
-        val adreno = runShell("cat $ADRENO_PATH")
-        if (adreno.isNotEmpty()) {
-            val parts = adreno[0].trim().split(Regex("\\s+"))
-            if (parts.size >= 2) {
-                val currentUsage = parts[0].toLongOrNull() ?: 0L
-                val currentTotal = parts[1].toLongOrNull() ?: 0L
-                val sampled = sample(currentUsage, currentTotal)
-                if (sampled >= 0f) return sampled.toInt().coerceIn(0, 100)
+    private suspend fun detectGpuSource(): GpuSource? {
+        if (parsePercent(readSysfs(ADRENO_PERCENT_PATH)) != null) return GpuSource.ADRENO_PERCENT
+        if (parseCounters(readSysfs(ADRENO_PATH)) != null) return GpuSource.ADRENO_COUNTERS
+        if (parsePercent(readSysfs(MALI_PATH)) != null) return GpuSource.MALI_UTILIZATION
+        if (parsePercent(readShellFirst(MALI_PLATFORM_COMMAND)) != null) return GpuSource.MALI_PLATFORM
+        if (parsePercent(readSysfs(GENERIC_GPU_PATH)) != null) return GpuSource.GENERIC_BUSY
+        return null
+    }
+
+    private suspend fun readGpuSource(source: GpuSource): Int? = when (source) {
+        GpuSource.ADRENO_PERCENT -> parsePercent(readSysfs(ADRENO_PERCENT_PATH))
+        GpuSource.MALI_UTILIZATION -> parsePercent(readSysfs(MALI_PATH))
+        GpuSource.MALI_PLATFORM -> parsePercent(readShellFirst(MALI_PLATFORM_COMMAND))
+        GpuSource.GENERIC_BUSY -> parsePercent(readSysfs(GENERIC_GPU_PATH))
+        GpuSource.ADRENO_COUNTERS -> {
+            val counters = parseCounters(readSysfs(ADRENO_PATH))
+            if (counters == null) {
+                null
+            } else {
+                val sampled = sample(counters.first, counters.second)
+                if (sampled < 0f) {
+                    // The first reading only establishes the baseline; keep the previous reading
+                    // instead of reporting the GPU as idle for one tick.
+                    lastGpuValue.coerceAtLeast(0)
+                } else {
+                    sampled.toInt().coerceIn(0, 100)
+                }
             }
         }
+    }
 
-        // Mali: a single utilisation figure.
-        val mali = runShell("cat $MALI_PATH")
-        if (mali.isNotEmpty()) {
-            val value = mali[0].trim().toIntOrNull() ?: return null
-            smoothedGpuUsage = value.toFloat()
-            return value.coerceIn(0, 100)
-        }
+    /** Reads a sysfs node directly, falling back to the shared root shell when it is not readable. */
+    private suspend fun readSysfs(path: String): String? {
+        runCatching { File(path).readText() }
+            .getOrNull()
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?.let { return it }
 
-        // Generic kernel GPU node.
-        val generic = runShell("cat $GENERIC_GPU_PATH")
-        if (generic.isNotEmpty()) {
-            val value = generic[0].trim().toIntOrNull() ?: return null
-            smoothedGpuUsage = value.toFloat()
-            return value.coerceIn(0, 100)
-        }
+        return readShellFirst("cat $path 2>/dev/null")
+    }
 
-        return null
+    private suspend fun readShellFirst(command: String): String? =
+        runShell(command)
+            .firstOrNull()
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+
+    /** "12", "12 %" and "12.5%" mean the same thing; anything outside 0..100 is clamped. */
+    private fun parsePercent(raw: String?): Int? {
+        val token = raw?.trim()?.split(Regex("\\s+"))?.firstOrNull()?.removeSuffix("%") ?: return null
+        return token.toFloatOrNull()?.coerceIn(0f, 100f)?.toInt()
+    }
+
+    /** The Adreno counter pair: cumulative busy time and cumulative total time. */
+    private fun parseCounters(raw: String?): Pair<Long, Long>? {
+        val parts = raw?.trim()?.split(Regex("\\s+")) ?: return null
+        if (parts.size < 2) return null
+        val busy = parts[0].toLongOrNull() ?: return null
+        val total = parts[1].toLongOrNull() ?: return null
+        if (busy < 0L || total <= 0L) return null
+        return busy to total
     }
 
     /**
@@ -182,7 +250,10 @@ object HardwareMonitor {
         prevGpuTotal = currentTotal
         lastGpuUpdateTime = now
 
-        if (deltaTotal <= 0) return -1f
+        // No time passed on the GPU's own clock: it is powered down, so the previous reading is
+        // more truthful than a division by zero.
+        if (deltaTotal <= 0L) return -1f
+
         val instant = (deltaUsage.toFloat() / deltaTotal.toFloat() * 100f).coerceIn(0f, 100f)
         smoothedGpuUsage = if (smoothedGpuUsage < 0f) {
             instant

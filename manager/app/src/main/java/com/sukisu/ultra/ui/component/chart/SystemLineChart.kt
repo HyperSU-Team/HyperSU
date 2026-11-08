@@ -75,7 +75,13 @@ fun SystemLineChart(
             )
     ) {
         Text(
-            text = if (currentValue > 0f && currentValue.isFinite() && currentValue < Int.MAX_VALUE) "${currentValue.toInt()}$unit" else "--$unit",
+            // A real 0% is a reading, not a missing one: only an empty history gets the dashes.
+            // `> 0f` used to turn an idle GPU into "--", which reads as "no data".
+            text = if (dataPoints.isNotEmpty() && currentValue.isFinite() && currentValue < Int.MAX_VALUE) {
+                "${currentValue.toInt()}$unit"
+            } else {
+                "--$unit"
+            },
             style = MaterialTheme.typography.headlineSmall.copy(
                 fontWeight = FontWeight.Bold,
                 color = lineColor

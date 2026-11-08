@@ -97,12 +97,15 @@ fun SystemMonitoringSection(
                     modifier = Modifier.weight(1f),
                     color = colors.primary,
                 )
-                SystemLineChart(
-                    title = stringResource(R.string.home_device_status_gpu_load),
-                    dataPoints = timeSeries.gpuHistory,
-                    modifier = Modifier.weight(1f),
-                    color = colors.tertiary,
-                )
+                // A device with no GPU counter gets no GPU chart, rather than a permanent "--".
+                if (timeSeries.gpuHistory.isNotEmpty()) {
+                    SystemLineChart(
+                        title = stringResource(R.string.home_device_status_gpu_load),
+                        dataPoints = timeSeries.gpuHistory,
+                        modifier = Modifier.weight(1f),
+                        color = colors.tertiary,
+                    )
+                }
             }
 
             // Only once a reading has actually arrived; the first sample of a device without a
