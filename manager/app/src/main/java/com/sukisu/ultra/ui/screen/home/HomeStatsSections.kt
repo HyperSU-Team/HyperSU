@@ -76,7 +76,12 @@ fun SystemMonitoringSection(
 ) {
     val colors = MaterialTheme.colorScheme
 
-    ExpressiveCard(modifier = modifier) {
+    // Flat on purpose: an elevated card over a wallpaper is translucent (the container colour
+    // carries the background opacity), and an elevated surface draws its own shadow *under* that
+    // translucent fill. On a bright wallpaper the shadow read as a grey layer covering the whole
+    // card - it appeared at the top of the stats page and vanished once the card scrolled - so the
+    // stats cards are plain cards, which is also what FolkPatch's own TonalCard does.
+    ExpressiveCard(modifier = modifier, flat = true) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -457,7 +462,8 @@ fun ModuleStatisticsSection(
 ) {
     val total = stats.apmModuleCount + stats.superuserCount
 
-    ExpressiveCard(modifier = modifier) {
+    // Flat for the same reason as the device-status card above: no shadow under a translucent fill.
+    ExpressiveCard(modifier = modifier, flat = true) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()

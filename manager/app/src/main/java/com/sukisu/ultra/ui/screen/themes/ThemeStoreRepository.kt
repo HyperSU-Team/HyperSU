@@ -5,6 +5,9 @@ import android.net.Uri
 import android.util.Log
 import com.sukisu.ultra.ksuApp
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import okhttp3.Request
 import org.json.JSONArray
@@ -37,7 +40,11 @@ object ThemeStoreRepository {
 
     private const val TAG = "ThemeStore"
     private const val RELEASES_URL = "https://api.github.com/repos/1542296180/FolkPatch-/releases"
-    private const val PER_PAGE = 30
+    // One page holds a full catalogue's worth of releases, and the second page covers the older
+    // half of the repository. The store used to read a single page of 30 and quietly hid every
+    // theme beyond it.
+    private const val PER_PAGE = 100
+    private const val PAGES = 2
     private const val CACHE_TTL_MS = 10 * 60 * 1000L
 
     // The shared client's 10s connect timeout is short for a mobile connection and a 100-release
@@ -49,7 +56,14 @@ object ThemeStoreRepository {
             .build()
     }
 
-    private val MARKDOWN_IMAGE = Regex("""!\[[^\]]*]\((https?://[^)]+)\)""")
+    // Release bodies carry the screenshot in either form: most are markdown images, but several
+    // authors paste the HTML `<img>` GitHub's editor produces. Only the markdown form was read, so
+    // those releases showed a card with no cover at all.
+    private val MARKDOWN_IMAGE = Regex("""!\[[^\]]*]\((https?://[^)\s]+)\)""")
+    private val HTML_IMAGE = Regex("""<img[^>]*?\ssrc\s*=\s*["'](https?://[^"']+)["']""", RegexOption.IGNORE_CASE)
+
+    /** An image published as a release asset rather than embedded in the body. */
+    private val PREVIEW_ASSET_EXTENSIONS = listOf(".png", ".jpg", ".jpeg", ".webp")
 
     /**
      * Public mirrors of a GitHub release asset.
@@ -73,9 +87,19 @@ object ThemeStoreRepository {
                 readCache(cache)?.let { return@withContext it }
             }
 
-            val fresh = runCatching { fetchPage(1) }
+            // The pages are independent requests, so they run together instead of one after the
+            // other; a page that fails only costs its own themes.
+            val fresh = runCatching {
+                coroutineScope {
+                    (1..PAGES).map { page ->
+                        async { runCatching { fetchPage(page) }.getOrDefault(emptyList()) }
+                    }.awaitAll().flatten()
+                }
+            }
                 .onFailure { Log.w(TAG, "could not load the theme catalogue", it) }
                 .getOrNull()
+                ?.distinctBy { it.tag }
+                ?.takeIf { it.isNotEmpty() }
 
             if (fresh != null) {
                 writeCache(cache, fresh)
@@ -127,6 +151,7 @@ object ThemeStoreRepository {
         val request = Request.Builder()
             .url("$RELEASES_URL?per_page=$PER_PAGE&page=$page")
             .header("Accept", "application/vnd.github+json")
+            .header("User-Agent", "HyperSU-Manager")
             .build()
 
         client.newCall(request).execute().use { response ->
@@ -142,15 +167,46 @@ object ThemeStoreRepository {
 
                 StoreTheme(
                     tag = release.optString("tag_name").ifBlank { "release-$index" },
-                    name = release.optString("name").ifBlank { release.optString("tag_name") },
-                    previewUrl = MARKDOWN_IMAGE.find(release.optString("body"))
-                        ?.groupValues?.get(1),
+                    // A few authors name the release after the file, suffix and all; the store
+                    // shows the theme's name, not its file name.
+                    name = (release.optString("name").ifBlank { release.optString("tag_name") })
+                        .trim()
+                        .removeSuffix(".fpt")
+                        .removeSuffix(".FPT"),
+                    previewUrl = previewUrlOf(release),
                     downloadUrl = asset.optString("browser_download_url"),
                     sizeBytes = asset.optLong("size"),
                     downloadCount = asset.optInt("download_count"),
                 )
             }
         }
+    }
+
+    /**
+     * The cover image of a release, whichever way the author attached it.
+     *
+     * Body first - markdown image, then HTML `<img>` - because that is the picture the author saw
+     * when publishing. When the body carries none, an image published as a release asset is used
+     * instead of leaving the card blank.
+     */
+    private fun previewUrlOf(release: JSONObject): String? {
+        val body = release.optString("body")
+        MARKDOWN_IMAGE.find(body)?.groupValues?.get(1)
+            ?.takeIf { it.isNotBlank() }
+            ?.let { return it }
+        HTML_IMAGE.find(body)?.groupValues?.get(1)
+            ?.takeIf { it.isNotBlank() }
+            ?.let { return it }
+
+        val assets = release.optJSONArray("assets") ?: return null
+        return (0 until assets.length())
+            .mapNotNull { assets.optJSONObject(it) }
+            .firstOrNull { asset ->
+                val name = asset.optString("name")
+                PREVIEW_ASSET_EXTENSIONS.any { name.endsWith(it, ignoreCase = true) }
+            }
+            ?.optString("browser_download_url")
+            ?.takeIf { it.isNotBlank() }
     }
 
     /**

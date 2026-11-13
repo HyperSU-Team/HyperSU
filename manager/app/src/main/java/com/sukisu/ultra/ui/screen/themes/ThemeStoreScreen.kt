@@ -66,7 +66,13 @@ fun ThemeStoreScreen() {
         reloadLibrary()
     }
 
-    LaunchedEffect(Unit) { reload() }
+    LaunchedEffect(Unit) {
+        // The library lives on the device, so it is read first and on its own: the downloaded tab
+        // used to stay empty until the GitHub request came back, which on a slow connection looked
+        // like nothing had ever been downloaded.
+        reloadLibrary()
+        reload()
+    }
 
     fun toast(message: Int) {
         Toast.makeText(context, context.getString(message), Toast.LENGTH_SHORT).show()
@@ -109,7 +115,9 @@ fun ThemeStoreScreen() {
                 return@launch
             }
 
-            val local = withContext(Dispatchers.IO) { ThemeLibrary.add(context, archive, theme.name) }
+            val local = withContext(Dispatchers.IO) {
+                ThemeLibrary.add(context, archive, theme.name, sourceTag = theme.tag)
+            }
             archive.delete()
             if (local == null) {
                 state = state.copy(busyKey = null)
@@ -143,7 +151,13 @@ fun ThemeStoreScreen() {
         state = state,
         onBack = { navigator.pop() },
         onRefresh = { scope.launch { reload(force = true) } },
-        onTabChange = { tab -> state = state.copy(tab = tab) },
+        onTabChange = { tab ->
+            state = state.copy(tab = tab)
+            // An import can land while the screen is open (the picker returns to it), so the
+            // downloaded tab re-reads the library each time it is opened instead of trusting the
+            // list that was read on first composition.
+            if (tab == ThemeStoreTab.DOWNLOADED) scope.launch { reloadLibrary() }
+        },
         onQueryChange = { query -> state = state.copy(query = query) },
         onInstall = ::install,
         onApplyLocal = ::applyLocal,

@@ -108,7 +108,7 @@ fun ThemeStoreFolk(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
                 if (state.tab == ThemeStoreTab.STORE) {
-                    storeItems(state, onRefresh, onInstall)
+                    storeItems(state, onRefresh, onInstall, onApplyLocal)
                 } else {
                     downloadedItems(state, onApplyLocal, onDeleteLocal)
                 }
@@ -117,10 +117,25 @@ fun ThemeStoreFolk(
     }
 }
 
+/**
+ * The library copy of a store theme, when there is one.
+ *
+ * The release tag is the reliable key; themes installed before the tag was recorded are matched
+ * by name, ignoring the `.fpt` suffix some releases put in their title.
+ */
+private fun downloadedCopy(theme: StoreTheme, downloads: List<LocalTheme>): LocalTheme? =
+    downloads.firstOrNull { it.sourceTag == theme.tag }
+        ?: downloads.firstOrNull { local ->
+            val lhs = local.name.trim().removeSuffix(".fpt")
+            val rhs = theme.name.trim().removeSuffix(".fpt")
+            lhs.equals(rhs, ignoreCase = true)
+        }
+
 private fun androidx.compose.foundation.lazy.LazyListScope.storeItems(
     state: ThemeStoreState,
     onRefresh: () -> Unit,
     onInstall: (StoreTheme) -> Unit,
+    onApply: (LocalTheme) -> Unit,
 ) {
     val query = state.query.trim()
     val visible = if (query.isEmpty()) {
@@ -176,7 +191,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.storeItems(
             StoreThemeCard(
                 theme = theme,
                 state = state,
+                downloaded = downloadedCopy(theme, state.downloads),
                 onInstall = onInstall,
+                onApply = onApply,
             )
         }
     }
@@ -222,9 +239,13 @@ private fun androidx.compose.foundation.lazy.LazyListScope.downloadedItems(
 private fun StoreThemeCard(
     theme: StoreTheme,
     state: ThemeStoreState,
+    downloaded: LocalTheme?,
     onInstall: (StoreTheme) -> Unit,
+    onApply: (LocalTheme) -> Unit,
 ) {
-    val busy = state.busyKey == theme.tag
+    // Two different operations can be in flight on this card: a download keyed by the release
+    // tag, and applying an archive that is already on the device, keyed by the library id.
+    val busy = state.busyKey == theme.tag || (downloaded != null && state.busyKey == downloaded.id)
     val progress = state.progress[theme.tag] ?: 0
 
     Card(
@@ -306,6 +327,16 @@ private fun StoreThemeCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
+                    // A theme that is already on the device says so, and its button applies the
+                    // local copy instead of downloading the same 20MB again.
+                    if (downloaded != null) {
+                        Spacer(Modifier.width(12.dp))
+                        Text(
+                            text = stringResource(R.string.theme_store_tab_downloaded),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
                     Spacer(Modifier.weight(1f))
                     Text(
                         text = stringResource(R.string.theme_store_downloads, theme.downloadCount),
@@ -315,19 +346,31 @@ private fun StoreThemeCard(
                 }
 
                 Spacer(Modifier.height(12.dp))
-                if (busy) {
-                    LinearProgressIndicator(
-                        progress = { progress / 100f },
+                when {
+                    // Only a download has a percentage to report; applying an existing copy is
+                    // quick and just leaves the button disabled until it is done.
+                    busy && state.busyKey == theme.tag -> {
+                        LinearProgressIndicator(
+                            progress = { progress / 100f },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = "$progress%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+
+                    downloaded != null -> Button(
+                        onClick = { onApply(downloaded) },
+                        enabled = state.busyKey == null,
                         modifier = Modifier.fillMaxWidth(),
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        text = "$progress%",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                } else {
-                    Button(
+                    ) {
+                        Text(stringResource(R.string.theme_store_apply))
+                    }
+
+                    else -> Button(
                         onClick = { onInstall(theme) },
                         enabled = state.busyKey == null,
                         modifier = Modifier.fillMaxWidth(),

@@ -19,6 +19,15 @@ data class LocalTheme(
     val version: String,
     val sizeBytes: Long,
     val addedAt: Long,
+    /**
+     * The store release this copy came from, when it came from the store at all.
+     *
+     * The store uses this to know which of its cards are already on the device, so a theme that
+     * was downloaded once offers "apply" instead of "download and apply". Matching that by name
+     * would break on the releases whose title carries a `.fpt` suffix, so the tag is recorded
+     * when the archive is installed.
+     */
+    val sourceTag: String? = null,
 )
 
 /**
@@ -52,13 +61,15 @@ object ThemeLibrary {
     /**
      * Copies [archive] into the library and records its metadata.
      *
-     * A theme with the same name and version replaces the previous copy instead of piling up:
-     * downloading an updated theme should not leave two entries that look identical.
+     * A theme with the same name and version - or the same store release - replaces the previous
+     * copy instead of piling up: downloading an updated theme should not leave two entries that
+     * look identical.
      */
     suspend fun add(
         context: Context,
         archive: File,
         fallbackName: String,
+        sourceTag: String? = null,
     ): LocalTheme? = withContext(Dispatchers.IO) {
         runCatching {
             val metadata = ThemeManager.readThemeMetadata(context, Uri.fromFile(archive))
@@ -67,24 +78,36 @@ object ThemeLibrary {
             val target = File(directory(context), fileName)
             // The callers hand over a fresh temporary file, and cache and files share a partition,
             // so a rename avoids copying a 20MB archive a second time; the copy is the fallback.
-            if (!archive.renameTo(target)) {
+            //
+            // A successful `renameTo` is not proof the file arrived: the theme download hit
+            // exactly that on the user's device and produced an index entry pointing at nothing,
+            // so the listing dropped it and the downloaded tab looked empty. The target is
+            // checked, and the copy runs whenever it is missing.
+            val moved = archive.renameTo(target)
+            if (!moved || !target.isFile) {
+                target.delete()
                 archive.copyTo(target, overwrite = true)
             }
+            if (!target.isFile) error("theme archive did not reach ${target.name}")
 
             val theme = LocalTheme(
                 id = id,
                 fileName = fileName,
-                name = metadata?.name ?: fallbackName,
+                name = metadata?.name?.takeIf { it.isNotBlank() } ?: fallbackName,
                 author = metadata?.author.orEmpty(),
                 version = metadata?.version.orEmpty(),
                 sizeBytes = target.length(),
                 addedAt = System.currentTimeMillis(),
+                sourceTag = sourceTag,
             )
 
             // Replace an identical theme, judged from the index rather than from the directory:
             // the file just copied would otherwise be seen as its own duplicate.
             val indexed = readIndex(context)
-            val duplicates = indexed.filter { it.name == theme.name && it.version == theme.version }
+            val duplicates = indexed.filter {
+                (sourceTag != null && it.sourceTag == sourceTag) ||
+                    (it.name == theme.name && it.version == theme.version)
+            }
             duplicates.forEach { file(context, it).takeIf { f -> f.exists() }?.delete() }
 
             writeIndex(context, indexed - duplicates.toSet() + theme)
@@ -116,6 +139,7 @@ object ThemeLibrary {
         val merged = (indexed + orphans).sortedByDescending { it.addedAt }
         // Recording the discovered files makes the next listing cheaper and keeps the names.
         if (orphans.isNotEmpty()) writeIndex(context, merged)
+        Log.d(TAG, "library: ${merged.size} theme(s), ${orphans.size} recovered from disk")
         return merged
     }
 
@@ -124,7 +148,7 @@ object ThemeLibrary {
         LocalTheme(
             id = archive.nameWithoutExtension,
             fileName = archive.name,
-            name = metadata?.name ?: archive.nameWithoutExtension,
+            name = metadata?.name?.takeIf { it.isNotBlank() } ?: archive.nameWithoutExtension,
             author = metadata?.author.orEmpty(),
             version = metadata?.version.orEmpty(),
             sizeBytes = archive.length(),
@@ -146,6 +170,7 @@ object ThemeLibrary {
                 version = item.optString("version"),
                 sizeBytes = item.optLong("sizeBytes"),
                 addedAt = item.optLong("addedAt"),
+                sourceTag = item.optString("sourceTag").takeIf { it.isNotBlank() },
             )
         }
     }.getOrElse {
@@ -165,6 +190,7 @@ object ThemeLibrary {
                     put("version", theme.version)
                     put("sizeBytes", theme.sizeBytes)
                     put("addedAt", theme.addedAt)
+                    put("sourceTag", theme.sourceTag.orEmpty())
                 },
             )
         }
