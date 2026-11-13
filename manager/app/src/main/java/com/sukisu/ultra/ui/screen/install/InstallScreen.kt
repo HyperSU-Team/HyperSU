@@ -82,7 +82,10 @@ fun InstallScreen(
     val partitions by produceState(initialValue = emptyList()) { value = getAvailablePartitions() }
     val defaultPartition by produceState(initialValue = "") { value = getDefaultPartition() }
     val rootAvailable by produceState(initialValue = false) { value = rootAvailable() }
-    val isAbDevice by produceState(initialValue = false) { value = isAbDevice() }
+    // Null until the platform has answered. The archive flow keys on A/B, and treating the
+    // placeholder "false" as the answer opened the confirmation for a two-slot device.
+    val isAbDeviceState by produceState<Boolean?>(initialValue = null) { value = isAbDevice() }
+    val isAbDevice = isAbDeviceState == true
     val isGkiDevice by produceState(initialValue = false) { value = getKernelVersion().isGKI() }
 
     val selectFileTip = stringResource(id = R.string.select_file_tip, defaultPartition)
@@ -135,7 +138,8 @@ fun InstallScreen(
         installMethodState = installMethodState,
         preselectedKernelUri = preselectedKernelUri?.toString(),
         horizonKernelSummary = horizonKernelSummary,
-        isAbDevice = isAbDevice
+        isAbDevice = isAbDevice,
+        deviceReady = isAbDeviceState != null,
     )
 
     // Keep installMethod and anyKernel3State in step.

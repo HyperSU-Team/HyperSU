@@ -11,11 +11,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -31,6 +33,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -255,55 +258,35 @@ private fun StoreThemeCard(
         ),
     ) {
         Column {
+            val preview = theme.previewUrl
             // The previews are phone screenshots. Cropping them to a fixed height showed only the
             // middle of each theme, so the whole picture is fitted instead, letterboxed on a
-            // neutral surface.
+            // neutral surface. A theme without any picture in its release gets a short strip with
+            // its name rather than a tall empty box.
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(260.dp)
+                    .height(if (preview.isNullOrBlank()) 132.dp else 260.dp)
                     .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 contentAlignment = Alignment.Center,
             ) {
-                val preview = theme.previewUrl
                 if (!preview.isNullOrBlank()) {
-                    // A preview that failed to load used to stay blank forever; a retry button
-                    // re-requests it instead of leaving the card without a picture. The attempt
-                    // is part of the cache key so the retry does not read the failed entry back.
-                    var attempt by remember(theme.tag) { mutableIntStateOf(0) }
-                    var failed by remember(theme.tag, attempt) { mutableStateOf(false) }
-                    val context = LocalContext.current
-                    if (failed) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = stringResource(R.string.theme_store_preview_failed),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            TextButton(onClick = { attempt++ }) {
-                                Text(stringResource(R.string.theme_store_retry))
-                            }
-                        }
-                    } else {
-                        AsyncImage(
-                            model = ImageRequest.Builder(context)
-                                .data(preview)
-                                .memoryCacheKey("$preview#$attempt")
-                                .diskCacheKey("$preview#$attempt")
-                                .crossfade(true)
-                                .build(),
-                            contentDescription = theme.name,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxSize(),
-                            onError = { failed = true },
+                    PreviewImage(preview = preview, name = theme.name)
+                } else {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            imageVector = Icons.Outlined.Image,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(28.dp),
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            text = stringResource(R.string.theme_store_no_preview),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                } else {
-                    Text(
-                        text = theme.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                 }
             }
 
@@ -378,6 +361,70 @@ private fun StoreThemeCard(
                         Text(stringResource(R.string.theme_store_install))
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * A release cover, with the loading and failure states the store needs.
+ *
+ * Full-size screenshots are megabytes each, so the first url tried is the same picture at the
+ * width this card draws (see [ThemeStoreRepository.previewCandidates]); the direct url is only
+ * used when that fails. A retry starts the chain over instead of leaving the card blank.
+ */
+@Composable
+private fun PreviewImage(preview: String, name: String) {
+    val context = LocalContext.current
+    val candidates = remember(preview) { ThemeStoreRepository.previewCandidates(preview) }
+    var index by remember(preview) { mutableIntStateOf(0) }
+    var retry by remember(preview) { mutableIntStateOf(0) }
+
+    val url = candidates.getOrNull(index)
+    var loaded by remember(preview, url, retry) { mutableStateOf(false) }
+    var failed by remember(preview, url, retry) { mutableStateOf(false) }
+
+    Box(contentAlignment = Alignment.Center) {
+        if (failed || url == null) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = stringResource(R.string.theme_store_preview_failed),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                TextButton(
+                    onClick = {
+                        index = 0
+                        retry++
+                    },
+                ) {
+                    Text(stringResource(R.string.theme_store_retry))
+                }
+            }
+        } else {
+            // A new key throws the painter away, so the retry really asks the network again
+            // instead of reading the failed attempt back out of the cache.
+            key(retry) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(url)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = name,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize(),
+                    onSuccess = { loaded = true },
+                    onError = {
+                        loaded = false
+                        if (index < candidates.lastIndex) index++ else failed = true
+                    },
+                )
+            }
+            if (!loaded) {
+                CircularProgressIndicator(
+                    strokeWidth = 2.dp,
+                    modifier = Modifier.size(22.dp),
+                )
             }
         }
     }

@@ -98,18 +98,17 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.20 - the theme store shows what it has, and the stats cards stop drawing a grey layer.
+            HyperSU v4.2.21 - applying a theme no longer looks like downloading it, and a flash can no longer be swiped away.
 
-            The downloaded tab was filled only after the GitHub catalogue request came back, so on a slow connection it sat empty and every store card kept offering "download and apply" even for a theme that was already on the device.
+            The store's confirmation said "download and apply" even for a theme that was already on the device, because the dialog always used the download label.
 
-            - The on-device theme library is read first and on its own, and reading it again when the downloaded tab is opened.
-            - A store card whose theme is already installed says so and offers "apply" instead of downloading the same archive again. The release tag is recorded with each installed theme, so the match also works for the releases whose title carries a `.fpt` suffix.
-            - Some releases publish their cover as an HTML `<img>` tag rather than a markdown image; those are read now, and a screenshot published as a release asset is used when the body has no picture at all.
-            - The catalogue reads two pages of 100 releases, so the older half of the repository is no longer missing from the store.
-            - The two stats cards are flat cards. An elevated card over a wallpaper is translucent, and its own shadow showed through as a grey layer that appeared at the top of the page and vanished while scrolling.
-            - A theme that could not be stored in the library is reported as a failure instead of leaving an index entry that points at nothing.
+            - That dialog now says "apply" whenever the archive is already in the library.
+            - A kernel opened from the browser no longer bounces back to the slot picker after the install starts. The A/B answer now arrives before the archive flow runs, so the slot picker and the confirmation no longer stack on top of each other, and the flash no longer starts with no slot chosen.
+            - Flashing a kernel or a boot image now holds a navigation lock. The progress screens ignore the edge swipe and the system back gesture for as long as the write runs, and the back button refuses with a message, because dismissing them cancelled the flash halfway through.
+            - Theme store covers load through a resizing proxy at the width the card draws - about 40KB instead of a 1.3MB screenshot - with the original url as the fallback, and the first eight covers are prefetched as soon as the list arrives.
+            - A release without any screenshot gets a short "no preview" strip instead of a tall empty box, and the stored theme keeps matching its store card.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.19...v4.2.20
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.20...v4.2.21
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

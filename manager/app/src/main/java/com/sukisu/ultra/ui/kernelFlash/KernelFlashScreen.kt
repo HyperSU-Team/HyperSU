@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Environment
 import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,6 +18,7 @@ import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.kernelFlash.state.HorizonKernelState
 import com.sukisu.ultra.ui.kernelFlash.state.HorizonKernelWorker
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
+import com.sukisu.ultra.ui.navigation3.NavLock
 import com.sukisu.ultra.ui.util.reboot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -65,6 +67,20 @@ fun KernelFlashScreen(
     }
 
     val flashState by horizonKernelState.state.collectAsStateWithLifecycle()
+
+    // While the write is running the screen cannot be swiped away or backed out of: doing so
+    // cancelled the flash coroutine in the middle of writing the boot image. The flag follows the
+    // job, so the result page is dismissible again the moment it finishes.
+    DisposableEffect(Unit) {
+        onDispose { NavLock.release() }
+    }
+    LaunchedEffect(flashState.isFlashing, flashState.isCompleted, flashState.error) {
+        if (flashState.isFlashing && !flashState.isCompleted && flashState.error.isEmpty()) {
+            NavLock.acquire()
+        } else {
+            NavLock.release()
+        }
+    }
 
     val flashComplete = stringResource(R.string.horizon_flash_complete)
 

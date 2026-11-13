@@ -1,7 +1,10 @@
 package com.sukisu.ultra.ui.screen.themes
 
+import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import coil.imageLoader
+import coil.request.ImageRequest
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,6 +24,33 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 enum class ThemeStoreTab { STORE, DOWNLOADED }
+
+/**
+ * How many covers to fetch ahead of the user.
+ *
+ * The cards are tall, so only a couple are on screen at a time, and each cover takes seconds on a
+ * slow connection - that is what made the list look empty while scrolling. Warming the first few
+ * while the user reads the top of the list means the cards they reach are already decoded.
+ */
+private const val PREVIEW_PREFETCH = 8
+
+/**
+ * Fetches the first covers into the image cache in the background.
+ *
+ * It requests the same url the card itself will ask for (the resized one), so the card finds it in
+ * the disk cache instead of starting its own transfer.
+ */
+private fun prefetchPreviews(context: Context, themes: List<StoreTheme>) {
+    val loader = context.imageLoader
+    themes.asSequence()
+        .mapNotNull { it.previewUrl }
+        .distinct()
+        .take(PREVIEW_PREFETCH)
+        .forEach { preview ->
+            val url = ThemeStoreRepository.previewCandidates(preview).firstOrNull() ?: return@forEach
+            loader.enqueue(ImageRequest.Builder(context).data(url).build())
+        }
+}
 
 /** The theme store's state. Per-theme progress is keyed by the release tag. */
 data class ThemeStoreState(
@@ -63,6 +93,7 @@ fun ThemeStoreScreen() {
             onSuccess = { state.copy(themes = it, loading = false) },
             onFailure = { state.copy(loading = false, failed = true) },
         )
+        themes.getOrNull()?.let { prefetchPreviews(context, it) }
         reloadLibrary()
     }
 
@@ -87,7 +118,11 @@ fun ThemeStoreScreen() {
                 local.author.ifBlank { "—" },
                 local.version.ifBlank { "—" },
             ),
-            confirm = context.getString(R.string.theme_store_install),
+            // Always "apply", never "download and apply": by the time this dialog is shown the
+            // archive is already in the library, whether it was just downloaded or was there
+            // all along. The old label made an installed theme look like it still had to be
+            // downloaded.
+            confirm = context.getString(R.string.theme_store_apply),
         )
         if (confirmed != ConfirmResult.Confirmed) return false
 

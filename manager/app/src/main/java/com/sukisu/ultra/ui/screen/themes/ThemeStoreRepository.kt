@@ -65,6 +65,9 @@ object ThemeStoreRepository {
     /** An image published as a release asset rather than embedded in the body. */
     private val PREVIEW_ASSET_EXTENSIONS = listOf(".png", ".jpg", ".jpeg", ".webp")
 
+    /** Width requested from the resizing proxy: the card is 260dp tall on a 1080p phone. */
+    private const val PREVIEW_WIDTH = 640
+
     /**
      * Public mirrors of a GitHub release asset.
      *
@@ -77,6 +80,25 @@ object ThemeStoreRepository {
         "https://gh-proxy.com/",
         "https://ghproxy.net/",
     )
+
+    /**
+     * The urls a cover is tried from, best first.
+     *
+     * A release screenshot is a full phone capture - 1.3MB at 1440x3200 - and GitHub serves it at
+     * a few hundred kilobytes a minute on a throttled connection, so a store page full of covers
+     * took tens of seconds to fill in. The first entries go through a resizing proxy that returns
+     * the same picture at the width the card actually draws, about 40KB, which is what makes the
+     * list readable immediately; the direct url stays as the last resort so nothing breaks when
+     * the proxy is unreachable.
+     *
+     * `wsrv.nl` wants the source without a scheme.
+     */
+    fun previewCandidates(url: String): List<String> {
+        if (url.isBlank()) return emptyList()
+        val bare = url.removePrefix("https://").removePrefix("http://")
+        val resized = "https://wsrv.nl/?url=$bare&w=$PREVIEW_WIDTH&output=webp&we"
+        return listOf(resized, url)
+    }
 
     private fun cacheFile(context: Context) = File(context.cacheDir, "theme_store/catalog.json")
 

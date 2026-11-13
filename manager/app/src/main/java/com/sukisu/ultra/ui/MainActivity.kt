@@ -80,6 +80,7 @@ import com.sukisu.ultra.ui.kernelFlash.KernelFlashScreen
 import com.sukisu.ultra.ui.navigation3.HandleZipFileIntent
 import com.sukisu.ultra.ui.navigation3.IntentDispatcher
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
+import com.sukisu.ultra.ui.navigation3.NavLock
 import com.sukisu.ultra.ui.navigation3.Navigator
 import com.sukisu.ultra.ui.navigation3.Route
 import com.sukisu.ultra.ui.navigation3.rememberNavigator
@@ -298,7 +299,11 @@ class MainActivity : ComponentActivity() {
                     }
                     IntentDispatcher(intentChannel = intentChannel)
                     HandleZipFileIntent(zipIntentChannel)
-                    val swipeDismiss = if (uiState.enableSwipeDismiss) {
+                    // A screen whose work must finish - a kernel or boot image being written -
+                    // raises NavLock, and from then on no entry may be dismissed with a swipe.
+                    // Without this the progress page could be swiped away mid-write, which
+                    // cancelled the flash coroutine while it was writing the boot partition.
+                    val swipeDismiss = if (uiState.enableSwipeDismiss && !NavLock.isBusy) {
                         if (LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl) {
                             NavSwipeDirection.RightToLeft
                         } else {
@@ -331,16 +336,20 @@ class MainActivity : ComponentActivity() {
                                 backStack = navigator.backStack,
                                 effects = NavDisplayEffects(cornerClipRadius = rememberNavSystemCornerRadius()),
                                 onBack = {
-                                    when (val top = navigator.current()) {
-                                        is Route.TemplateEditor -> {
-                                            if (!top.readOnly) {
-                                                navigator.setResult("template_edit", true)
-                                            } else {
-                                                navigator.pop()
+                                    // Ignored while a flash is writing: the system back gesture
+                                    // popped the progress screen and cancelled the job.
+                                    if (!NavLock.isBusy) {
+                                        when (val top = navigator.current()) {
+                                            is Route.TemplateEditor -> {
+                                                if (!top.readOnly) {
+                                                    navigator.setResult("template_edit", true)
+                                                } else {
+                                                    navigator.pop()
+                                                }
                                             }
-                                        }
 
-                                        else -> navigator.pop()
+                                            else -> navigator.pop()
+                                        }
                                     }
                                 }) {
                                 entry<Route.Main>(swipeDismiss = swipeDismiss) { mainScreenEntry() }
@@ -353,7 +362,11 @@ class MainActivity : ComponentActivity() {
                                 entry<Route.ModuleRepo>(swipeDismiss = swipeDismiss) { ModuleRepoScreen() }
                                 entry<Route.ModuleRepoDetail>(swipeDismiss = swipeDismiss) { key -> ModuleRepoDetailScreen(key.module) }
                                 entry<Route.Install>(swipeDismiss = swipeDismiss) { key -> InstallScreen(preselectedKernelUri = key.preselectedKernelUri) }
-                                entry<Route.Flash>(swipeDismiss = swipeDismiss) { key -> FlashScreen(key.flashIt) }
+                                // The two progress screens never dismiss with a swipe: the work
+                                // they report on writes the boot partition from this entry's
+                                // coroutine, and a swipe cancelled it halfway through. Their own
+                                // back button closes them as usual.
+                                entry<Route.Flash>(swipeDismiss = NavSwipeDirection.None) { key -> FlashScreen(key.flashIt) }
                                 entry<Route.ExecuteModuleAction>(swipeDismiss = swipeDismiss) { key ->
                                     ExecuteModuleActionScreen(
                                         key.moduleId,
@@ -364,7 +377,7 @@ class MainActivity : ComponentActivity() {
                                 entry<Route.SuperUser>(swipeDismiss = swipeDismiss) { mainScreenEntry() }
                                 entry<Route.Module>(swipeDismiss = swipeDismiss) { mainScreenEntry() }
                                 entry<Route.Settings>(swipeDismiss = swipeDismiss) { mainScreenEntry() }
-                                entry<Route.KernelFlash>(swipeDismiss = swipeDismiss) { key ->
+                                entry<Route.KernelFlash>(swipeDismiss = NavSwipeDirection.None) { key ->
                                     KernelFlashScreen(
                                         key.kernelUri,
                                         key.selectedSlot,

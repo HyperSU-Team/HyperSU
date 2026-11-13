@@ -33,6 +33,17 @@ fun rememberAnyKernel3State(
     preselectedKernelUri: String?,
     horizonKernelSummary: String,
     isAbDevice: Boolean,
+    /**
+     * Whether [isAbDevice] is a real reading yet.
+     *
+     * It arrives from a `produceState` that starts at `false`, and the preselected flow below
+     * keys on it: without this flag the effect ran once with "single slot" and opened the
+     * confirmation, then ran again with the real answer and opened the slot picker underneath it.
+     * Confirming the top dialog flashed the archive with no slot at all, and the picker that was
+     * still pending popped up again over the progress page - which read as the app jumping back to
+     * the slot step right after the install started.
+     */
+    deviceReady: Boolean = true,
 ): AnyKernel3State {
     var showSlotSelectionDialog by remember { mutableStateOf(false) }
     var showConfirmDialog by remember { mutableStateOf(false) }
@@ -45,9 +56,13 @@ fun rememberAnyKernel3State(
         if (uri != null) {
             if (isAbDevice && method.archiveSlot == null) {
                 pendingArchive = method
+                // One dialog at a time: the confirmation under the picker is what let the archive
+                // reach the flash with no slot chosen.
+                showConfirmDialog = false
                 showSlotSelectionDialog = true
             } else {
                 installMethodState.value = method
+                showSlotSelectionDialog = false
                 showConfirmDialog = true
             }
         }
@@ -57,6 +72,7 @@ fun rememberAnyKernel3State(
         val uri = method.archiveUri
         if (uri != null && isAbDevice) {
             pendingArchive = method
+            showConfirmDialog = false
             showSlotSelectionDialog = true
         }
     }
@@ -89,7 +105,10 @@ fun rememberAnyKernel3State(
         installMethodState.value = null
     }
 
-    LaunchedEffect(preselectedKernelUri, isAbDevice, horizonKernelSummary) {
+    LaunchedEffect(preselectedKernelUri, isAbDevice, deviceReady, horizonKernelSummary) {
+        // Wait for the real A/B answer; running this on the placeholder `false` opened the
+        // confirmation for a device that then turned out to have two slots.
+        if (!deviceReady) return@LaunchedEffect
         preselectedKernelUri?.let { uriString ->
             runCatching { uriString.toUri() }
                 .getOrNull()
@@ -100,9 +119,11 @@ fun rememberAnyKernel3State(
                     )
                     if (isAbDevice) {
                         pendingArchive = method
+                        showConfirmDialog = false
                         showSlotSelectionDialog = true
                     } else {
                         installMethodState.value = method
+                        showSlotSelectionDialog = false
                         showConfirmDialog = true
                     }
                 }

@@ -444,6 +444,7 @@
     <string name="mnt_detach" translatable="false">MNT_DETACH</string>
     <!-- Kernel Flash Progress Related -->
     <string name="horizon_flash_complete">Flash complete</string>
+    <string name="flash_in_progress">Writing — wait for it to finish</string>
     <string name="horizon_preparing">Preparing…</string>
     <string name="horizon_cleaning_files">Cleaning files…</string>
     <string name="horizon_copying_files">Copying files…</string>
@@ -1029,6 +1030,7 @@
     <string name="theme_store_error">Could not load the theme list. Check the network and try again.</string>
     <string name="theme_store_retry">Retry</string>
     <string name="theme_store_preview_failed">Preview failed to load</string>
+    <string name="theme_store_no_preview">No preview</string>
     <string name="theme_store_install">Download and apply</string>
     <string name="theme_store_downloads">%1$d downloads</string>
     <string name="theme_store_download_failed">Theme download failed</string>
