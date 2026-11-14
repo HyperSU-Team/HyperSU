@@ -1027,6 +1027,17 @@ object ThemeManager {
                 }
 
                 BackgroundConfig.load(context)
+                // Written to disk before the import reports success. The preference writes above go
+                // through apply(), which only schedules the write; an import is regularly followed
+                // by a reboot within seconds (the user is off to test the kernel), and an
+                // asynchronous write can be lost there - the theme then comes back as the built-in
+                // one with its wallpaper gone. An empty commit waits for the queued write.
+                runCatching {
+                    context.getSharedPreferences(SETTINGS_PREFS, Context.MODE_PRIVATE)
+                        .edit().commit()
+                    context.getSharedPreferences(BackgroundConfig.PREFS_NAME, Context.MODE_PRIVATE)
+                        .edit().commit()
+                }.onFailure { Log.w(TAG, "could not flush the imported theme", it) }
                 Log.d(TAG, "theme imported from $uri")
                 ImportResult(language)
             } catch (e: Exception) {
@@ -1099,6 +1110,12 @@ object ThemeManager {
 
                 BackgroundConfig.reset()
                 BackgroundConfig.load(context)
+                // Same reason as an import: a reset followed by an immediate reboot must not come
+                // back with the old theme still in place.
+                runCatching {
+                    settings.edit().commit()
+                    background.edit().commit()
+                }.onFailure { Log.w(TAG, "could not flush the theme reset", it) }
                 Log.d(TAG, "theme reset")
                 true
             } catch (e: Exception) {

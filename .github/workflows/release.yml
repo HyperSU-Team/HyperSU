@@ -98,13 +98,16 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.22 - the CPU identity spoof entry is gone, because it never worked.
+            HyperSU v4.2.23 - the browser kernel flow goes straight to flashing, and old theme downloads come back.
 
-            The Tools page offered a "CPU identity spoof" dialog (MIDR, BogoMIPS, HWCAP per core). Nothing behind it exists: the manager called `ksud kernel spoof-cpu`, a subcommand this project's ksud does not have, whose ioctl is not in the uapi crate either, and no kernel here implements the /proc/cpuinfo rewrite the dialog promised. Applying it could only ever fail, so the row has been removed instead of staying a dead end.
+            - A kernel opened from the browser now goes straight to the flash screen. It used to land on the install screen's picker instead, so the same archive had to be confirmed twice and the slot dialog came up over a page about a choice the user had already made. The archive is flashed on the running slot, which is what the archive row does when no slot is picked.
+            - The AnyKernel3 row now shows the name of the zip that was picked. It kept its generic description after a file was chosen, so the selected archive had no name anywhere in the list.
+            - Theme archives left behind in the old store download cache are adopted into the theme library on the first listing. Themes installed by earlier builds never entered the library, which is why the downloaded tab kept coming up empty for them.
+            - "Downloaded" also has a retry that re-reads the library, for a theme that lands there while the screen is open.
+            - An import and a reset now flush their preferences to disk before reporting success. A theme imported seconds before a reboot could come back as the built-in one with its wallpaper gone, because the preference write was still queued.
+            - A module banner that fails to resolve once is retried shortly after instead of leaving the card bare until the list is reopened.
 
-            Everything else is unchanged from v4.2.21.
-
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.21...v4.2.22
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.22...v4.2.23
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

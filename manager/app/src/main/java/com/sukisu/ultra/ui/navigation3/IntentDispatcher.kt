@@ -313,7 +313,20 @@ private suspend fun handleConfirmed(
     }
 
     if (kernelUris.isNotEmpty()) {
-        navigator.push(Route.Install(preselectedKernelUri = kernelUris.first()))
+        // Straight to the flash, not through the install screen. Tapping a downloaded kernel in the
+        // browser is a request to flash that file; the install screen is the place to *choose* what
+        // to flash, and sending the intent there meant the user confirmed twice and had to find the
+        // continue button on a page about a choice they had already made. The slot is left to the
+        // AnyKernel3 script, which defaults to the running slot - the archive path on that screen
+        // does the same when no slot was picked.
+        navigator.push(
+            Route.KernelFlash(
+                kernelUri = kernelUris.first(),
+                selectedSlot = null,
+                kpmPatchEnabled = false,
+                kpmUndoPatch = false,
+            ),
+        )
     }
 }
 

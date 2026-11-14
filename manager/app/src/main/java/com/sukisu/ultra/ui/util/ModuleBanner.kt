@@ -11,6 +11,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
@@ -38,6 +39,9 @@ object ModuleBanner {
 
     /** 模块目录里可能存在的横幅文件，顺序即优先级。 */
     private val BANNER_FILES = listOf("banner.png", "banner.jpg", "banner.jpeg", "banner.webp", "banner")
+
+    /** 第一次没取到横幅时，等这么久再试一次（见 [load]）。 */
+    private const val BANNER_RETRY_DELAY_MS = 400L
 
     private val folkStorage by lazy { ModuleBannerStorage(ksuApp, "module_banners") }
 
@@ -99,7 +103,19 @@ object ModuleBanner {
 
         val job = scope.async {
             loadSemaphore.withPermit {
-                val resolved = withContext(Dispatchers.IO) { resolve(context, moduleId) }
+                val resolved = withContext(Dispatchers.IO) {
+                    // One retry: the two sources are a third-party image endpoint and a root shell
+                    // read of the module directory, and both fail transiently - the shell is busy
+                    // right after the list loads, the endpoint answers slowly or not at all. A
+                    // single retry a moment later turns "the banner did not load this time" into a
+                    // banner that appears a few hundred milliseconds later, which is what the
+                    // card's fade is for. `resolve` is cheap on success, so a healthy module pays
+                    // nothing for this.
+                    resolve(context, moduleId) ?: run {
+                        delay(BANNER_RETRY_DELAY_MS)
+                        resolve(context, moduleId)
+                    }
+                }
                 // A null means the fetch did not succeed; leaving it out of the cache lets the next
                 // visit try again instead of pinning the card blank for the life of the process.
                 if (resolved != null) {

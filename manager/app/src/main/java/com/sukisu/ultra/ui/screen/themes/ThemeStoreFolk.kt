@@ -64,6 +64,7 @@ fun ThemeStoreFolk(
     onInstall: (StoreTheme) -> Unit,
     onApplyLocal: (LocalTheme) -> Unit,
     onDeleteLocal: (LocalTheme) -> Unit,
+    onRescanLibrary: () -> Unit,
 ) {
     FolkScaffold(
         title = stringResource(R.string.theme_store),
@@ -113,7 +114,7 @@ fun ThemeStoreFolk(
                 if (state.tab == ThemeStoreTab.STORE) {
                     storeItems(state, onRefresh, onInstall, onApplyLocal)
                 } else {
-                    downloadedItems(state, onApplyLocal, onDeleteLocal)
+                    downloadedItems(state, onApplyLocal, onDeleteLocal, onRescanLibrary)
                 }
             }
         }
@@ -206,6 +207,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.downloadedItems(
     state: ThemeStoreState,
     onApply: (LocalTheme) -> Unit,
     onDelete: (LocalTheme) -> Unit,
+    onRescan: () -> Unit,
 ) {
     val query = state.query.trim()
     val visible = if (query.isEmpty()) {
@@ -216,15 +218,25 @@ private fun androidx.compose.foundation.lazy.LazyListScope.downloadedItems(
 
     if (visible.isEmpty()) {
         item {
-            Text(
-                text = stringResource(R.string.theme_store_no_downloads),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 32.dp),
-            )
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = stringResource(R.string.theme_store_no_downloads),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+                // Re-reads the library directory. Useful on its own - a theme dropped in by an
+                // import that landed after this screen was opened shows up here - and it is what
+                // turns "nothing downloaded" into something the user can retry.
+                TextButton(onClick = onRescan) {
+                    Text(stringResource(R.string.theme_store_retry))
+                }
+            }
         }
     } else {
         items(visible, key = { it.id }) { local ->

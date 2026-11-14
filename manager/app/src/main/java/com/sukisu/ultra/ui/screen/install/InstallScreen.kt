@@ -334,9 +334,19 @@ fun InstallScreen(
     ) {
         if (it.resultCode == Activity.RESULT_OK) {
             it.data?.data?.let { uri ->
+                // The row keeps its generic description otherwise, so the archive the user just
+                // picked was invisible: the list looked unchanged after choosing a zip.
+                val displayName = runCatching { uri.getFileName(context) }.getOrNull()
+                    ?.takeIf { name -> name.isNotBlank() }
+                    ?: uri.lastPathSegment
+                        ?.substringAfterLast('/')
+                        ?.let { segment -> runCatching { Uri.decode(segment) }.getOrNull() }
+                        ?.takeIf { name -> name.isNotBlank() }
                 val option: InstallMethod? = when (installMethod) {
-                    is InstallMethod.SelectFile -> InstallMethod.SelectFile(uri, summary = selectFileTip)
-                    is InstallMethod.HorizonKernel -> InstallMethod.HorizonKernel(uri, summary = horizonKernelSummary)
+                    is InstallMethod.SelectFile ->
+                        InstallMethod.SelectFile(uri, summary = displayName ?: selectFileTip)
+                    is InstallMethod.HorizonKernel ->
+                        InstallMethod.HorizonKernel(uri, summary = displayName ?: horizonKernelSummary)
                     else -> null
                 }
                 option?.let { opt ->

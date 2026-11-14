@@ -48,6 +48,9 @@ object ThemeLibrary {
     private const val DIR = "themes"
     private const val INDEX = "index.json"
 
+    /** A cached download this old is a leftover, not a transfer in progress. */
+    private const val CACHED_DOWNLOAD_MIN_AGE_MS = 10_000L
+
     private fun directory(context: Context): File = File(context.filesDir, DIR).apply { mkdirs() }
 
     private fun indexFile(context: Context) = File(directory(context), INDEX)
@@ -136,11 +139,57 @@ object ThemeLibrary {
             ?.mapNotNull { archive -> describe(context, archive) }
             .orEmpty()
 
-        val merged = (indexed + orphans).sortedByDescending { it.addedAt }
+        // Older builds downloaded a theme into the store's cache directory and imported it from
+        // there without keeping a copy, so a theme that is clearly installed has nothing in the
+        // library and the downloaded tab lists nothing. Adopting what is still in that cache is the
+        // only way those downloads can be offered again without downloading 20MB afresh.
+        val adopted = adoptCachedDownloads(context, known + orphans.map { it.fileName })
+
+        val merged = (indexed + orphans + adopted).sortedByDescending { it.addedAt }
         // Recording the discovered files makes the next listing cheaper and keeps the names.
-        if (orphans.isNotEmpty()) writeIndex(context, merged)
-        Log.d(TAG, "library: ${merged.size} theme(s), ${orphans.size} recovered from disk")
+        if (orphans.isNotEmpty() || adopted.isNotEmpty()) writeIndex(context, merged)
+        Log.d(TAG, "library: ${merged.size} theme(s), ${orphans.size} recovered, ${adopted.size} adopted")
         return merged
+    }
+
+    /**
+     * Moves archives left in the theme store's download cache into the library.
+     *
+     * A `.part` is an unfinished transfer and is skipped; a file the index already knows is left
+     * alone. Nothing is deleted unless it was moved, so a failed adoption costs nothing.
+     */
+    private suspend fun adoptCachedDownloads(
+        context: Context,
+        known: Set<String>,
+    ): List<LocalTheme> {
+        val cacheDir = File(context.cacheDir, "theme_store")
+        if (!cacheDir.isDirectory) return emptyList()
+        val staleBefore = System.currentTimeMillis() - CACHED_DOWNLOAD_MIN_AGE_MS
+        val candidates = cacheDir.listFiles { file ->
+            // The age guard keeps this out of a transfer that is finishing right now: the store
+            // writes `<tag>.fpt` and then hands that same file to add(), so a listing that ran in
+            // between would move the file away and break the install.
+            file.isFile && file.name.endsWith(".fpt", ignoreCase = true) &&
+                file.name !in known && file.length() > 0L && file.lastModified() < staleBefore
+        }.orEmpty()
+        if (candidates.isEmpty()) return emptyList()
+
+        return candidates.mapNotNull { archive ->
+            val id = "${archive.lastModified()}"
+            val target = File(directory(context), "theme_$id.fpt")
+            if (target.isFile) {
+                archive.delete()
+                return@mapNotNull describe(context, target)
+            }
+            val moved = runCatching {
+                if (!archive.renameTo(target) || !target.isFile) {
+                    target.delete()
+                    archive.copyTo(target, overwrite = true)
+                }
+                target.isFile
+            }.getOrDefault(false)
+            if (moved) describe(context, target) else null
+        }
     }
 
     private suspend fun describe(context: Context, archive: File): LocalTheme? = runCatching {

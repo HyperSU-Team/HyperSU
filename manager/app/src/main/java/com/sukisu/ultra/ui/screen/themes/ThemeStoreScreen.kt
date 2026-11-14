@@ -197,5 +197,6 @@ fun ThemeStoreScreen() {
         onInstall = ::install,
         onApplyLocal = ::applyLocal,
         onDeleteLocal = ::deleteLocal,
+        onRescanLibrary = { scope.launch { reloadLibrary() } },
     )
 }

@@ -289,9 +289,24 @@ private fun SelectInstallMethod(
         FolkSettingsGroup {
             state.installMethodOptions.forEach { option ->
                 item(key = option::class.simpleName) {
+                    // The archive row reports the file that is actually chosen. Its static
+                    // description ("flash an AnyKernel3 zip") stayed on screen after picking one,
+                    // so the selected archive had no name anywhere in the list.
+                    val chosen = state.installMethod
+                    val chosenSummary = chosen?.summary
+                    val summary = if (
+                        option.isKernelArchive &&
+                        chosen.isKernelArchive &&
+                        chosen.archiveUri != null &&
+                        !chosenSummary.isNullOrBlank()
+                    ) {
+                        chosenSummary
+                    } else {
+                        option.summary
+                    }
                     FolkSelectableRow(
                         title = stringResource(option.label),
-                        summary = option.summary,
+                        summary = summary,
                         selected = state.installMethod?.let { option::class == it::class } ?: false,
                         onClick = { onClick(option) },
                     )
