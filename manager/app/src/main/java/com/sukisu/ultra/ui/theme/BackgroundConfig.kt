@@ -151,7 +151,7 @@ object BackgroundConfig {
     var isBannerCustomOpacityEnabled: Boolean by mutableStateOf(true)
         private set
 
-    var bannerCustomOpacity: Float by mutableStateOf(1.0f)
+    var bannerCustomOpacity: Float by mutableStateOf(DEFAULT_BANNER_OPACITY)
         private set
 
     /**
@@ -278,6 +278,10 @@ object BackgroundConfig {
     const val DEFAULT_BANNER_API_SOURCE = "https://www.loliapi.com/acg/pc/"
 
     private const val KEY_BANNER_ENABLED = "banner_enabled"
+
+    /** A layer that sits under the card text: half-strength by default so the picture reads. */
+    private const val DEFAULT_BANNER_OPACITY = 0.5f
+    private const val KEY_BANNER_OPACITY_MIGRATED = "banner_opacity_default_migrated"
     private const val KEY_FOLK_BANNER_ENABLED = "folk_banner_enabled"
     private const val KEY_BANNER_CUSTOM_OPACITY_ENABLED = "banner_custom_opacity_enabled"
     private const val KEY_BANNER_CUSTOM_OPACITY = "banner_custom_opacity"
@@ -607,7 +611,7 @@ object BackgroundConfig {
         } else if (isWallpaperMode) {
             (0.35f + (wallpaperOpacity.coerceAtLeast(0.35f) - 0.2f) * 0.5f).coerceIn(0.25f, 0.6f)
         } else {
-            0.18f
+            DEFAULT_BANNER_OPACITY
         }
 
     fun getEffectiveBackgroundDim(isDarkTheme: Boolean): Float {
@@ -882,6 +886,18 @@ object BackgroundConfig {
         isFolkBannerEnabled = folkBannerEnabled
         isBannerCustomOpacityEnabled = bannerCustomOpacityEnabled
         this.bannerCustomOpacity = bannerCustomOpacity
+        // Installs from before this build stored the old default (fully opaque) even when the
+        // slider was never touched, so changing the default alone would not have been visible to
+        // them. A stored 1.0 is moved to the new half-strength default exactly once; anything else
+        // is a value the user picked and is left alone.
+        if (!prefs.getBoolean(KEY_BANNER_OPACITY_MIGRATED, false)) {
+            val wasOldDefault = bannerCustomOpacity >= 0.999f
+            if (wasOldDefault) this.bannerCustomOpacity = DEFAULT_BANNER_OPACITY
+            prefs.edit {
+                putBoolean(KEY_BANNER_OPACITY_MIGRATED, true)
+                if (wasOldDefault) putFloat(KEY_BANNER_CUSTOM_OPACITY, DEFAULT_BANNER_OPACITY)
+            }
+        }
         isBannerApiModeEnabled = bannerApiModeEnabled
         this.bannerApiSource = bannerApiSource
     }
@@ -938,7 +954,7 @@ object BackgroundConfig {
         isBannerEnabled = true
         isFolkBannerEnabled = true
         isBannerCustomOpacityEnabled = true
-        bannerCustomOpacity = 1.0f
+        bannerCustomOpacity = DEFAULT_BANNER_OPACITY
         isBannerApiModeEnabled = true
         bannerApiSource = DEFAULT_BANNER_API_SOURCE
     }

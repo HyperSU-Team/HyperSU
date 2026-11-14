@@ -47,7 +47,7 @@
     <string name="home_click_to_learn_kernelsu">Naučite kako da instalirate KernelSU i da koristite module.</string>
     <string name="home_support_title">Podržite Nas</string>
     <string name="home_support_content">KernelSU je i uvijek će biti besplatan i otvorenog koda. Međutim, možete nam pokazati da vam je stalo donacijom.</string>
-    <string name="about_source_code"><![CDATA[Pogledajte izvor na %1$s]]></string>
+    <string name="about_source_code"><![CDATA[Pogledajte izvor na %1$s<br/><a href="%2$s">HyperSU QQ group</a>]]></string>
     <string name="profile_default">Zadano</string>
     <string name="profile_template">Šablon</string>
     <string name="profile_custom">Prilagođeno</string>

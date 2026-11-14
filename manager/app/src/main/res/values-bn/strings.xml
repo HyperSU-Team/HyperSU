@@ -46,7 +46,7 @@
     <string name="home_click_to_learn_kernelsu">কিভাবে কার্নেলএসইউ ইনস্টল করতে হয় এবং মডিউল ব্যবহার করতে হয় তা শিখুন।</string>
     <string name="home_support_title">সাপোর্ট টাইটেল</string>
     <string name="home_support_content">কার্নেলএসইউ ফ্রি ও ওপেন সোর্স, এবং সবসময় এমনই থাকবে। তবে, আপনি অনুদান দিয়ে আপনার কৃতজ্ঞতা প্রদর্শন করতে পারেন।</string>
-    <string name="about_source_code"><![CDATA[Bekijk source code op %1$s]]></string>
+    <string name="about_source_code"><![CDATA[Bekijk source code op %1$s<br/><a href="%2$s">HyperSU QQ group</a>]]></string>
     <string name="profile_name">প্রফাইলের নাম</string>
     <string name="profile_namespace">নেমস্পেস মাউন্ট</string>
     <string name="profile_groups">গ্রুপস</string>

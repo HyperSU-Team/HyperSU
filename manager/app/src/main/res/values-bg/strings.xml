@@ -51,7 +51,7 @@
     <string name="home_click_to_learn_kernelsu">Научи как да изтеглите KernelSU и да използвате модули.</string>
     <string name="home_support_title">Помогнете Ни</string>
     <string name="home_support_content">KernelSU си е, и винаги ще е безплатен, и с отворен код. Обаче, можете да ни покажете че се интересувате като ни направите дарение.</string>
-    <string name="about_source_code"><![CDATA[View source code at %1$s]]></string>
+    <string name="about_source_code"><![CDATA[View source code at %1$s<br/><a href="%2$s">HyperSU QQ group</a>]]></string>
     <string name="profile_default">По подразбиране</string>
     <string name="profile_template">Шаблон</string>
     <string name="profile_custom">По избор</string>

@@ -98,18 +98,16 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.30 - KPM is gone.
+            HyperSU v4.2.31 - module banners default to half strength, and the Chinese variants are complete.
 
-            KPM (KernelPatch module patching) is no longer supported, so everything that carried it has been removed from the manager:
+            - A module banner now defaults to 50% opacity instead of fully opaque. The old default was stored as 1.0 for every install, so it is migrated once: a stored 1.0 becomes 0.5, anything else is a value that was chosen and stays.
+            - Traditional Chinese (Taiwan) and Traditional Chinese (Hong Kong) are now complete: 944 strings each, the same keys as English, converted from the Simplified translation with the standard phrase mapping and keeping every existing entry that was already translated.
+            - The About page's source-code block was written with two links in English but only one placeholder in 35 translations, so the QQ group link silently disappeared there; it is restored, and one Persian entry that had a broken CDATA wrapper was repaired.
+            - The Bosnian module confirmation had lost its placeholder, so the archive name was never shown; it is back.
 
-            - The patch step in the AnyKernel3 flash: the kptools/kpimg tool download, the image patching and the archive repack, along with the route options that switched it on.
-            - Its strings, including the install-mode dialog and the settings summary.
-            - The flash screen no longer prints a KPM mode line, and the module chart no longer names a slice "KPM".
-            - The flash no longer downloads tools from a third-party repository before writing the boot partition.
+            Coverage of the remaining languages is unchanged: their files stay at the size the community left them and missing keys fall back to English. No machine translation was added, because a wrong line in a rooting tool's warnings is worse than an English one.
 
-            A kernel flash is now: copy, unpack, patch the script, flash, restore the slot.
-
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.29...v4.2.30
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.30...v4.2.31
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
