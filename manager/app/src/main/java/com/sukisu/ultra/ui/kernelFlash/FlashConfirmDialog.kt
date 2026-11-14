@@ -31,7 +31,7 @@ import com.sukisu.ultra.ui.theme.tokens.FolkType
 /**
  * Confirms the AnyKernel3 archive about to be flashed.
  *
- * Choosing an archive used to lead straight into the KPM dialog, so the first thing the user
+ * Choosing an archive used to lead straight into a patch dialog, so the first thing the user
  * saw was a question about patching rather than an answer about what they had picked. This
  * reports the file and the slot, and flashes only on confirmation.
  */

@@ -329,8 +329,6 @@ private suspend fun handleConfirmed(
             Route.KernelFlash(
                 kernelUri = kernelUris.first(),
                 selectedSlot = null,
-                kpmPatchEnabled = false,
-                kpmUndoPatch = false,
             ),
         )
     }

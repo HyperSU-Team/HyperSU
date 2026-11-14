@@ -88,7 +88,7 @@ sealed interface Route : NavKey, Parcelable {
 
     @Parcelize
     @Serializable
-    data class KernelFlash(@Serializable(with = UriSerializer::class) val kernelUri: Uri, val selectedSlot: String?, val kpmPatchEnabled: Boolean, val kpmUndoPatch: Boolean) : Route
+    data class KernelFlash(@Serializable(with = UriSerializer::class) val kernelUri: Uri, val selectedSlot: String?) : Route
 
     @Parcelize
     @Serializable

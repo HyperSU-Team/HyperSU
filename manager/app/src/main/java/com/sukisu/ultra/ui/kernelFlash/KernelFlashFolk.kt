@@ -49,7 +49,7 @@ import com.sukisu.ultra.ui.theme.tokens.FolkType
 /**
  * The kernel flashing progress screen, in the FolkPatch design.
  *
- * The progress card keeps its status line, the KPM-patch note, the current step,
+ * The progress card keeps its status line, the current step,
  * the bar and the error block; the streamed log lives in the shared monospace
  * card. The volume keys stay blocked while flashing, back is routed through
  * [KernelFlashActions.onBack] so an in-flight flash is not abandoned, and the
@@ -60,8 +60,6 @@ fun KernelFlashFolk(
     state: FlashState,
     actions: KernelFlashActions,
     logText: String,
-    kpmPatchEnabled: Boolean,
-    kpmUndoPatch: Boolean,
 ) {
     val scrollState = rememberScrollState()
 
@@ -118,7 +116,7 @@ fun KernelFlashFolk(
                 .fillMaxSize()
                 .padding(top = innerPadding.calculateTopPadding()),
         ) {
-            FlashProgressCard(state, kpmPatchEnabled, kpmUndoPatch)
+            FlashProgressCard(state)
 
             Box(
                 modifier = Modifier
@@ -143,8 +141,6 @@ fun KernelFlashFolk(
 @Composable
 private fun FlashProgressCard(
     flashState: FlashState,
-    kpmPatchEnabled: Boolean,
-    kpmUndoPatch: Boolean,
 ) {
     val statusColor = when {
         flashState.error.isNotEmpty() -> MaterialTheme.colorScheme.error
@@ -193,19 +189,6 @@ private fun FlashProgressCard(
                         tint = MaterialTheme.colorScheme.primary,
                     )
                 }
-            }
-
-            if (kpmPatchEnabled || kpmUndoPatch) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = if (kpmUndoPatch) {
-                        stringResource(R.string.kpm_undo_patch_mode)
-                    } else {
-                        stringResource(R.string.kpm_patch_mode)
-                    },
-                    style = FolkType.Summary,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
 
             if (flashState.currentStep.isNotEmpty()) {

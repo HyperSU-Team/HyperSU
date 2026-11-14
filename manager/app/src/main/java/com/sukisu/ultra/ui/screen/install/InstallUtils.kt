@@ -69,7 +69,7 @@ val InstallMethod?.archiveUri: Uri?
 val InstallMethod?.archiveSlot: String?
     get() = (this as? InstallMethod.HorizonKernel)?.slot
 
-/** True for the archive row, which owns the slot, KPM and confirmation steps. */
+/** True for the archive row, which owns the slot and confirmation steps. */
 val InstallMethod?.isKernelArchive: Boolean
     get() = this is InstallMethod.HorizonKernel
 

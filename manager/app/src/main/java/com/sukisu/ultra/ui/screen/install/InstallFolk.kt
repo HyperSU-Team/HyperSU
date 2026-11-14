@@ -64,7 +64,7 @@ internal fun InstallScreenFolk(
     val isAb by produceState(initialValue = false) { value = isAbDevice() }
     val isGki by produceState(initialValue = false) { value = getKernelVersion().isGKI() }
 
-    // The slot, KPM and confirmation dialogs are drawn by InstallScreen, which owns the state
+    // The slot and confirmation dialogs are drawn by InstallScreen, which owns the state
     // they act on. Drawing them here as well stacked two copies of each on top of one another.
 
     FolkScaffold(
@@ -222,7 +222,7 @@ internal fun InstallScreenFolk(
                 }
             }
 
-            // AnyKernel3 slot and KPM rows. Either archive row qualifies, so this guards on the
+            // AnyKernel3 slot row. Either archive row qualifies, so this guards on the
             // shared predicate rather than one concrete class.
             val archiveMethod = uiState.installMethod?.takeIf { it.isKernelArchive }
             if (archiveMethod != null) {

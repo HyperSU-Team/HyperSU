@@ -33,8 +33,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 fun KernelFlashScreen(
     kernelUri: Uri,
     selectedSlot: String? = null,
-    kpmPatchEnabled: Boolean = false,
-    kpmUndoPatch: Boolean = false
 ) {
     val navigator = LocalNavigator.current
     val context = LocalContext.current
@@ -54,9 +52,7 @@ fun KernelFlashScreen(
         val reusable = cached != null &&
             !cachedFinished &&
             KernelFlashStateHolder.currentUri == kernelUri &&
-            KernelFlashStateHolder.currentSlot == selectedSlot &&
-            KernelFlashStateHolder.currentKpmPatchEnabled == kpmPatchEnabled &&
-            KernelFlashStateHolder.currentKpmUndoPatch == kpmUndoPatch
+            KernelFlashStateHolder.currentSlot == selectedSlot
         if (reusable) {
             cached!!
         } else {
@@ -64,8 +60,6 @@ fun KernelFlashScreen(
                 KernelFlashStateHolder.currentState = it
                 KernelFlashStateHolder.currentUri = kernelUri
                 KernelFlashStateHolder.currentSlot = selectedSlot
-                KernelFlashStateHolder.currentKpmPatchEnabled = kpmPatchEnabled
-                KernelFlashStateHolder.currentKpmUndoPatch = kpmUndoPatch
                 KernelFlashStateHolder.isFlashing = false
             }
         }
@@ -113,8 +107,6 @@ fun KernelFlashScreen(
                     context = context,
                     state = horizonKernelState,
                     slot = selectedSlot,
-                    kpmPatchEnabled = kpmPatchEnabled,
-                    kpmUndoPatch = kpmUndoPatch
                 )
                 worker.uri = kernelUri
                 worker.setOnFlashCompleteListener(onFlashComplete)
@@ -179,7 +171,5 @@ fun KernelFlashScreen(
         state = flashState,
         actions = actions,
         logText = logText,
-        kpmPatchEnabled = kpmPatchEnabled,
-        kpmUndoPatch = kpmUndoPatch
     )
 }

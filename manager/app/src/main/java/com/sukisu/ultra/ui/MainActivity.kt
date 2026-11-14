@@ -385,8 +385,6 @@ class MainActivity : ComponentActivity() {
                                     KernelFlashScreen(
                                         key.kernelUri,
                                         key.selectedSlot,
-                                        key.kpmPatchEnabled,
-                                        key.kpmUndoPatch
                                     )
                                 }
                                 entry<Route.SuSFS>(swipeDismiss = swipeDismiss) { SuSFSScreen() }

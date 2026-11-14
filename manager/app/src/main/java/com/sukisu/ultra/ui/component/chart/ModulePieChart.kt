@@ -20,7 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 
 private object ChartPalette {
-    val KPM = Color(0xFF6366F1)
+    val KernelModules = Color(0xFF6366F1)
     val APM = Color(0xFF3DDC84)
     val SU  = Color(0xFFFF9F43)
 }
@@ -105,20 +105,20 @@ fun rememberPieSliceDataFromCounts(
     kernelModules: Int? = null,
     apmModules: Int = 0,
     superusers: Int = 0,
-    kpmLabel: String = "KPM",
+    kernelLabel: String = "Kernels",
     apmLabel: String = "APM",
     suLabel: String = "SU"
 ): List<PieSliceData> {
     val emptyColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
 
-    return remember(kernelModules, apmModules, superusers, kpmLabel, apmLabel, suLabel) {
+    return remember(kernelModules, apmModules, superusers, kernelLabel, apmLabel, suLabel) {
         buildList {
             if (kernelModules != null) {
                 add(
                     PieSliceData(
-                        label = kpmLabel,
+                        label = kernelLabel,
                         value = kernelModules.toFloat(),
-                        color = if (kernelModules > 0) ChartPalette.KPM else emptyColor
+                        color = if (kernelModules > 0) ChartPalette.KernelModules else emptyColor
                     )
                 )
             }

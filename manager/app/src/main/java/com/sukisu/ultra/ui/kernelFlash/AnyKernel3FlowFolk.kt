@@ -20,7 +20,7 @@ import com.sukisu.ultra.ui.screen.install.withArchiveSlot
  * The AnyKernel3 install flow, in the FolkPatch design.
  *
  * A chosen archive goes through slot selection on an A/B device, then a confirmation; on a
- * single-slot device it goes straight to the confirmation. The KPM choice is not part of this
+ * single-slot device it goes straight to the confirmation.
  * sequence.
  *
  * The archive keeps its concrete type throughout, so the row the user picked keeps its

@@ -72,7 +72,7 @@ import kotlinx.coroutines.launch
  *
  * Every row the old screen offered is here with the same gate: the KSU-only
  * rows stay inside [KsuIsValid], the feature switches keep their
- * supported/managed/unsupported summary and enablement, KPM and SuSFS appear
+ * supported/managed/unsupported summary and enablement, SuSFS appears
  * only when the kernel provides them, and soft reboot keeps the jailbreak-mode
  * lock. The UI-mode row is gone with the dual design, and the send-log sheet is
  * the single Folk implementation.

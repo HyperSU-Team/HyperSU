@@ -445,27 +445,6 @@
     <string name="kernel_version_log">内核版本：%1$s</string>
     <string name="tools">工具</string>
     <string name="root_required">需要root权限</string>
-    <string name="kpm_patch_options">KPM 补丁</string>
-    <string name="kpm_patch_description">用于添加额外的KPM功能</string>
-    <string name="enable_kpm_patch">KPM 补丁</string>
-    <string name="enable_kpm_undo_patch">KPM 撤销补丁</string>
-    <string name="kpm_patch_enabled">KPM 补丁已启用</string>
-    <string name="kpm_undo_patch_enabled">KPM 撤销补丁已启用</string>
-    <string name="kpm_patch_mode">KPM 补丁模式</string>
-    <string name="kpm_undo_patch_mode">KPM 撤销补丁模式</string>
-    <string name="kpm_preparing_tools">准备KPM工具</string>
-    <string name="kpm_applying_patch">应用KPM补丁</string>
-    <string name="kpm_undoing_patch">撤销KPM补丁</string>
-    <string name="kpm_found_image_file">找到镜像文件: %s</string>
-    <string name="kpm_patch_success">KPM 补丁应用成功</string>
-    <string name="kpm_undo_patch_success">KPM 补丁撤销成功</string>
-    <string name="kpm_file_repacked">文件重新打包成功</string>
-    <string name="kpm_extract_zip_failed">解压zip文件失败</string>
-    <string name="kpm_image_file_not_found">未找到镜像文件</string>
-    <string name="kpm_patch_failed">KPM 补丁失败</string>
-    <string name="kpm_undo_patch_failed">KPM 撤销补丁失败</string>
-    <string name="kpm_patch_operation_failed">KPM 补丁操作失败: %s</string>
-    <string name="kpm_follow_kernel_file">跟随内核</string>
     <string name="kernel_flashing">内核刷入</string>
     <string name="horizon_kernel">AnyKernel3 内核</string>
     <string name="horizon_kernel_summary">刷入AnyKernel3格式的内核zip包</string>
@@ -474,30 +453,10 @@
     <string name="flash_confirm_slot">分区槽位</string>
     <string name="flash_confirm_unknown">未知文件名</string>
     <string name="flash_confirm_action">刷入</string>
-    <!-- KPM -->
-    <string name="settings_kpm_summary">使用 KPM 管理内核模块</string>
-    <string name="kpm_empty">当前没有安装内核模块</string>
-    <string name="kpm_version">版本</string>
-    <string name="kpm_author">作者</string>
-    <string name="kpm_uninstall">卸载</string>
-    <string name="kpm_uninstall_success">卸载成功</string>
-    <string name="kpm_uninstall_failed">卸载失败</string>
-    <string name="kpm_install_success">kpm 模块加载成功</string>
-    <string name="kpm_install_failed">kpm 模块加载失败</string>
-    <string name="kpm_args">参数</string>
-    <string name="kpm_control">执行</string>
     <string name="close_notice">关闭</string>
     <string name="kernel_module_notice">以下内核模块功能由 KernelPatch 开发，并经过修改后加入了 HyperSU 的内核模块功能</string>
-    <string name="kpm_control_success">成功</string>
-    <string name="kpm_control_failed">失败</string>
     <string name="not_supported">不支持</string>
-    <string name="kpm_install_mode">KPM 安装</string>
-    <string name="kpm_install_mode_load">加载</string>
-    <string name="kpm_install_mode_embed">嵌入</string>
-    <string name="kpm_install_mode_description">请选择：%1$s 模块安装模式\n\n加载：临时加载模块\n嵌入：永久安装到系统中</string>
-    <string name="invalid_file_type">文件类型不正确！请选择 .kpm 文件</string>
     <string name="confirm_uninstall_title_with_filename">卸载</string>
-    <string name="confirm_uninstall_content">以下 KPM 将被卸载：%s</string>
     <string name="snackbar_failed_to_check_module_file">无法检查模块文件是否存在</string>
     <string name="cancel">取消</string>
     <!-- Tools -->
@@ -1015,7 +974,6 @@
     <string name="inline_hook">Inline Hook</string>
     <string name="tracepoint_hook">Tracepoint Hook</string>
     <string name="mnt_detach">MNT_DETACH</string>
-    <string name="kpm_title">KPM</string>
     <string name="zip_file_unknown">未知文件</string>
     <string name="zip_type_unknown"> (未知)</string>
     <string name="zip_file_unreadable">无法读取所选文件</string>
@@ -1037,6 +995,4 @@
     <string name="sulog_log_empty">暂无日志</string>
     <string name="umount_no_paths">暂无自定义路径</string>
     <string name="release_no_releases">暂无发布版本</string>
-    <string name="kpm_install">安装</string>
-    <string name="kpm_notice">KPM 模块会加载到内核中，更新前请先卸载</string>
 </resources>

@@ -133,7 +133,7 @@ fun InstallScreen(
 
     val installMethodState = remember { mutableStateOf<InstallMethod?>(null) }
 
-    // AnyKernel3 flow state (slot selection, confirmation and KPM patching).
+    // AnyKernel3 flow state (slot selection and confirmation).
     val anyKernel3State = rememberAnyKernel3State(
         installMethodState = installMethodState,
         preselectedKernelUri = preselectedKernelUri?.toString(),
@@ -211,9 +211,7 @@ fun InstallScreen(
                         navigator.pushFlash(
                             Route.KernelFlash(
                                 kernelUri = uri,
-                                selectedSlot = method.archiveSlot,
-                                kpmPatchEnabled = false,
-                                kpmUndoPatch = false
+                                selectedSlot = method.archiveSlot
                             )
                         )
                     }
@@ -252,7 +250,7 @@ fun InstallScreen(
         }
     }
 
-    // Confirmation for the archive the user picked. It replaces the KPM dialog that used to
+    // Confirmation for the archive the user picked. It replaces the patch dialog that used to
     // appear at this point, which asked about patching before anything had been confirmed.
     // Declared after onInstall because confirming is what starts the flash.
     if (anyKernel3State.showConfirmDialog) {

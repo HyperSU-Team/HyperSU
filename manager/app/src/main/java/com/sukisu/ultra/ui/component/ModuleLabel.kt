@@ -12,8 +12,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 /**
- * 模块卡片上的小标签（如 "APM"、"KPM"、版本号等）。
- * APM / KPM 模块列表共用。
+ * 模块卡片上的小标签（如 "APM"、版本号等）。
+ * 各个模块列表共用。
  */
 @Composable
 fun ModuleLabel(

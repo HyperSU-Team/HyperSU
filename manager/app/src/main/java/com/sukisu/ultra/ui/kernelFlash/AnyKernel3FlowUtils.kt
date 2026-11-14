@@ -9,9 +9,9 @@ data class AnyKernel3State(
     /**
      * True while the user is being asked to confirm the archive they picked.
      *
-     * Picking a file used to open the KPM dialog straight away, which asked a question the user
+     * Picking a file used to open a patch dialog straight away, which asked a question the user
      * had not raised. This confirmation takes that place: it reports what is about to be
-     * flashed and waits for an answer, and the KPM choice stays on its own row.
+     * flashed and waits for an answer.
      */
     val showConfirmDialog: Boolean,
     /** Either archive row; the callbacks ignore anything that is not one. */
