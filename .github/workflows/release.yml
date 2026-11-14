@@ -98,7 +98,7 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.35 - a failed module download no longer crashes, updates check themselves, and the last vulnerable dependency is gone.
+            HyperSU v4.2.36 - a failed module download no longer crashes, updates check themselves, and the last vulnerable dependency is gone.
 
             - Downloading a module from the module store or from a module's update prompt called download() inside a coroutine with nothing catching it. On a filtered network the release host redirects to 
 elease-assets.githubusercontent.com, which resolves to 127.0.0.1 there, so the transfer threw IOException and took the app down. Both paths go through the mirror helper now, and a failure shows "download failed".
@@ -107,7 +107,7 @@ elease-assets.githubusercontent.com, which resolves to 127.0.0.1 there, so the t
             - iglet-rs is replaced by a static banner. It only drew ASCII art and pulled in a second copy of the zip crate (0.6), the last open Dependabot advisory; zip is 9.5.1 now and ZipFile::name() returns a Result in that version, which the AnyKernel3 reader now handles.
             - The three new strings are translated into every supported language.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.33...v4.2.35
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.33...v4.2.36
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

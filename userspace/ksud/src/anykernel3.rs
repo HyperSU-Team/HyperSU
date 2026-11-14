@@ -231,12 +231,13 @@ mod android {
                 .by_index(index)
                 .with_context(|| format!("failed to inspect ZIP entry {index}"))?;
 
-            // zip 9 returns the name as a fallible `Cow`: the entry may carry a name that is not
-            // valid UTF-8, so `.to_owned()` alone no longer compiles.
-            let name = entry
+            // zip 9 returns the name as a fallible `Cow` borrowed from the entry, so it has to be
+            // turned into an owned String before the next `by_index` call: `to_owned()` on a Cow
+            // keeps the borrow (its Owned type is Cow itself), `into_owned()` does not.
+            let name: String = entry
                 .name()
                 .with_context(|| format!("failed to read the name of ZIP entry {index}"))?
-                .to_owned();
+                .into_owned();
             names.push((index, name));
         }
 
