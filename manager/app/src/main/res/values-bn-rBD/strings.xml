@@ -305,7 +305,7 @@
     <string name="jailbreak_reboot_warning">আপনি জেলব্রেক মোডে আছেন। রিবুট করলে রুট অ্যাক্সেস হারাবেন এবং ডিভাইস চালু হওয়ার পর আবার জেলব্রেক করতে হবে। তবুও রিবুট করবেন?</string>
     <string name="safe_mode_module_disabled">সেফ মোডে মডিউল ইনস্টল বন্ধ আছে</string>
     <string name="home_gki_warning">v3.0.0 থেকে GKI ওয়ার্ক মোড শুধু টেস্টিং পরিবেশে ব্যবহার করা হবে। দৈনন্দিন ব্যবহারের জন্য এটি আমরা সুপারিশ করি না, এবং আর ইমেজ ফাইল সরবরাহ করা হবে না।</string>
-    <string name="about_source_code"><![CDATA[সোর্স কোড দেখুন %1$s-এ<br/>আমাদের <a href='%2$s'>HyperSU QQ গ্রুপে</a> যোগ দিন<br/><br/>আইকনগুলো একটি বিশেষ ব্যবস্থার অধীনে লাইসেন্সপ্রাপ্ত: এঁকেছেন 怡子曰曰, কপিরাইট 明风 OuO-এর, এবং ভেক্টরাইজড আইকন এই প্রজেক্ট সরবরাহ করেছে।]]></string>
+    <string name="about_source_code"><![CDATA[View source code at %1$s<br/>Join the <a href="%2$s">HyperSU QQ group</a><br/><br/>The icons are licensed under a special arrangement: drawn by 怡子曰曰, the copyright is held by 明风 OuO, and the vectorized icons are provided by this project.]]></string>
     <string name="profile">অ্যাপ প্রোফাইল</string>
     <string name="profile_name">প্রোফাইলের নাম</string>
     <string name="app_profile_template_id_exist">টেমপ্লেট ID ইতিমধ্যে আছে!</string>

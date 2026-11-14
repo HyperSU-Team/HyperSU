@@ -120,7 +120,7 @@
     <string name="home_support_title">Подржите нас</string>
     <string name="home_support_content">KernelSU је, и увек ће бити, бесплатан и отвореног кода. Ипак, можете нам показати да вам је стало донацијом.</string>
     <string name="home_gki_warning">Од верзије v3.0.0 GKI режим рада користиће се само у тестним окружењима. Не препоручујемо га за свакодневну употребу, а датотеке слика више неће бити обезбеђене.</string>
-    <string name="about_source_code"><![CDATA[Погледајте изворни код на %1$s<br/>Придружите се <a href='%2$s'>HyperSU QQ групи</a><br/><br/>Иконе су лиценциране по посебном договору: нацртао 怡子曰曰, ауторска права држи 明风 OuO, а векторске иконе обезбеђује овај пројекат.]]></string>
+    <string name="about_source_code"><![CDATA[View source code at %1$s<br/>Join the <a href="%2$s">HyperSU QQ group</a><br/><br/>The icons are licensed under a special arrangement: drawn by 怡子曰曰, the copyright is held by 明风 OuO, and the vectorized icons are provided by this project.]]></string>
     <string name="profile">Профил апликације</string>
     <string name="profile_default">Подразумевано</string>
     <string name="profile_template">Шаблон</string>

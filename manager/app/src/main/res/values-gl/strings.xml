@@ -108,7 +108,7 @@
     <string name="home_support_title">Apóianos</string>
     <string name="home_support_content">KernelSU é, e sempre será, gratuíto e de código aberto. Non obstante, podes amosarnos que che importa facendo unha doazón.</string>
     <string name="home_gki_warning">A partir da v3.0.0, o modo de traballo GKI usarase só en contornos de proba. Non o recomendamos para o uso diario e xa non se fornecerán ficheiros de imaxe.</string>
-    <string name="about_source_code"><![CDATA[Consulta o código fonte en %1$s<br/>Únete ao <a href='%2$s'>grupo de QQ de HyperSU</a><br/><br/>As iconas están baixo un acordo especial: debuxadas por 怡子曰曰, os dereitos de autor son de 明风 OuO e as iconas vectorizadas fornéceas este proxecto.]]></string>
+    <string name="about_source_code"><![CDATA[View source code at %1$s<br/>Join the <a href="%2$s">HyperSU QQ group</a><br/><br/>The icons are licensed under a special arrangement: drawn by 怡子曰曰, the copyright is held by 明风 OuO, and the vectorized icons are provided by this project.]]></string>
     <string name="profile">Perfil da aplicación</string>
     <string name="profile_default">Por defecto</string>
     <string name="profile_template">Modelo</string>

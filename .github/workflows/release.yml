@@ -98,19 +98,17 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.32 - every supported language is complete, banners default to 50%, and the docs site's vulnerable packages are updated.
+            HyperSU v4.2.33 - every supported language is complete, banners default to 50%, and the site's vulnerable packages are updated.
 
-            Translations:
+            Translations: all 43 locales now carry the full 944 strings. Traditional Chinese came from the Simplified text through the standard phrase mapping, 2109 keys came from the upstream community translations of KernelSU / SukiSU / ReSukiSU where they matched, and the rest were translated per locale with the placeholders, \n escapes and product names kept intact. A scripted check verifies every locale: no missing keys, no placeholder mismatch, no duplicate keys, no replacement characters, valid XML. The about page's HTML block stays English in Serbian, Galician and Bengali (Bangladesh): aapt2 rejects the translated CDATA for that one resource there, and an English block beats breaking the build.
 
-            - All 43 locales now carry the full 944 strings. Coverage before this build ranged from 8 to 944 per language; Traditional Chinese was completed from the Simplified text, 2109 strings came from the community translations of KernelSU / SukiSU / ReSukiSU, and the rest were translated per locale with the placeholders, escape sequences and product names kept intact. A scripted pass verifies every locale: no missing keys, no placeholder mismatches, no duplicate keys, no replacement characters, valid XML.
+            Banner: module banners default to 50% opacity instead of fully opaque; a stored old default of 1.0 migrates once and any other value is left alone.
 
-            Banner: a module banner now defaults to 50% opacity instead of fully opaque. Existing installs stored the old 1.0, so it is migrated once - a stored 1.0 becomes 0.5, any other value is left alone.
+            Build: v4.2.31 used the edit { } extension without importing it and did not compile; it uses an explicit editor now.
 
-            Build fix: the v4.2.31 banner migration used the `edit { }` extension without importing it and failed to compile; it now uses an explicit editor and applies it.
+            Docs site: vite, esbuild, postcss, js-yaml, nanoid, @xmldom/xmldom, source-map-js and defu are pinned to their fixed releases through pnpm overrides and Vue is bumped past the @vue/server-renderer advisory, which clears the open Dependabot alerts. The 8 dead links to the licence files now point at the repository URLs, so the site builds again.
 
-            Docs site: vite, esbuild, postcss, js-yaml, nanoid, @xmldom/xmldom, source-map-js and defu are pinned to their fixed releases through pnpm overrides and Vue is bumped past the @vue/server-renderer advisory, which clears the open Dependabot alerts. The site build also had 8 dead links to the licence files; they now point at the repository URLs.
-
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.31...v4.2.32
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.32...v4.2.33
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
