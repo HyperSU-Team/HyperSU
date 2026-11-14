@@ -45,6 +45,9 @@ object ModuleBanner {
     /** 第一次没取到横幅时，等这么久再试一次（见 [load]）。 */
     private const val BANNER_RETRY_DELAY_MS = 400L
 
+    /** 远程横幅的上限：再大就不值得为一张装饰图占内存。 */
+    private const val MAX_BANNER_BYTES = 12L * 1024L * 1024L
+
     private val folkStorage by lazy { ModuleBannerStorage(ksuApp, "module_banners") }
 
     /** 已解析的横幅，键是模块 ID；按最近使用排序，超过上限丢弃最久没用的那个。 */
@@ -255,7 +258,14 @@ object ModuleBanner {
             .build()
         client.newCall(Request.Builder().url(url).build()).execute().use { response ->
             if (!response.isSuccessful) return@use null
-            response.body?.bytes()?.takeIf { it.isNotEmpty() }
+            val body = response.body ?: return@use null
+            // The banner is drawn as a decorative layer, so an oversized image is not worth the
+            // memory: reject it rather than reading tens of megabytes into the heap.
+            if (body.contentLength() > MAX_BANNER_BYTES) {
+                Log.w(TAG, "banner $url is ${body.contentLength()} bytes, skipping")
+                return@use null
+            }
+            body.bytes().takeIf { it.isNotEmpty() && it.size <= MAX_BANNER_BYTES }
         }
     }.onFailure { Log.w(TAG, "could not fetch banner $url: ${it.message}") }.getOrNull()
 

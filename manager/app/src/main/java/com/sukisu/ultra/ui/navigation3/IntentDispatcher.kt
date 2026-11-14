@@ -130,6 +130,7 @@ fun HandleZipFileIntent(intentChannel: ReceiveChannel<Intent>) {
         safeMode = stringResource(R.string.safe_mode_module_disabled),
         zipTypeModule = stringResource(R.string.zip_type_module),
         zipTypeKernel = stringResource(R.string.zip_type_kernel),
+        zipTypeUnknown = stringResource(R.string.zip_type_unknown),
         zipFileUnknown = stringResource(R.string.zip_file_unknown),
         mixedInstallPrompt = stringResource(R.string.mixed_install_prompt_with_name),
         kernelInstallPrompt = stringResource(R.string.kernel_install_prompt_with_name),
@@ -171,6 +172,7 @@ private data class Strings(
     val safeMode: String,
     val zipTypeModule: String,
     val zipTypeKernel: String,
+    val zipTypeUnknown: String,
     val zipFileUnknown: String,
     val mixedInstallPrompt: String,
     val kernelInstallPrompt: String,
@@ -262,7 +264,9 @@ private fun buildFileNames(
         val typeStr = when (types[index]) {
             ZipType.MODULE -> strings.zipTypeModule
             ZipType.KERNEL -> strings.zipTypeKernel
-            ZipType.UNKNOWN -> strings.zipFileUnknown
+            // The unknown type has its own label: reusing the file-name fallback printed
+            // "1. foo.zipunknown.zip" in the confirmation.
+            ZipType.UNKNOWN -> strings.zipTypeUnknown
         }
         "\n${index + 1}. $fileName$typeStr"
     }.joinToString("")
@@ -307,7 +311,9 @@ private suspend fun handleConfirmed(
             if (cachedUris.isNotEmpty()) {
                 navigator.pushFlash(Route.Flash(FlashIt.FlashModules(cachedUris)))
             } else {
-                Toast.makeText(context, R.string.zip_file_unknown, Toast.LENGTH_SHORT).show()
+                // "unknown file" was the wrong message for this: the archive was recognised, it just
+                // could not be copied out of the uri the chooser handed over.
+                Toast.makeText(context, R.string.zip_file_unreadable, Toast.LENGTH_SHORT).show()
             }
         }
     }

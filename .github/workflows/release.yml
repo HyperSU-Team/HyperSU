@@ -98,26 +98,15 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.28 - the theme survives a reboot, and every import lands in the library.
+            HyperSU v4.2.29 - the Simplified Chinese translation is complete, and the prompts say the right thing.
 
-            The theme, font and music came back as the built-in ones after a reboot, while every preference and wallpaper file was still on disk. The app is `directBootAware`, so a boot broadcast can start it before the device is unlocked; the startup code returned early in that case and never read the appearance configuration, and that process lived on to draw the default theme.
+            - 41 strings were missing from the Simplified Chinese resources, so parts of the UI fell back to English with Chinese selected: the SuLog filters, palette style names, the shared action labels (search, clear, back, close, more, refresh, filter, save, send, download, configure, delete), the busy state, the KPM and SuSFS section titles, empty-state texts and a few more. All 985 strings are translated now.
+            - One English string had an escaped placeholder (`%1\$s`), which would throw as soon as it was formatted; it is a normal `%1$s`.
+            - The confirmation for a zip that is neither a module nor a kernel used the file-name fallback as its type label and printed "1. foo.zipunknown.zip". It now has its own " (Unknown)" label.
+            - When a picked archive could not be read, the toast said "unknown file"; it now says the file could not be read.
+            - A module banner declared as a URL larger than 12MB is skipped instead of being read into memory.
 
-            - The configuration is now read as soon as the device unlocks, and again before the first activity draws, so a process started before the unlock ends up with the right theme, font, music and switch style.
-            - The HTTP client, TMPDIR and webroot setup no longer sit behind that early return; they are what the boot-time code needs and none of it touches user storage.
-
-            The "downloaded" tab:
-
-            - Every successful import now keeps its archive in the theme library, whatever path it came through. Callers already copied the file in, but that copy can fail, and the theme was then applied while the library stayed empty.
-            - An archive whose metadata cannot be read is listed under its file name instead of being dropped - the listing no longer silently hides a theme that is on the device.
-            - If the directory does contain theme files but none can be read, the empty state says so instead of claiming nothing is downloaded.
-
-            Module banners:
-
-            - The module's directory is resolved by the `id` in its `module.prop` when the folder name differs, which is what FolkPatch does and what our fixed path missed.
-            - A `banner=` that is an http(s) url is downloaded and shown; it used to be skipped, so those modules never had a banner.
-            - A resolution that fails once is retried shortly after.
-
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.26...v4.2.28
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.28...v4.2.29
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

@@ -517,7 +517,7 @@
     <string name="kpm_install_mode">KPM Install</string>
     <string name="kpm_install_mode_load">Load</string>
     <string name="kpm_install_mode_embed">Embed</string>
-    <string name="kpm_install_mode_description">Please select: %1\$s Module Installation Mode \n\nLoad: Temporarily load the module \nEmbedded: Permanently install into the system</string>
+    <string name="kpm_install_mode_description">Please select: %1$s Module Installation Mode \n\nLoad: Temporarily load the module \nEmbedded: Permanently install into the system</string>
     <string name="invalid_file_type">Incorrect file type! Please select .kpm file</string>
     <string name="confirm_uninstall_title_with_filename">Uninstall</string>
     <string name="confirm_uninstall_content">The following KPM will be uninstalled: %s</string>
@@ -562,7 +562,11 @@
     <!-- Zip File Type Labels -->
     <string name="zip_type_module"> (Module)</string>
     <string name="zip_type_kernel"> (Kernel)</string>
-    <string name="zip_file_unknown" translatable="false">unknown.zip</string>
+    <string name="zip_file_unknown">unknown.zip</string>
+    <!-- The type label for an archive that is neither a module nor a kernel; it used to reuse
+         the file-name fallback, so the prompt read "1. foo.zipunknown.zip". -->
+    <string name="zip_type_unknown"> (Unknown)</string>
+    <string name="zip_file_unreadable">Could not read the selected file</string>
     <!-- Zip Install Prompts -->
     <string name="kernel_install_prompt_with_name">The following kernels will be installed: %1$s</string>
     <string name="mixed_install_prompt_with_name">The following files will be installed: %1$s</string>
