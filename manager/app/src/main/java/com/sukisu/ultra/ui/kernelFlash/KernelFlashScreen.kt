@@ -48,12 +48,20 @@ fun KernelFlashScreen(
     val logContent = rememberSaveable { StringBuilder() }
 
     val horizonKernelState = remember {
-        if (KernelFlashStateHolder.currentState != null &&
+        // Only an in-flight flash may be picked up again. A finished or failed one is not: reusing
+        // it meant a flash of the same archive immediately showed the previous result - the
+        // completed page with its reboot button, and nothing was written. Opening this screen always
+        // means "flash this archive now", so anything that is done is discarded.
+        val cached = KernelFlashStateHolder.currentState
+        val cachedFinished = cached?.state?.value?.let { it.isCompleted || it.error.isNotEmpty() } ?: true
+        val reusable = cached != null &&
+            !cachedFinished &&
             KernelFlashStateHolder.currentUri == kernelUri &&
             KernelFlashStateHolder.currentSlot == selectedSlot &&
             KernelFlashStateHolder.currentKpmPatchEnabled == kpmPatchEnabled &&
-            KernelFlashStateHolder.currentKpmUndoPatch == kpmUndoPatch) {
-            KernelFlashStateHolder.currentState!!
+            KernelFlashStateHolder.currentKpmUndoPatch == kpmUndoPatch
+        if (reusable) {
+            cached!!
         } else {
             HorizonKernelState().also {
                 KernelFlashStateHolder.currentState = it
@@ -65,6 +73,11 @@ fun KernelFlashScreen(
             }
         }
     }
+
+    // Note: the holder is deliberately *not* cleared here. It is what keeps a running flash alive
+    // across an activity recreation (a rotation, a language switch): the worker is a plain thread
+    // and the state has to outlive this composition, or a second worker would start writing the
+    // boot image. KernelFlashFolk drops a finished or failed state when this screen goes away.
 
     val flashState by horizonKernelState.state.collectAsStateWithLifecycle()
 

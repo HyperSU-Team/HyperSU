@@ -98,16 +98,13 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.23 - the browser kernel flow goes straight to flashing, and old theme downloads come back.
+            HyperSU v4.2.24 - a kernel archive is treated as a kernel again, and starting a flash always flashes.
 
-            - A kernel opened from the browser now goes straight to the flash screen. It used to land on the install screen's picker instead, so the same archive had to be confirmed twice and the slot dialog came up over a page about a choice the user had already made. The archive is flashed on the running slot, which is what the archive row does when no slot is picked.
-            - The AnyKernel3 row now shows the name of the zip that was picked. It kept its generic description after a file was chosen, so the selected archive had no name anywhere in the list.
-            - Theme archives left behind in the old store download cache are adopted into the theme library on the first listing. Themes installed by earlier builds never entered the library, which is why the downloaded tab kept coming up empty for them.
-            - "Downloaded" also has a retry that re-reads the library, for a theme that lands there while the screen is open.
-            - An import and a reset now flush their preferences to disk before reporting success. A theme imported seconds before a reboot could come back as the built-in one with its wallpaper gone, because the preference write was still queued.
-            - A module banner that fails to resolve once is retried shortly after instead of leaving the card bare until the list is reopened.
+            - AnyKernel3 detection looked for `module.prop` first. Kernel packages that ship one - the prop is there for the kernel's own KernelSU integration - were classified as modules, so opening one from the browser installed it as a module and showed the module flash screen, the one with the reboot button, instead of flashing the boot image. The presence of `anykernel.sh` now decides first.
+            - The flash screen reused the previous run's state whenever the archive, slot and options matched, including a finished or failed run. Flashing the same archive a second time therefore opened straight on the completed page with its reboot button and wrote nothing; only a flash that is still running is resumed now.
+            - The AnyKernel3 row reports the picked zip's name, and 'downloaded' keeps its retry, both from v4.2.23.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.22...v4.2.23
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.23...v4.2.24
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

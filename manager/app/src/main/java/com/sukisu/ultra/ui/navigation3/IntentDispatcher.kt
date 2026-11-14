@@ -385,8 +385,14 @@ private fun detectFromZipStream(zipStream: ZipInputStream, isApk: Boolean): ZipT
     }
 
     return when {
+        // An AnyKernel3 script wins over a `module.prop`. Plenty of kernel packages ship both - the
+        // prop is there for the kernel's own KernelSU integration - and checking the prop first
+        // classified those as modules: tapping a downloaded kernel in the browser installed it as a
+        // module and landed on the module flash screen, which is the one with the reboot button,
+        // instead of flashing the boot image. `tools/` is not required: the script is the marker,
+        // and an AnyKernel3 archive without tools only means it expects the phone's own binaries.
+        hasAnykernelSh -> ZipType.KERNEL
         hasModuleProp -> ZipType.MODULE
-        hasToolsFolder && hasAnykernelSh -> ZipType.KERNEL
         isApk -> ZipType.MODULE
         else -> ZipType.UNKNOWN
     }
