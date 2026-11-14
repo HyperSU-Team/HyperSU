@@ -37,7 +37,8 @@ fun ManagerUpdateAutoCheck() {
         if (!enabled) return@LaunchedEffect
         if (!ManagerUpdateSettings.isCheckDue(context)) return@LaunchedEffect
         ManagerUpdateSettings.markChecked(context)
-        runCatching { ManagerUpdateChecker.check() }
+        // check() already returns a Result, so runCatching around it produced Result<Result<..>>.
+        ManagerUpdateChecker.check()
             .onSuccess { found -> if (found != null) update = found }
     }
 
