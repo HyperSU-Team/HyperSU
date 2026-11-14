@@ -179,7 +179,8 @@ object ModuleBanner {
 
         return runCatching {
             val shell = getRootShell()
-            fun su(path: String) = SuFile(path).apply { setShell(shell) }
+            // A function value, not a local fun: it is handed to resolveModuleDir below.
+            val su: (String) -> SuFile = { path -> SuFile(path).apply { setShell(shell) } }
 
             val dirPath = resolveModuleDir(moduleId, su)
             if (!su(dirPath).isDirectory) return@runCatching null
