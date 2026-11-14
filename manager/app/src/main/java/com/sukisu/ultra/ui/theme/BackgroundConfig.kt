@@ -893,10 +893,9 @@ object BackgroundConfig {
         if (!prefs.getBoolean(KEY_BANNER_OPACITY_MIGRATED, false)) {
             val wasOldDefault = bannerCustomOpacity >= 0.999f
             if (wasOldDefault) this.bannerCustomOpacity = DEFAULT_BANNER_OPACITY
-            prefs.edit {
-                putBoolean(KEY_BANNER_OPACITY_MIGRATED, true)
-                if (wasOldDefault) putFloat(KEY_BANNER_CUSTOM_OPACITY, DEFAULT_BANNER_OPACITY)
-            }
+            val editor = prefs.edit().putBoolean(KEY_BANNER_OPACITY_MIGRATED, true)
+            if (wasOldDefault) editor.putFloat(KEY_BANNER_CUSTOM_OPACITY, DEFAULT_BANNER_OPACITY)
+            editor.apply()
         }
         isBannerApiModeEnabled = bannerApiModeEnabled
         this.bannerApiSource = bannerApiSource

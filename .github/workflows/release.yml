@@ -98,16 +98,19 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.31 - module banners default to half strength, and the Chinese variants are complete.
+            HyperSU v4.2.32 - every supported language is complete, banners default to 50%, and the docs site's vulnerable packages are updated.
 
-            - A module banner now defaults to 50% opacity instead of fully opaque. The old default was stored as 1.0 for every install, so it is migrated once: a stored 1.0 becomes 0.5, anything else is a value that was chosen and stays.
-            - Traditional Chinese (Taiwan) and Traditional Chinese (Hong Kong) are now complete: 944 strings each, the same keys as English, converted from the Simplified translation with the standard phrase mapping and keeping every existing entry that was already translated.
-            - The About page's source-code block was written with two links in English but only one placeholder in 35 translations, so the QQ group link silently disappeared there; it is restored, and one Persian entry that had a broken CDATA wrapper was repaired.
-            - The Bosnian module confirmation had lost its placeholder, so the archive name was never shown; it is back.
+            Translations:
 
-            Coverage of the remaining languages is unchanged: their files stay at the size the community left them and missing keys fall back to English. No machine translation was added, because a wrong line in a rooting tool's warnings is worse than an English one.
+            - All 43 locales now carry the full 944 strings. Coverage before this build ranged from 8 to 944 per language; Traditional Chinese was completed from the Simplified text, 2109 strings came from the community translations of KernelSU / SukiSU / ReSukiSU, and the rest were translated per locale with the placeholders, escape sequences and product names kept intact. A scripted pass verifies every locale: no missing keys, no placeholder mismatches, no duplicate keys, no replacement characters, valid XML.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.30...v4.2.31
+            Banner: a module banner now defaults to 50% opacity instead of fully opaque. Existing installs stored the old 1.0, so it is migrated once - a stored 1.0 becomes 0.5, any other value is left alone.
+
+            Build fix: the v4.2.31 banner migration used the `edit { }` extension without importing it and failed to compile; it now uses an explicit editor and applies it.
+
+            Docs site: vite, esbuild, postcss, js-yaml, nanoid, @xmldom/xmldom, source-map-js and defu are pinned to their fixed releases through pnpm overrides and Vue is bumped past the @vue/server-renderer advisory, which clears the open Dependabot alerts. The site build also had 8 dead links to the licence files; they now point at the repository URLs.
+
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.31...v4.2.32
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

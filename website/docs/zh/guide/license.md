@@ -30,8 +30,8 @@
 
 **许可要求：**
 
-1. 完整英文许可证请参见 [`LICENSE_icon_English`](../../../../LICENSE_icon_English)。
-2. 完整简体中文许可证请参见 [`LICENSE_icon_SC`](../../../../LICENSE_icon_SC)。
+1. 完整英文许可证请参见 [`LICENSE_icon_English`](https://github.com/HyperSU-Team/HyperSU/blob/main/LICENSE_icon_English)。
+2. 完整简体中文许可证请参见 [`LICENSE_icon_SC`](https://github.com/HyperSU-Team/HyperSU/blob/main/LICENSE_icon_SC)。
 
 ## 摘要
 
@@ -46,8 +46,8 @@
 
 - **GPL-2.0：** [完整许可证文本](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
 - **GPL-3.0：** [完整许可证文本](https://www.gnu.org/licenses/gpl-3.0.html)
-- **图标许可证（英文）：** [`LICENSE_icon_English`](../../../../LICENSE_icon_English)
-- **图标许可证（简体中文）：** [`LICENSE_icon_SC`](../../../../LICENSE_icon_SC)
+- **图标许可证（英文）：** [`LICENSE_icon_English`](https://github.com/HyperSU-Team/HyperSU/blob/main/LICENSE_icon_English)
+- **图标许可证（简体中文）：** [`LICENSE_icon_SC`](https://github.com/HyperSU-Team/HyperSU/blob/main/LICENSE_icon_SC)
 
 ## 问题
 
