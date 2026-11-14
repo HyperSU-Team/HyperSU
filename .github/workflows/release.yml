@@ -98,15 +98,16 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.34 - a failed module download no longer crashes, updates check themselves, and the last vulnerable dependency is gone.
+            HyperSU v4.2.35 - a failed module download no longer crashes, updates check themselves, and the last vulnerable dependency is gone.
 
-            - Downloading a module from the module store or from a module's update prompt went through `download()` without catching anything. On a filtered network the release host redirects to `release-assets.githubusercontent.com`, which resolves to 127.0.0.1 there, so the transfer threw `IOException` inside a coroutine and took the app down. Both paths go through the mirror helper now and show "download failed" instead.
-            - The manager's own update check is automatic and on by default: it runs at startup (at most once every twelve hours) and offers the usual dialog, with the download also going through the mirrors. The old "check for updates" button is now a switch for this.
-            - The alternate launcher icon row and its plumbing are removed.
-            - `figlet-rs` is replaced by a static banner. It existed only to draw ASCII art and dragged in a second copy of the `zip` crate (0.6), which was the last Dependabot advisory; `zip` itself is on 9.5.1 now, which closes all remaining alerts.
-            - The three new strings (download failed, automatic update check and its summary) are translated into every supported language.
+            - Downloading a module from the module store or from a module's update prompt called download() inside a coroutine with nothing catching it. On a filtered network the release host redirects to 
+elease-assets.githubusercontent.com, which resolves to 127.0.0.1 there, so the transfer threw IOException and took the app down. Both paths go through the mirror helper now, and a failure shows "download failed".
+            - The manager's own update check is automatic and on by default: it runs at startup (at most once every twelve hours) and offers the usual dialog, with the download going through the mirrors too. The old check button is now the switch for it.
+            - The alternate launcher icon row and its state are removed.
+            - iglet-rs is replaced by a static banner. It only drew ASCII art and pulled in a second copy of the zip crate (0.6), the last open Dependabot advisory; zip is 9.5.1 now and ZipFile::name() returns a Result in that version, which the AnyKernel3 reader now handles.
+            - The three new strings are translated into every supported language.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.33...v4.2.34
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.33...v4.2.35
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

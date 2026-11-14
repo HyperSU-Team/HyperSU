@@ -231,7 +231,13 @@ mod android {
                 .by_index(index)
                 .with_context(|| format!("failed to inspect ZIP entry {index}"))?;
 
-            names.push((index, entry.name().to_owned()));
+            // zip 9 returns the name as a fallible `Cow`: the entry may carry a name that is not
+            // valid UTF-8, so `.to_owned()` alone no longer compiles.
+            let name = entry
+                .name()
+                .with_context(|| format!("failed to read the name of ZIP entry {index}"))?
+                .to_owned();
+            names.push((index, name));
         }
 
         let index = select_update_binary(names.iter().map(|(index, name)| (*index, name)))?;
