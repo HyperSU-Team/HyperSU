@@ -1,9 +1,7 @@
 package com.sukisu.ultra.ui.kernelFlash
 
-import android.content.Intent
 import android.net.Uri
 import android.os.Environment
-import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -41,7 +39,6 @@ fun KernelFlashScreen(
     val navigator = LocalNavigator.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val activity = LocalActivity.current
 
     var logText by rememberSaveable { mutableStateOf("") }
     var showFloatAction by rememberSaveable { mutableStateOf(false) }
@@ -102,22 +99,11 @@ fun KernelFlashScreen(
         KernelFlashStateHolder.isFlashing = false
     }
 
-    LaunchedEffect(flashState.isCompleted, flashState.error) {
-        if (flashState.isCompleted && flashState.error.isEmpty()) {
-            val intent = activity?.intent
-            val isFromExternalIntent = intent?.action?.let { action ->
-                action == Intent.ACTION_VIEW ||
-                action == Intent.ACTION_SEND ||
-                action == Intent.ACTION_SEND_MULTIPLE
-            } ?: false
-
-            if (isFromExternalIntent) {
-                delay(1500)
-                KernelFlashStateHolder.clear()
-                activity.finish()
-            }
-        }
-    }
+    // The finished page stays up, whoever started the flash. It used to close the activity 1.5s
+    // after completion when the archive had been opened from the browser, which took away the
+    // result - the log and the reboot action - exactly when the user needed it. The page is
+    // dismissible with its own back button, and the flash lock is released as soon as it finishes,
+    // so nothing is trapped here.
 
     LaunchedEffect(Unit) {
         if (!KernelFlashStateHolder.isFlashing && !flashState.isCompleted && flashState.error.isEmpty()) {
