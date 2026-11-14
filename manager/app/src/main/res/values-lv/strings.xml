@@ -949,4 +949,7 @@
     <string name="theme_store_library_unreadable">Ierīcē ir %1$d tēmas fails(-i), bet tos nevarēja nolasīt</string>
     <string name="music_play">Atskaņot mūziku</string>
     <string name="music_pause">Pauzēt mūziku</string>
+    <string name="module_download_failed">Lejupielāde neizdevās</string>
+    <string name="settings_manager_auto_update">Automātiska atjauninājumu pārbaude</string>
+    <string name="settings_manager_auto_update_summary">Palaides laikā pārbaudīt jaunu pārvaldnieka versiju un paziņot, kad tā ir pieejama</string>
 </resources>

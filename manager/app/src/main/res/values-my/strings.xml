@@ -945,4 +945,7 @@
     <string name="theme_store_library_unreadable">အပြင်အဆင်ဖိုင် %1$d ခု စက်ထဲ ရှိသော်လည်း ဖတ်၍ မရပါ</string>
     <string name="music_play">တေးဂီတ ဖွင့်</string>
     <string name="music_pause">တေးဂီတ ခေတ္တရပ်</string>
+    <string name="module_download_failed">ဒေါင်းလုဒ် မအောင်မြင်ပါ</string>
+    <string name="settings_manager_auto_update">အလိုအလျောက် အပ်ဒိတ် စစ်ဆေးမှု</string>
+    <string name="settings_manager_auto_update_summary">စတင်ချိန်တွင် မန်နေဂျာ၏ ဗားရှင်းအသစ်ကို စစ်ဆေးပြီး ရရှိနိုင်ပါက အသိပေးပါ</string>
 </resources>

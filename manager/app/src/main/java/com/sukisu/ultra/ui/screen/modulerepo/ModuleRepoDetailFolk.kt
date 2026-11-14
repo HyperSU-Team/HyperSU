@@ -63,7 +63,7 @@ import com.sukisu.ultra.ui.component.folk.FolkTitleStyle
 import com.sukisu.ultra.ui.component.markdown.GithubMarkdown
 import com.sukisu.ultra.ui.theme.tokens.FolkShape
 import com.sukisu.ultra.ui.theme.tokens.FolkType
-import com.sukisu.ultra.ui.util.download
+import com.sukisu.ultra.ui.util.GithubMirrors
 import com.sukisu.ultra.ui.util.isDownloadAvailable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -425,17 +425,27 @@ private fun ReleaseAssetRow(
             setPendingDownload {
                 isDownloading = true
                 scope.launch(Dispatchers.IO) {
-                    download(
-                        asset.downloadUrl,
-                        fileName,
-                        onDownloaded = { uri ->
-                            isDownloading = false
-                            downloadedUri = uri
-                        },
+                    // Through the mirrors, and with the failure caught: a filtered network makes
+                    // the release host unreachable, and the exception used to crash the app.
+                    val uri = GithubMirrors.downloadThroughMirrors(
+                        url = asset.downloadUrl,
+                        fileName = fileName,
                         onDownloading = { isDownloading = true },
                         onProgress = { p -> scope.launch(Dispatchers.Main) { progress = p } },
                     )
-                    isDownloading = false
+                    if (uri != null) {
+                        downloadedUri = uri
+                        isDownloading = false
+                    } else {
+                        isDownloading = false
+                        scope.launch(Dispatchers.Main) {
+                            android.widget.Toast.makeText(
+                                context,
+                                context.getString(com.sukisu.ultra.R.string.module_download_failed),
+                                android.widget.Toast.LENGTH_SHORT,
+                            ).show()
+                        }
+                    }
                 }
             }
             confirmDialog.showConfirm(title = confirmTitle, content = startText)

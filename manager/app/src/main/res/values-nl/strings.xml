@@ -949,4 +949,7 @@
     <string name="theme_store_library_unreadable">%1$d themabestand(en) staan op het apparaat maar konden niet worden gelezen</string>
     <string name="music_play">Muziek afspelen</string>
     <string name="music_pause">Muziek pauzeren</string>
+    <string name="module_download_failed">Downloaden mislukt</string>
+    <string name="settings_manager_auto_update">Automatische updatecontrole</string>
+    <string name="settings_manager_auto_update_summary">Bij het starten controleren op een nieuwe manager-versie en melden wanneer die beschikbaar is</string>
 </resources>

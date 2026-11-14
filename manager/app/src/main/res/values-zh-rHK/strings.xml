@@ -946,4 +946,7 @@
     <string name="sulog_log_empty">暫無日誌</string>
     <string name="umount_no_paths">暫無自定義路徑</string>
     <string name="release_no_releases">暫無釋出版本</string>
+    <string name="module_download_failed">下載失敗</string>
+    <string name="settings_manager_auto_update">自動檢查更新</string>
+    <string name="settings_manager_auto_update_summary">啟動時檢查是否有新的管理器版本，有更新時提示</string>
 </resources>

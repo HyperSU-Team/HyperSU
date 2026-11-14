@@ -947,4 +947,7 @@
     <string name="theme_store_library_unreadable">%1$d файл(а) с теми са на устройството, но не могат да бъдат прочетени</string>
     <string name="music_play">Пусни музика</string>
     <string name="music_pause">Пауза на музиката</string>
+    <string name="module_download_failed">Изтеглянето е неуспешно</string>
+    <string name="settings_manager_auto_update">Автоматична проверка за актуализации</string>
+    <string name="settings_manager_auto_update_summary">Проверка за ново издание на мениджъра при стартиране и подкана, когато е налично</string>
 </resources>

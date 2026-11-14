@@ -947,4 +947,7 @@
     <string name="theme_store_library_unreadable">기기에 테마 파일 %1$d개가 있지만 읽을 수 없습니다</string>
     <string name="music_play">음악 재생</string>
     <string name="music_pause">음악 일시정지</string>
+    <string name="module_download_failed">다운로드 실패</string>
+    <string name="settings_manager_auto_update">자동 업데이트 확인</string>
+    <string name="settings_manager_auto_update_summary">시작 시 매니저의 새 빌드를 확인하고 사용 가능하면 알림</string>
 </resources>

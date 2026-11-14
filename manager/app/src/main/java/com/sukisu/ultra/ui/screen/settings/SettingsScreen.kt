@@ -74,8 +74,7 @@ fun SettingPager(
             onSetAutoJailbreak = viewModel::setAutoJailbreak,
             onSetUseSoftReboot = viewModel::setUseSoftReboot,
             onOpenAbout = { navigator.push(Route.About) },
-            onSetAlternativeIcon = { enabled -> viewModel.setAlternativeIcon(context, enabled) },
-            onOpenTools = { navigator.push(Route.Tool) },
+                onOpenTools = { navigator.push(Route.Tool) },
             onOpenSusfsConfig = { navigator.push(Route.SuSFS) },
             onOpenDynamicManager = { navigator.push(Route.DynamicManager) },
         )

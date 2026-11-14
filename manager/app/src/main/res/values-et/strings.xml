@@ -947,4 +947,7 @@
     <string name="theme_store_library_unreadable">Seadmes on %1$d teemafaili, kuid neid ei õnnestunud lugeda</string>
     <string name="music_play">Esita muusikat</string>
     <string name="music_pause">Peata muusika</string>
+    <string name="module_download_failed">Allalaadimine ebaõnnestus</string>
+    <string name="settings_manager_auto_update">Automaatne uuenduste kontroll</string>
+    <string name="settings_manager_auto_update_summary">Kontrolli käivitamisel halduri uut versiooni ja teata, kui see on saadaval</string>
 </resources>

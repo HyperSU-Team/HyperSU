@@ -947,4 +947,7 @@
     <string name="theme_store_library_unreadable">%1$d थीम फ़ाइलें डिवाइस पर हैं लेकिन पढ़ी नहीं जा सकीं</string>
     <string name="music_play">संगीत चलाएँ</string>
     <string name="music_pause">संगीत रोकें</string>
+    <string name="module_download_failed">डाउनलोड विफल</string>
+    <string name="settings_manager_auto_update">स्वचालित अपडेट जाँच</string>
+    <string name="settings_manager_auto_update_summary">शुरू होने पर मैनेजर का नया संस्करण जाँचें और उपलब्ध होने पर सूचित करें</string>
 </resources>

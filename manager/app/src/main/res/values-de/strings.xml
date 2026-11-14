@@ -949,4 +949,7 @@
     <string name="theme_store_library_unreadable">%1$d Design-Datei(en) sind auf dem Gerät, konnten aber nicht gelesen werden</string>
     <string name="music_play">Musik abspielen</string>
     <string name="music_pause">Musik pausieren</string>
+    <string name="module_download_failed">Download fehlgeschlagen</string>
+    <string name="settings_manager_auto_update">Automatische Update-Prüfung</string>
+    <string name="settings_manager_auto_update_summary">Beim Start nach einer neuen Manager-Version suchen und bei Verfügbarkeit hinweisen</string>
 </resources>

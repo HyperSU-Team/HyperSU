@@ -949,4 +949,7 @@
     <string name="theme_store_library_unreadable">На пристрої є файлів тем: %1$d, але їх не вдалося прочитати</string>
     <string name="music_play">Грати музику</string>
     <string name="music_pause">Пауза музики</string>
+    <string name="module_download_failed">Не вдалося завантажити</string>
+    <string name="settings_manager_auto_update">Автоматична перевірка оновлень</string>
+    <string name="settings_manager_auto_update_summary">Перевіряти нову версію менеджера під час запуску та повідомляти, коли вона доступна</string>
 </resources>

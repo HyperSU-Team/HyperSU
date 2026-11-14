@@ -949,4 +949,7 @@
     <string name="theme_store_library_unreadable">يوجد %1$d ملف مظهر على الجهاز لكن تعذّرت قراءته</string>
     <string name="music_play">تشغيل الموسيقى</string>
     <string name="music_pause">إيقاف الموسيقى</string>
+    <string name="module_download_failed">فشل التنزيل</string>
+    <string name="settings_manager_auto_update">التحقق التلقائي من التحديثات</string>
+    <string name="settings_manager_auto_update_summary">التحقق من إصدار جديد للمدير عند بدء التشغيل والمطالبة عند توفره</string>
 </resources>

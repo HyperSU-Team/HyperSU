@@ -947,4 +947,7 @@
     <string name="theme_store_library_unreadable">%1$d датотека тема је на уређају, али се не могу прочитати</string>
     <string name="music_play">Пусти музику</string>
     <string name="music_pause">Паузирај музику</string>
+    <string name="module_download_failed">Преузимање није успело</string>
+    <string name="settings_manager_auto_update">Аутоматска провера ажурирања</string>
+    <string name="settings_manager_auto_update_summary">При покретању проверава да ли постоји нова верзија менаџера и обавештава те</string>
 </resources>

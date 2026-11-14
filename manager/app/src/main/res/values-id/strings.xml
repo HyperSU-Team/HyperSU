@@ -945,4 +945,7 @@
     <string name="theme_store_library_unreadable">%1$d file tema ada di perangkat tetapi tidak dapat dibaca</string>
     <string name="music_play">Putar musik</string>
     <string name="music_pause">Jeda musik</string>
+    <string name="module_download_failed">Unduhan gagal</string>
+    <string name="settings_manager_auto_update">Pemeriksaan pembaruan otomatis</string>
+    <string name="settings_manager_auto_update_summary">Periksa build manager baru saat mulai dan beri tahu bila tersedia</string>
 </resources>

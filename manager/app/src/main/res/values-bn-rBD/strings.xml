@@ -947,4 +947,7 @@
     <string name="theme_store_library_unreadable">ডিভাইসে %1$dটি থিম ফাইল আছে কিন্তু পড়া যায়নি</string>
     <string name="music_play">মিউজিক চালান</string>
     <string name="music_pause">মিউজিক থামান</string>
+    <string name="module_download_failed">ডাউনলোড ব্যর্থ হয়েছে</string>
+    <string name="settings_manager_auto_update">স্বয়ংক্রিয় আপডেট যাচাই</string>
+    <string name="settings_manager_auto_update_summary">চালু হওয়ার সময় ম্যানেজারের নতুন বিল্ড যাচাই করুন এবং পাওয়া গেলে জানান</string>
 </resources>

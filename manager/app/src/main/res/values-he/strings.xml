@@ -945,4 +945,7 @@
     <string name="theme_store_library_unreadable">%1$d קובצי ערכת נושא קיימים במכשיר אך לא ניתן לקרוא אותם</string>
     <string name="music_play">נגן מוזיקה</string>
     <string name="music_pause">השהה מוזיקה</string>
+    <string name="module_download_failed">ההורדה נכשלה</string>
+    <string name="settings_manager_auto_update">בדיקת עדכונים אוטומטית</string>
+    <string name="settings_manager_auto_update_summary">לבדוק גרסה חדשה של המנהל בעת ההפעלה ולהתריע כשהיא זמינה</string>
 </resources>

@@ -949,4 +949,7 @@
     <string name="theme_store_library_unreadable">%1$d file di tema presenti sul dispositivo ma non leggibili</string>
     <string name="music_play">Riproduci musica</string>
     <string name="music_pause">Metti in pausa la musica</string>
+    <string name="module_download_failed">Download non riuscito</string>
+    <string name="settings_manager_auto_update">Controllo automatico aggiornamenti</string>
+    <string name="settings_manager_auto_update_summary">Cerca una nuova versione del manager all\'avvio e avvisa quando è disponibile</string>
 </resources>

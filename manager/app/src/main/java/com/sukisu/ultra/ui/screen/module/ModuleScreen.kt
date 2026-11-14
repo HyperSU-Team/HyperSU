@@ -27,6 +27,7 @@ import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.component.SearchStatus
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
 import com.sukisu.ultra.ui.navigation3.Route
+import com.sukisu.ultra.ui.util.GithubMirrors
 import com.sukisu.ultra.ui.screen.flash.FlashIt
 import com.sukisu.ultra.ui.util.download
 import com.sukisu.ultra.ui.util.module.Shortcut
@@ -134,15 +135,12 @@ fun ModulePager(
         },
         onConfirmUpdate = { request ->
             scope.launch {
-                download(
+                // Through the mirrors, and never letting a failed transfer take the process down:
+                // a filtered network answers the release host with a loopback address and the
+                // IOException used to kill the app.
+                val uri = GithubMirrors.downloadThroughMirrors(
                     url = request.downloadUrl,
                     fileName = request.fileName,
-                    onDownloaded = { uri ->
-                        if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-                            navigator.pushFlash(Route.Flash(FlashIt.FlashModules(listOf(uri))))
-                            viewModel.markNeedRefresh()
-                        }
-                    },
                     onDownloading = {
                         viewModel.emitEffect(
                             ModuleEffect.Toast(
@@ -151,6 +149,12 @@ fun ModulePager(
                         )
                     },
                 )
+                if (uri == null) {
+                    viewModel.emitEffect(ModuleEffect.Toast(resource.getString(R.string.module_download_failed)))
+                } else if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                    navigator.pushFlash(Route.Flash(FlashIt.FlashModules(listOf(uri))))
+                    viewModel.markNeedRefresh()
+                }
             }
             viewModel.dismissConfirmRequest()
         },

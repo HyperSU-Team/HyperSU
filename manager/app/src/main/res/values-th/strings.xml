@@ -949,4 +949,7 @@
     <string name="theme_store_library_unreadable">มีไฟล์ธีม %1$d ไฟล์ในอุปกรณ์แต่ไม่สามารถอ่านได้</string>
     <string name="music_play">เล่นเพลง</string>
     <string name="music_pause">หยุดเพลงชั่วคราว</string>
+    <string name="module_download_failed">ดาวน์โหลดไม่สำเร็จ</string>
+    <string name="settings_manager_auto_update">ตรวจหาการอัปเดตอัตโนมัติ</string>
+    <string name="settings_manager_auto_update_summary">ตรวจหาเวอร์ชันใหม่ของตัวจัดการเมื่อเริ่มระบบ และแจ้งเตือนเมื่อมีให้ใช้</string>
 </resources>

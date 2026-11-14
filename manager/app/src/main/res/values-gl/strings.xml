@@ -945,4 +945,7 @@
     <string name="theme_store_library_unreadable">%1$d ficheiro(s) de tema están no dispositivo pero non se puideron ler</string>
     <string name="music_play">Reproducir música</string>
     <string name="music_pause">Pausar a música</string>
+    <string name="module_download_failed">Erro na descarga</string>
+    <string name="settings_manager_auto_update">Comprobación automática de actualizacións</string>
+    <string name="settings_manager_auto_update_summary">Buscar unha nova versión do manager ao iniciar e avisar cando estea dispoñible</string>
 </resources>

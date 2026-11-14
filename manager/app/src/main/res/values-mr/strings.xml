@@ -947,4 +947,7 @@
     <string name="theme_store_library_unreadable">डिव्हाइसवर %1$d थीम फाइल्स आहेत पण त्या वाचता आल्या नाहीत</string>
     <string name="music_play">संगीत वाजवा</string>
     <string name="music_pause">संगीत थांबवा</string>
+    <string name="module_download_failed">डाउनलोड अयशस्वी</string>
+    <string name="settings_manager_auto_update">स्वयंचलित अद्यतन तपासणी</string>
+    <string name="settings_manager_auto_update_summary">सुरू होताना मॅनेजरची नवीन आवृत्ती तपासा आणि उपलब्ध असल्यास सूचित करा</string>
 </resources>

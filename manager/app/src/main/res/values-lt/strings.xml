@@ -947,4 +947,7 @@
     <string name="theme_store_library_unreadable">Įrenginyje yra %1$d temos failų, bet jų nepavyko perskaityti</string>
     <string name="music_play">Leisti muziką</string>
     <string name="music_pause">Pristabdyti muziką</string>
+    <string name="module_download_failed">Atsisiuntimas nepavyko</string>
+    <string name="settings_manager_auto_update">Automatinis atnaujinimų tikrinimas</string>
+    <string name="settings_manager_auto_update_summary">Paleidus patikrinti naują tvarkyklės versiją ir pranešti, kai ji pasiekiama</string>
 </resources>

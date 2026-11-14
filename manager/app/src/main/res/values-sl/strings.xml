@@ -945,4 +945,7 @@
     <string name="theme_store_library_unreadable">%1$d datotek tem je v napravi, vendar jih ni bilo mogoče prebrati</string>
     <string name="music_play">Predvajaj glasbo</string>
     <string name="music_pause">Ustavi glasbo</string>
+    <string name="module_download_failed">Prenos ni uspel</string>
+    <string name="settings_manager_auto_update">Samodejno preverjanje posodobitev</string>
+    <string name="settings_manager_auto_update_summary">Ob zagonu preveri, ali je na voljo nova različica upravitelja, in te opozori</string>
 </resources>

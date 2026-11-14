@@ -947,4 +947,7 @@
     <string name="theme_store_library_unreadable">%1$d فایل پوسته روی دستگاه هست اما خوانده نشد</string>
     <string name="music_play">پخش موسیقی</string>
     <string name="music_pause">توقف موسیقی</string>
+    <string name="module_download_failed">دانلود ناموفق بود</string>
+    <string name="settings_manager_auto_update">بررسی خودکار به‌روزرسانی</string>
+    <string name="settings_manager_auto_update_summary">هنگام شروع، نسخه جدید مدیر را بررسی و در صورت موجود بودن اطلاع بده</string>
 </resources>

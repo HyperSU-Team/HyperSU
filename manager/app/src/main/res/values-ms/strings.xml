@@ -947,4 +947,7 @@
     <string name="theme_store_library_unreadable">%1$d fail tema ada pada peranti tetapi tidak dapat dibaca</string>
     <string name="music_play">Mainkan muzik</string>
     <string name="music_pause">Jeda muzik</string>
+    <string name="module_download_failed">Muat turun gagal</string>
+    <string name="settings_manager_auto_update">Semakan kemas kini automatik</string>
+    <string name="settings_manager_auto_update_summary">Semak binaan pengurus baharu semasa mula dan beritahu apabila tersedia</string>
 </resources>

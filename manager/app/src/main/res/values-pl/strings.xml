@@ -949,4 +949,7 @@
     <string name="theme_store_library_unreadable">Na urządzeniu znajdują się pliki motywów (%1$d), ale nie można ich odczytać</string>
     <string name="music_play">Odtwarzaj muzykę</string>
     <string name="music_pause">Wstrzymaj muzykę</string>
+    <string name="module_download_failed">Pobieranie nie powiodło się</string>
+    <string name="settings_manager_auto_update">Automatyczne sprawdzanie aktualizacji</string>
+    <string name="settings_manager_auto_update_summary">Sprawdź nową wersję menedżera przy starcie i powiadom, gdy będzie dostępna</string>
 </resources>

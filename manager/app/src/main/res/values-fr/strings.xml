@@ -947,4 +947,7 @@
     <string name="theme_store_library_unreadable">%1$d fichier(s) de thème sont présents sur l\'appareil mais n\'ont pas pu être lus</string>
     <string name="music_play">Lire la musique</string>
     <string name="music_pause">Mettre la musique en pause</string>
+    <string name="module_download_failed">Échec du téléchargement</string>
+    <string name="settings_manager_auto_update">Recherche automatique des mises à jour</string>
+    <string name="settings_manager_auto_update_summary">Rechercher une nouvelle version du manager au démarrage et prévenir lorsqu\'elle est disponible</string>
 </resources>

@@ -945,4 +945,7 @@
     <string name="theme_store_library_unreadable">%1$d temafiler findes på enheden, men kunne ikke læses</string>
     <string name="music_play">Afspil musik</string>
     <string name="music_pause">Pause musik</string>
+    <string name="module_download_failed">Download mislykkedes</string>
+    <string name="settings_manager_auto_update">Automatisk opdateringstjek</string>
+    <string name="settings_manager_auto_update_summary">Tjek for en ny manager-version ved opstart, og giv besked, når den er tilgængelig</string>
 </resources>

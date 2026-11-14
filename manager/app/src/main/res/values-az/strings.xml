@@ -945,4 +945,7 @@
     <string name="theme_store_library_unreadable">Cihazda %1$d mövzu faylı var, lakin oxuna bilmədi</string>
     <string name="music_play">Musiqini oxut</string>
     <string name="music_pause">Musiqini dayandır</string>
+    <string name="module_download_failed">Yükləmə alınmadı</string>
+    <string name="settings_manager_auto_update">Avtomatik yeniləmə yoxlaması</string>
+    <string name="settings_manager_auto_update_summary">Başlanğıcda menecerin yeni buraxılışını yoxla və mövcud olduqda xəbərdar et</string>
 </resources>

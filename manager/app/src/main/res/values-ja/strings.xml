@@ -947,4 +947,7 @@
     <string name="theme_store_library_unreadable">%1$d 件のテーマファイルがデバイスにありますが、読み取れませんでした</string>
     <string name="music_play">音楽を再生</string>
     <string name="music_pause">音楽を一時停止</string>
+    <string name="module_download_failed">ダウンロードに失敗しました</string>
+    <string name="settings_manager_auto_update">自動アップデート確認</string>
+    <string name="settings_manager_auto_update_summary">起動時にマネージャーの新しいビルドを確認し、利用可能なら通知します</string>
 </resources>

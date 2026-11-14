@@ -947,4 +947,7 @@
     <string name="theme_store_library_unreadable">%1$d témafájl van az eszközön, de nem olvasható</string>
     <string name="music_play">Zene lejátszása</string>
     <string name="music_pause">Zene szüneteltetése</string>
+    <string name="module_download_failed">A letöltés nem sikerült</string>
+    <string name="settings_manager_auto_update">Automatikus frissítésellenőrzés</string>
+    <string name="settings_manager_auto_update_summary">Indításkor ellenőrizze a kezelő új verzióját, és jelezze, ha elérhető</string>
 </resources>

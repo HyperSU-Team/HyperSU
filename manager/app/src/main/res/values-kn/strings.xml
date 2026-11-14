@@ -945,4 +945,7 @@
     <string name="theme_store_library_unreadable">%1$d ಥೀಮ್ ಫೈಲ್(ಗಳು) ಸಾಧನದಲ್ಲಿವೆ ಆದರೆ ಓದಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ</string>
     <string name="music_play">ಸಂಗೀತ ಪ್ಲೇ ಮಾಡಿ</string>
     <string name="music_pause">ಸಂಗೀತ ವಿರಾಮಗೊಳಿಸಿ</string>
+    <string name="module_download_failed">ಡೌನ್‌ಲೋಡ್ ವಿಫಲವಾಗಿದೆ</string>
+    <string name="settings_manager_auto_update">ಸ್ವಯಂಚಾಲಿತ ನವೀಕರಣ ಪರಿಶೀಲನೆ</string>
+    <string name="settings_manager_auto_update_summary">ಪ್ರಾರಂಭದಲ್ಲಿ ಮ್ಯಾನೇಜರ್‌ನ ಹೊಸ ಬಿಲ್ಡ್ ಪರಿಶೀಲಿಸಿ, ಲಭ್ಯವಿದ್ದರೆ ಸೂಚಿಸಿ</string>
 </resources>

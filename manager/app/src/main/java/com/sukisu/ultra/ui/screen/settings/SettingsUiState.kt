@@ -8,7 +8,6 @@ import com.materialkolor.dynamiccolor.ColorSpec
 data class SettingsUiState(
     val appLanguage: String = "",
     val checkModuleUpdate: Boolean = true,
-    val alternativeIcon : Boolean = false,
     val themeMode: Int = 0,
     val keyColor: Int = 0,
     val colorStyle: String = PaletteStyle.TonalSpot.name,
@@ -99,7 +98,6 @@ data class SettingsScreenActions(
     val onSetAutoJailbreak: (Boolean) -> Unit,
     val onSetUseSoftReboot: (Boolean) -> Unit,
     val onOpenAbout: () -> Unit,
-    val onSetAlternativeIcon: (Boolean) -> Unit,
     val onOpenTools: () -> Unit,
     val onOpenSusfsConfig: () -> Unit,
     val onOpenDynamicManager: () -> Unit,

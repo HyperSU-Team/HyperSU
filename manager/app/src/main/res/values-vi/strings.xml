@@ -947,4 +947,7 @@
     <string name="theme_store_library_unreadable">%1$d tệp chủ đề có trên thiết bị nhưng không thể đọc</string>
     <string name="music_play">Phát nhạc</string>
     <string name="music_pause">Tạm dừng nhạc</string>
+    <string name="module_download_failed">Tải xuống thất bại</string>
+    <string name="settings_manager_auto_update">Kiểm tra cập nhật tự động</string>
+    <string name="settings_manager_auto_update_summary">Kiểm tra bản dựng mới của trình quản lý khi khởi động và nhắc khi có bản mới</string>
 </resources>

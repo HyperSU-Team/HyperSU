@@ -38,8 +38,7 @@ class SettingsViewModel(
     fun refresh() {
         viewModelScope.launch {
             val checkModuleUpdate = repo.checkModuleUpdate
-            val alternativeIcon = repo.alternativeIcon
-            val themeMode = repo.themeMode
+                val themeMode = repo.themeMode
             val keyColor = repo.keyColor
             val enablePredictiveBack = repo.enablePredictiveBack
             val enableSwipeDismiss = repo.enableSwipeDismiss
@@ -91,8 +90,7 @@ class SettingsViewModel(
                 it.copy(
                     appLanguage = appLanguage,
                     checkModuleUpdate = checkModuleUpdate,
-                    alternativeIcon = alternativeIcon,
-                    themeMode = themeMode,
+                            themeMode = themeMode,
                     keyColor = keyColor,
                     enablePredictiveBack = enablePredictiveBack,
                     enableSwipeDismiss = enableSwipeDismiss,
@@ -154,11 +152,6 @@ class SettingsViewModel(
     fun setCheckModuleUpdate(enabled: Boolean) {
         repo.checkModuleUpdate = enabled
         _uiState.update { it.copy(checkModuleUpdate = enabled) }
-    }
-    fun setAlternativeIcon(context: Context, enabled: Boolean) {
-        repo.alternativeIcon = enabled
-        _uiState.update { it.copy(alternativeIcon = enabled) }
-        com.sukisu.ultra.ui.util.toggleLauncherIcon(context, enabled)
     }
 
     fun setThemeMode(mode: Int) {

@@ -945,4 +945,7 @@
     <string name="theme_store_library_unreadable">%1$d థీమ్ ఫైల్(లు) పరికరంలో ఉన్నాయి కానీ చదవలేకపోయాం</string>
     <string name="music_play">సంగీతం ప్లే చేయి</string>
     <string name="music_pause">సంగీతం ఆపివేయి</string>
+    <string name="module_download_failed">డౌన్‌లోడ్ విఫలమైంది</string>
+    <string name="settings_manager_auto_update">స్వయంచాలక నవీకరణ తనిఖీ</string>
+    <string name="settings_manager_auto_update_summary">ప్రారంభంలో మేనేజర్ కొత్త బిల్డ్ కోసం చూసి, అందుబాటులో ఉంటే తెలియజేయి</string>
 </resources>

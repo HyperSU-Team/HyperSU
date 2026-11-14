@@ -98,17 +98,15 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.33 - every supported language is complete, banners default to 50%, and the site's vulnerable packages are updated.
+            HyperSU v4.2.34 - a failed module download no longer crashes, updates check themselves, and the last vulnerable dependency is gone.
 
-            Translations: all 43 locales now carry the full 944 strings. Traditional Chinese came from the Simplified text through the standard phrase mapping, 2109 keys came from the upstream community translations of KernelSU / SukiSU / ReSukiSU where they matched, and the rest were translated per locale with the placeholders, \n escapes and product names kept intact. A scripted check verifies every locale: no missing keys, no placeholder mismatch, no duplicate keys, no replacement characters, valid XML. The about page's HTML block stays English in Serbian, Galician and Bengali (Bangladesh): aapt2 rejects the translated CDATA for that one resource there, and an English block beats breaking the build.
+            - Downloading a module from the module store or from a module's update prompt went through `download()` without catching anything. On a filtered network the release host redirects to `release-assets.githubusercontent.com`, which resolves to 127.0.0.1 there, so the transfer threw `IOException` inside a coroutine and took the app down. Both paths go through the mirror helper now and show "download failed" instead.
+            - The manager's own update check is automatic and on by default: it runs at startup (at most once every twelve hours) and offers the usual dialog, with the download also going through the mirrors. The old "check for updates" button is now a switch for this.
+            - The alternate launcher icon row and its plumbing are removed.
+            - `figlet-rs` is replaced by a static banner. It existed only to draw ASCII art and dragged in a second copy of the `zip` crate (0.6), which was the last Dependabot advisory; `zip` itself is on 9.5.1 now, which closes all remaining alerts.
+            - The three new strings (download failed, automatic update check and its summary) are translated into every supported language.
 
-            Banner: module banners default to 50% opacity instead of fully opaque; a stored old default of 1.0 migrates once and any other value is left alone.
-
-            Build: v4.2.31 used the edit { } extension without importing it and did not compile; it uses an explicit editor now.
-
-            Docs site: vite, esbuild, postcss, js-yaml, nanoid, @xmldom/xmldom, source-map-js and defu are pinned to their fixed releases through pnpm overrides and Vue is bumped past the @vue/server-renderer advisory, which clears the open Dependabot alerts. The 8 dead links to the licence files now point at the repository URLs, so the site builds again.
-
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.32...v4.2.33
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.33...v4.2.34
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

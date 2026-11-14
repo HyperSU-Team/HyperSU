@@ -63,6 +63,7 @@ import com.sukisu.ultra.ui.component.uninstalldialog.UninstallDialog
 import com.sukisu.ultra.ui.util.LocaleHelper
 import com.sukisu.ultra.ui.util.ManagerUpdate
 import com.sukisu.ultra.ui.util.ManagerUpdateChecker
+import com.sukisu.ultra.ui.util.ManagerUpdateSettings
 import com.sukisu.ultra.ui.util.download
 import com.sukisu.ultra.ui.util.installApk
 import kotlinx.coroutines.launch
@@ -88,9 +89,6 @@ fun SettingPagerFolk(
     val showUninstallDialog = rememberSaveable { mutableStateOf(false) }
     var showBottomSheet by remember { mutableStateOf(false) }
 
-    // Manager update check. Kept here rather than in the settings view model because nothing else
-    // reads it: it is one request, made when the user asks, and its result lives only as long as
-    // this dialog.
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var checking by remember { mutableStateOf(false) }
@@ -194,41 +192,18 @@ fun SettingPagerFolk(
                 }
             }
 
-            // The manager's own update check. Offered on its own section rather than beside the
-            // module one, because it is a different question: this build, not a module.
+            // The manager's own update check: automatic now, and on by default. The row is the
+            // switch for it; there is no manual button any more, the check runs at startup.
             item {
                 FolkSettingsSectionGroup(title = stringResource(R.string.settings_manager_update)) {
                     item {
-                        FolkValuePreference(
-                            title = stringResource(R.string.settings_manager_check_update),
-                            summary = stringResource(R.string.settings_manager_check_update_summary),
+                        FolkSwitchPreference(
+                            title = stringResource(R.string.settings_manager_auto_update),
+                            summary = stringResource(R.string.settings_manager_auto_update_summary),
                             icon = Icons.Rounded.SystemUpdate,
-                            onClick = {
-                                if (checking) return@FolkValuePreference
-                                checking = true
-                                scope.launch {
-                                    val result = ManagerUpdateChecker.check()
-                                    checking = false
-                                    result
-                                        .onSuccess { found ->
-                                            if (found != null) {
-                                                update = found
-                                            } else {
-                                                snackBarHost.showSnackbar(
-                                                    context.getString(
-                                                        R.string.settings_manager_update_none,
-                                                    ),
-                                                )
-                                            }
-                                        }
-                                        .onFailure {
-                                            snackBarHost.showSnackbar(
-                                                context.getString(
-                                                    R.string.settings_manager_update_failed,
-                                                ),
-                                            )
-                                        }
-                                }
+                            checked = ManagerUpdateSettings.isEnabled,
+                            onCheckedChange = { enabled ->
+                                ManagerUpdateSettings.setEnabled(context, enabled)
                             },
                         )
                     }
@@ -263,15 +238,6 @@ fun SettingPagerFolk(
                             summary = stringResource(R.string.settings_theme_summary),
                             icon = Icons.Filled.Palette,
                             onClick = actions.onOpenTheme,
-                        )
-                    }
-                    item {
-                        FolkSwitchPreference(
-                            title = stringResource(R.string.icon_switch_title),
-                            summary = stringResource(R.string.icon_switch_summary),
-                            icon = Icons.Rounded.Android,
-                            checked = uiState.alternativeIcon,
-                            onCheckedChange = actions.onSetAlternativeIcon,
                         )
                     }
                 }

@@ -945,4 +945,7 @@
     <string name="theme_store_library_unreadable">May %1$d theme file sa device ngunit hindi ito mabasa</string>
     <string name="music_play">I-play ang musika</string>
     <string name="music_pause">I-pause ang musika</string>
+    <string name="module_download_failed">Nabigo ang pag-download</string>
+    <string name="settings_manager_auto_update">Awtomatikong pagsusuri ng update</string>
+    <string name="settings_manager_auto_update_summary">Maghanap ng bagong build ng manager sa pagsisimula at mag-abiso kapag may available</string>
 </resources>
