@@ -56,6 +56,14 @@ private fun prefetchPreviews(context: Context, themes: List<StoreTheme>) {
 data class ThemeStoreState(
     val themes: List<StoreTheme> = emptyList(),
     val downloads: List<LocalTheme> = emptyList(),
+    /**
+     * Archives the library directory holds.
+     *
+     * The listing is empty either because nothing was ever stored or because the files are there
+     * and could not be read; the two look identical to the user, so the empty state reports which
+     * one it is.
+     */
+    val libraryFiles: Int = 0,
     val loading: Boolean = true,
     val failed: Boolean = false,
     val tab: ThemeStoreTab = ThemeStoreTab.STORE,
@@ -81,7 +89,8 @@ fun ThemeStoreScreen() {
 
     suspend fun reloadLibrary() {
         val downloads = withContext(Dispatchers.IO) { ThemeLibrary.list(context) }
-        state = state.copy(downloads = downloads)
+        val files = withContext(Dispatchers.IO) { ThemeLibrary.fileCount(context) }
+        state = state.copy(downloads = downloads, libraryFiles = files)
     }
 
     suspend fun reload(force: Boolean = false) {

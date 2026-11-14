@@ -192,9 +192,19 @@ object ThemeLibrary {
         }
     }
 
-    private suspend fun describe(context: Context, archive: File): LocalTheme? = runCatching {
-        val metadata = ThemeManager.readThemeMetadata(context, Uri.fromFile(archive))
-        LocalTheme(
+    /**
+     * Describes an archive in the directory.
+     *
+     * Never null for a file that is actually there: an archive whose metadata cannot be read is
+     * still a theme the user can apply, and dropping it from the listing is how a library that does
+     * contain themes came up empty. The file name stands in for the name in that case.
+     */
+    private suspend fun describe(context: Context, archive: File): LocalTheme? {
+        if (!archive.isFile || archive.length() <= 0L) return null
+        val metadata = runCatching {
+            ThemeManager.readThemeMetadata(context, Uri.fromFile(archive))
+        }.onFailure { Log.w(TAG, "could not read ${archive.name}", it) }.getOrNull()
+        return LocalTheme(
             id = archive.nameWithoutExtension,
             fileName = archive.name,
             name = metadata?.name?.takeIf { it.isNotBlank() } ?: archive.nameWithoutExtension,
@@ -203,7 +213,14 @@ object ThemeLibrary {
             sizeBytes = archive.length(),
             addedAt = archive.lastModified(),
         )
-    }.onFailure { Log.w(TAG, "could not read ${archive.name}", it) }.getOrNull()
+    }
+
+    /** How many archives the directory holds, whether or not the index knows them. */
+    suspend fun fileCount(context: Context): Int = withContext(Dispatchers.IO) {
+        directory(context)
+            .listFiles { file -> file.isFile && file.name.endsWith(".fpt", ignoreCase = true) }
+            ?.size ?: 0
+    }
 
     private fun readIndex(context: Context): List<LocalTheme> = runCatching {
         val raw = indexFile(context).takeIf { it.isFile }?.readText().orEmpty()

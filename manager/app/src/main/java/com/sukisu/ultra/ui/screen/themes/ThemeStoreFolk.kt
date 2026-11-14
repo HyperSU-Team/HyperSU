@@ -230,6 +230,18 @@ private fun androidx.compose.foundation.lazy.LazyListScope.downloadedItems(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
+                // Says which of the two empty cases this is: nothing stored, or files that could not
+                // be read. Without it the screen gives no way to tell a storage problem from an
+                // empty library.
+                if (state.libraryFiles > 0) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.theme_store_library_unreadable, state.libraryFiles),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                    )
+                }
                 // Re-reads the library directory. Useful on its own - a theme dropped in by an
                 // import that landed after this screen was opened shows up here - and it is what
                 // turns "nothing downloaded" into something the user can retry.

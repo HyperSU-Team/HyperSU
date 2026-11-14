@@ -15,6 +15,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import okhttp3.Request
+import java.util.concurrent.TimeUnit
 
 /**
  * 解析一个模块该显示哪张横幅，移植自 FolkPatch `APMModuleItem` 的 `bannerInfo` 计算。
@@ -179,11 +181,11 @@ object ModuleBanner {
             val shell = getRootShell()
             fun su(path: String) = SuFile(path).apply { setShell(shell) }
 
-            val dirPath = "$MODULES_ROOT/$moduleId"
+            val dirPath = resolveModuleDir(moduleId, su)
             if (!su(dirPath).isDirectory) return@runCatching null
 
-            // module.prop 的 `banner=` 可以是相对路径；http(s) 地址没法在这里落地成文件，
-            // 直接跳过，交给后面的候选文件名。
+            // module.prop 的 `banner=` 可以是相对路径，也可以是一个 http(s) 地址。前者按文件读，
+            // 后者直接下载：FolkPatch 把 url 交给图片加载器，这里统一成字节，走同一份缓存。
             val propBanner = runCatching {
                 SuFileInputStream.open(su("$dirPath/module.prop")).use { input ->
                     input.bufferedReader()
@@ -193,6 +195,10 @@ object ModuleBanner {
                         ?.trim()
                 }
             }.getOrNull()
+
+            propBanner
+                ?.takeIf { it.startsWith("http://", true) || it.startsWith("https://", true) }
+                ?.let { url -> fetchRemoteBanner(url)?.let { bytes -> return@runCatching bytes } }
 
             val candidates = buildList {
                 propBanner
@@ -213,6 +219,44 @@ object ModuleBanner {
             null
         }
     }
+
+    /**
+     * The module's directory, matched by the `id` in its `module.prop`.
+     *
+     * The directory is usually named after the id, so that is tried first and costs one stat. A
+     * module whose folder name differs - renamed by hand, or an old install - needs the scan: reading
+     * only `/data/adb/modules/<id>` missed its banner completely.
+     */
+    private fun resolveModuleDir(moduleId: String, su: (String) -> SuFile): String {
+        val defaultDir = "$MODULES_ROOT/$moduleId"
+        return runCatching {
+            if (su(defaultDir).isDirectory) return defaultDir
+            val dirs = su(MODULES_ROOT).listFiles().orEmpty()
+            dirs.firstOrNull { dir ->
+                if (!dir.isDirectory) return@firstOrNull false
+                runCatching {
+                    SuFileInputStream.open(su("${dir.path}/module.prop")).use { input ->
+                        input.bufferedReader().lineSequence()
+                            .firstOrNull { it.startsWith("id=") }
+                            ?.substringAfter('=')
+                            ?.trim() == moduleId
+                    }
+                }.getOrDefault(false)
+            }?.path ?: defaultDir
+        }.getOrDefault(defaultDir)
+    }
+
+    /** Downloads a banner that `module.prop` declares as a url. */
+    private fun fetchRemoteBanner(url: String): ByteArray? = runCatching {
+        val client = ksuApp.okhttpClient.newBuilder()
+            .connectTimeout(6, TimeUnit.SECONDS)
+            .readTimeout(8, TimeUnit.SECONDS)
+            .build()
+        client.newCall(Request.Builder().url(url).build()).execute().use { response ->
+            if (!response.isSuccessful) return@use null
+            response.body?.bytes()?.takeIf { it.isNotEmpty() }
+        }
+    }.onFailure { Log.w(TAG, "could not fetch banner $url: ${it.message}") }.getOrNull()
 
     /** 换了 API 源或用户点了「清除缓存」时，把磁盘缓存和内存缓存一起丢掉。 */
     suspend fun clearApiCache(context: Context) {

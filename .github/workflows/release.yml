@@ -98,14 +98,26 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.26 - the finished kernel flash page stays up.
+            HyperSU v4.2.27 - the theme survives a reboot, and every import lands in the library.
 
-            A kernel opened from the browser closed the app 1.5 seconds after it finished. The result page - the log and the reboot button - was taken away exactly when it was needed, and the flash could only be repeated by opening the archive again.
+            The theme, font and music came back as the built-in ones after a reboot, while every preference and wallpaper file was still on disk. The app is `directBootAware`, so a boot broadcast can start it before the device is unlocked; the startup code returned early in that case and never read the appearance configuration, and that process lived on to draw the default theme.
 
-            - The completed page now stays, whoever started the flash, with its reboot action and its log. It is dismissed with its own back button, and the navigation lock is released the moment the write finishes, so nothing is trapped there.
-            - A flash still cannot be swiped away or backed out of while it is writing.
+            - The configuration is now read as soon as the device unlocks, and again before the first activity draws, so a process started before the unlock ends up with the right theme, font, music and switch style.
+            - The HTTP client, TMPDIR and webroot setup no longer sit behind that early return; they are what the boot-time code needs and none of it touches user storage.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.25...v4.2.26
+            The "downloaded" tab:
+
+            - Every successful import now keeps its archive in the theme library, whatever path it came through. Callers already copied the file in, but that copy can fail, and the theme was then applied while the library stayed empty.
+            - An archive whose metadata cannot be read is listed under its file name instead of being dropped - the listing no longer silently hides a theme that is on the device.
+            - If the directory does contain theme files but none can be read, the empty state says so instead of claiming nothing is downloaded.
+
+            Module banners:
+
+            - The module's directory is resolved by the `id` in its `module.prop` when the folder name differs, which is what FolkPatch does and what our fixed path missed.
+            - A `banner=` that is an http(s) url is downloaded and shown; it used to be skipped, so those modules never had a banner.
+            - A resolution that fails once is retried shortly after.
+
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.26...v4.2.27
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

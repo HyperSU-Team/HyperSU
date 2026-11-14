@@ -1042,6 +1042,7 @@
     <string name="theme_store_apply">Apply</string>
     <string name="theme_store_delete">Delete</string>
     <string name="theme_store_no_downloads">No downloaded themes</string>
+    <string name="theme_store_library_unreadable">%1$d theme file(s) are on the device but could not be read</string>
     <string name="music_play">Play music</string>
     <string name="music_pause">Pause music</string>
 

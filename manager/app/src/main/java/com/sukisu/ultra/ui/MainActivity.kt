@@ -163,6 +163,10 @@ class MainActivity : ComponentActivity() {
         val coldStart = savedInstanceState == null
         splashStartedAt = if (coldStart) SystemClock.uptimeMillis() else 0L
         super.onCreate(savedInstanceState)
+        // The process may have been started before the device was unlocked (the app is
+        // directBootAware), in which case the application skipped the appearance load and this
+        // activity would draw the built-in theme. Asking again costs nothing once it has run.
+        (application as? com.sukisu.ultra.KernelSUApplication)?.ensureLoaded()
         splashScreen.setKeepOnScreenCondition {
             !contentReady ||
                 (coldStart && SystemClock.uptimeMillis() - splashStartedAt < splashAnimationDurationMs)

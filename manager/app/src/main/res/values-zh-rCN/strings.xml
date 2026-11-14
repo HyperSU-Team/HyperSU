@@ -962,6 +962,7 @@
     <string name="theme_store_apply">应用</string>
     <string name="theme_store_delete">删除</string>
     <string name="theme_store_no_downloads">还没有已下载的主题</string>
+    <string name="theme_store_library_unreadable">设备上有 %1$d 个主题文件，但都读取失败</string>
     <string name="music_play">播放音乐</string>
     <string name="music_pause">暂停音乐</string>
 

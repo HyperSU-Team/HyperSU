@@ -14,6 +14,7 @@ import com.sukisu.ultra.data.repository.STATS_TOP_GRID
 import com.sukisu.ultra.data.repository.STATS_TOP_LIST
 import com.sukisu.ultra.data.repository.folkPatchLayoutNameFor
 import com.sukisu.ultra.data.repository.resolveHomeLayout
+import com.sukisu.ultra.ui.screen.themes.ThemeLibrary
 import com.sukisu.ultra.ui.util.LocaleHelper
 import com.sukisu.ultra.ui.util.MusicManager
 import kotlinx.coroutines.Dispatchers
@@ -1038,7 +1039,6 @@ object ThemeManager {
                     context.getSharedPreferences(BackgroundConfig.PREFS_NAME, Context.MODE_PRIVATE)
                         .edit().commit()
                 }.onFailure { Log.w(TAG, "could not flush the imported theme", it) }
-                Log.d(TAG, "theme imported from $uri")
                 ImportResult(language)
             } catch (e: Exception) {
                 Log.e(TAG, "failed to import theme", e)
@@ -1047,6 +1047,12 @@ object ThemeManager {
                 tempDir.deleteRecursively()
             }
         } ?: return false
+
+        // The archive is kept whatever path delivered it. Callers copy it in themselves, but that
+        // copy can fail (an unreadable picker uri, a rename that did not land) and the theme would
+        // then be applied while the "downloaded" tab stayed empty. Doing it here means every
+        // successful import is a theme that can be applied again without downloading it.
+        keepImportedArchive(context, uri)
 
         // Applied on the main thread, after everything else has succeeded: on Android 13 and up
         // this assigns applicationLocales, which recreates the activity.
@@ -1066,6 +1072,30 @@ object ThemeManager {
                 .onFailure { Log.w(TAG, "failed to reload music after import", it) }
         }
         return true
+    }
+
+    /**
+     * Keeps the archive that was just imported, unless it is the library's own copy.
+     *
+     * The import is the one place every theme passes through, so this is where the invariant
+     * "every applied theme can be applied again" is enforced. A `content://` uri has no path and is
+     * skipped - the callers already copy those into the library before importing.
+     */
+    private suspend fun keepImportedArchive(context: Context, uri: Uri) = withContext(Dispatchers.IO) {
+        val libraryDir = runCatching { File(context.filesDir, "themes").canonicalFile }.getOrNull()
+            ?: return@withContext
+        val source = runCatching { uri.path?.let(::File) }.getOrNull()
+            ?.takeIf { it.isFile } ?: return@withContext
+        val inLibrary = runCatching { source.canonicalFile.parentFile == libraryDir }.getOrDefault(false)
+        if (inLibrary) return@withContext
+
+        val staged = File(context.cacheDir, "theme_import_archive.fpt")
+        val copied = runCatching { source.copyTo(staged, overwrite = true) }.isSuccess &&
+            staged.isFile && staged.length() > 0L
+        if (!copied) return@withContext
+        runCatching { ThemeLibrary.add(context, staged, source.nameWithoutExtension) }
+            .onFailure { Log.w(TAG, "could not keep ${source.name} in the library", it) }
+        staged.delete()
     }
 
     /** A finished import: the language it asked for, or null when it named none. */
