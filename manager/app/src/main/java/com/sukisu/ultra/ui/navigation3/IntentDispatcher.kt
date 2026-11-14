@@ -305,7 +305,7 @@ private suspend fun handleConfirmed(
             }
 
             if (cachedUris.isNotEmpty()) {
-                navigator.push(Route.Flash(FlashIt.FlashModules(cachedUris)))
+                navigator.pushFlash(Route.Flash(FlashIt.FlashModules(cachedUris)))
             } else {
                 Toast.makeText(context, R.string.zip_file_unknown, Toast.LENGTH_SHORT).show()
             }
@@ -319,7 +319,7 @@ private suspend fun handleConfirmed(
         // continue button on a page about a choice they had already made. The slot is left to the
         // AnyKernel3 script, which defaults to the running slot - the archive path on that screen
         // does the same when no slot was picked.
-        navigator.push(
+        navigator.pushFlash(
             Route.KernelFlash(
                 kernelUri = kernelUris.first(),
                 selectedSlot = null,

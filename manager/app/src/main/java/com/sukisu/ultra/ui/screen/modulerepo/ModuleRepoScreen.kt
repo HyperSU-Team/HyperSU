@@ -128,7 +128,7 @@ fun ModuleRepoDetailScreen(module: RepoModuleArg) {
         onBack = { navigator.pop() },
         onOpenWebUrl = { if (webUrl.isNotEmpty()) uriHandler.openUri(webUrl) },
         onOpenUrl = uriHandler::openUri,
-        onInstallModule = { uri -> navigator.push(Route.Flash(FlashIt.FlashModules(listOf(uri)))) },
+        onInstallModule = { uri -> navigator.pushFlash(Route.Flash(FlashIt.FlashModules(listOf(uri)))) },
     )
 
     ModuleRepoDetailScreenFolk(state, actions)

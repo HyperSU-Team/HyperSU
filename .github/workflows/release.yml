@@ -98,13 +98,16 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.24 - a kernel archive is treated as a kernel again, and starting a flash always flashes.
+            HyperSU v4.2.25 - flashing the same archive a second time really flashes.
 
-            - AnyKernel3 detection looked for `module.prop` first. Kernel packages that ship one - the prop is there for the kernel's own KernelSU integration - were classified as modules, so opening one from the browser installed it as a module and showed the module flash screen, the one with the reboot button, instead of flashing the boot image. The presence of `anykernel.sh` now decides first.
-            - The flash screen reused the previous run's state whenever the archive, slot and options matched, including a finished or failed run. Flashing the same archive a second time therefore opened straight on the completed page with its reboot button and wrote nothing; only a flash that is still running is resumed now.
-            - The AnyKernel3 row reports the picked zip's name, and 'downloaded' keeps its retry, both from v4.2.23.
+            The navigation stack never holds the same route twice, and a flash route is nothing but the archive plus its options. Flashing the same archive again - tapping the same kernel zip in the browser twice, or installing the same module again - produced an identical route, the push was dropped, and what came up was the previous run's screen: the completed page with its reboot button, with nothing written.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.23...v4.2.24
+            - Every flash now pops the progress screen that is still on the stack and starts its own, so the second attempt is a real attempt.
+            - This covers the module flash screens too, which had the same problem when the same module was installed twice.
+
+            The confirmation dialog before a kernel opened from the browser stays: it is the only step between a downloaded file and a write to the boot partition.
+
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.24...v4.2.25
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

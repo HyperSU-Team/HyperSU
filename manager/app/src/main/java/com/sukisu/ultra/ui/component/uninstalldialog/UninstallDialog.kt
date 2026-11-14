@@ -49,8 +49,8 @@ fun UninstallDialog(
 
     val run = { type: UninstallType ->
         when (type) {
-            PERMANENT -> navigator.push(Route.Flash(FlashIt.FlashUninstall))
-            RESTORE_STOCK_IMAGE -> navigator.push(Route.Flash(FlashIt.FlashRestore))
+            PERMANENT -> navigator.pushFlash(Route.Flash(FlashIt.FlashUninstall))
+            RESTORE_STOCK_IMAGE -> navigator.pushFlash(Route.Flash(FlashIt.FlashRestore))
             else -> Unit
         }
     }

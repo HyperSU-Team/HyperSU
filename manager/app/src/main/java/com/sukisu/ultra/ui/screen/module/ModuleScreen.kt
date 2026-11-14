@@ -139,7 +139,7 @@ fun ModulePager(
                     fileName = request.fileName,
                     onDownloaded = { uri ->
                         if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-                            navigator.push(Route.Flash(FlashIt.FlashModules(listOf(uri))))
+                            navigator.pushFlash(Route.Flash(FlashIt.FlashModules(listOf(uri))))
                             viewModel.markNeedRefresh()
                         }
                     },
@@ -180,7 +180,7 @@ fun ModulePager(
         },
         onOpenFlash = { uris ->
             if (uris.isNotEmpty()) {
-                navigator.push(Route.Flash(FlashIt.FlashModules(uris)))
+                navigator.pushFlash(Route.Flash(FlashIt.FlashModules(uris)))
                 viewModel.markNeedRefresh()
             }
         },

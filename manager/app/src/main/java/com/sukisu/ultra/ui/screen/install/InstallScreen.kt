@@ -208,7 +208,7 @@ fun InstallScreen(
                 // The archive row goes through the kernel-flash route.
                 is InstallMethod.HorizonKernel -> {
                     method.archiveUri?.let { uri ->
-                        navigator.push(
+                        navigator.pushFlash(
                             Route.KernelFlash(
                                 kernelUri = uri,
                                 selectedSlot = method.archiveSlot,
@@ -220,7 +220,7 @@ fun InstallScreen(
                 }
                 else -> {
                     val isOta = method is InstallMethod.DirectInstallToInactiveSlot
-                    navigator.push(
+                    navigator.pushFlash(
                         Route.Flash(
                             when (method) {
                                 is InstallMethod.DownloadFile -> FlashIt.DownloadBoot(

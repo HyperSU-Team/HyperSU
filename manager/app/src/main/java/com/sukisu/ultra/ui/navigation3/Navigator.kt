@@ -57,6 +57,21 @@ class Navigator(
 
 
     /**
+     * Start a flash on its own screen.
+     *
+     * [push] is idempotent - the same route value is never added twice - and that is wrong for a
+     * flash. A flash route is made of the archive and the options, so flashing the same archive a
+     * second time produces the same value: the push was skipped and the app showed the previous
+     * run's screen, which for a finished run is the "done" page with its reboot button, while
+     * nothing was written. Whatever flash screen is still on the stack is popped first, so every
+     * run gets a screen of its own.
+     */
+    fun pushFlash(key: NavKey) {
+        popUntil { it !is Route.KernelFlash && it !is Route.Flash }
+        push(key)
+    }
+
+    /**
      * Pop the top key if present.
      */
     fun pop() {
