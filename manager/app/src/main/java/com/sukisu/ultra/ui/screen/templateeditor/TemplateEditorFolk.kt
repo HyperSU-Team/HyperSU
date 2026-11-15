@@ -58,11 +58,13 @@ fun TemplateEditorScreenFolk(
         onBack = actions.onBack,
         actions = {
             if (state.readOnly) return@FolkScaffold
-            IconButton(onClick = actions.onDelete) {
-                Icon(
-                    Icons.Filled.DeleteForever,
-                    contentDescription = stringResource(R.string.app_profile_template_delete),
-                )
+            if (!state.isCreation) {
+                IconButton(onClick = actions.onDelete) {
+                    Icon(
+                        Icons.Filled.DeleteForever,
+                        contentDescription = stringResource(R.string.app_profile_template_delete),
+                    )
+                }
             }
             IconButton(onClick = actions.onSave) {
                 Icon(

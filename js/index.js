@@ -32,7 +32,7 @@ export function exec(command, options) {
 }
 
 function Stdio() {
-    this.listeners = {};
+    this.listeners = Object.create(null);
   }
   
   Stdio.prototype.on = function (event, listener) {
@@ -49,7 +49,7 @@ function Stdio() {
   };
   
   function ChildProcess() {
-    this.listeners = {};
+    this.listeners = Object.create(null);
     this.stdin = new Stdio();
     this.stdout = new Stdio();
     this.stderr = new Stdio();
@@ -74,6 +74,7 @@ function Stdio() {
     } else if (!(args instanceof Array)) {
         // allow for (command, options) signature
         options = args;
+        args = [];
     }
     
     if (typeof options === "undefined") {
@@ -100,8 +101,8 @@ function Stdio() {
         childCallbackName
       );
     } catch (error) {
-      child.emit("error", error);
       cleanup(childCallbackName);
+      queueMicrotask(() => child.emit("error", error));
     }
     return child;
   }

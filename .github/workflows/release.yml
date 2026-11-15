@@ -98,11 +98,15 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.41 - the automatic update check runs on every launch again.
+            HyperSU v4.2.42 - the WebUI SDK, the install page and the profile editor get the fixes the review found.
 
-            The check was throttled to one request every twelve hours, so opening the app the next day was the only way to see it - and often not even then. It now runs every time the app comes to the foreground, with a one minute debounce so an activity recreation (a rotation, a theme switch) does not fire a second request. Turning the switch off still disables it entirely, and turning it back on checks right away instead of waiting for the next launch.
+            - WebUI SDK: `spawn(command, options)` without an argument array shifted the options into the arguments and ran the program with a stray option; the argument list is empty now. A program that fails to start emitted its error before the caller had a chance to attach a listener (the event was lost); the error is queued after the handlers are in place. Listener tables are prototype-less, so a module that listens for `constructor`, `toString` or another inherited name no longer collides with `Object.prototype`. `js/` is an ES module package now and its tests run with `node --test` (the old `npm run test` was a self-recursive script).
+            - Install page: cancelling the file picker left the image row selectable and the next step flashed an empty URI as a direct install. The next button and the install action now require a real input (a picked file, a url plus partition, or a method that needs neither), and unit tests cover the cases.
+            - App profiles: an app with no template bound had the template mode disabled, so a template could not be chosen the first time. Deleting every sepolicy rule now reaches ksud and clears the stored rules instead of leaving the old ones behind. Version codes go through `PackageInfoCompat` so older devices read them correctly.
+            - Template editor: the delete action is hidden while creating a template, and the id conflict check no longer fires when editing an existing one.
+            - Module metadata: `module.prop` is read through a byte buffer with a hard 64 KiB cap; a split multi-byte character is no longer mangled and an oversized file reports an error instead of silently truncating the metadata.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.40...v4.2.41
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.41...v4.2.42
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

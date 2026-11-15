@@ -248,7 +248,7 @@ internal fun InstallScreenFolk(
 
             Button(
                 modifier = Modifier.fillMaxWidth(),
-                enabled = uiState.installMethod != null,
+                enabled = uiState.installMethod.isReadyToInstall,
                 colors = FolkButtonDefaults.filledColors(),
                 onClick = actions.onNext,
             ) {

@@ -5,6 +5,9 @@ import android.net.Uri
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.ByteArrayOutputStream
+import java.io.IOException
+import java.io.InputStream
 import java.util.zip.ZipInputStream
 
 /**
@@ -68,18 +71,17 @@ object ModuleZipReader {
      * A `module.prop` is a few hundred bytes; the cap only exists to bound the damage from a
      * zip that declares a huge entry.
      */
-    private fun readProp(zip: ZipInputStream): String {
+    internal fun readProp(input: InputStream): String {
         val buffer = ByteArray(4096)
-        val out = StringBuilder()
-        var total = 0
+        val out = ByteArrayOutputStream()
         while (true) {
-            val read = zip.read(buffer)
-            if (read <= 0) break
-            total += read
-            if (total > MAX_PROP_BYTES) break
-            out.append(String(buffer, 0, read, Charsets.UTF_8))
+            val read = input.read(buffer)
+            if (read < 0) break
+            if (read == 0) throw IOException("Stalled module.prop read")
+            if (read > MAX_PROP_BYTES - out.size()) throw IOException("module.prop exceeds size limit")
+            out.write(buffer, 0, read)
         }
-        return out.toString()
+        return out.toByteArray().toString(Charsets.UTF_8)
     }
 
     /**

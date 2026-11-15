@@ -3,9 +3,10 @@
   "version": "3.0.2",
   "description": "Library for KernelSU's module WebUI",
   "main": "index.js",
+  "type": "module",
   "types": "index.d.ts",
   "scripts": {
-    "test": "npm run test"
+    "test": "node --test index.test.mjs"
   },
   "repository": {
     "type": "git",

@@ -43,6 +43,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.content.pm.PackageInfoCompat
 import com.sukisu.ultra.Natives
 import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.component.AppIconImage
@@ -132,7 +133,7 @@ fun AppProfileScreenFolk(
             appVersionCode = if (state.isUidGroup) {
                 0L
             } else {
-                state.appGroup.primary.packageInfo.longVersionCode
+                PackageInfoCompat.getLongVersionCode(state.appGroup.primary.packageInfo)
             },
             profile = state.profile,
             isUidGroup = state.isUidGroup,
@@ -322,7 +323,7 @@ private fun AppProfileInner(
                 if (current) {
                     ProfileModePicker(
                         mode = mode,
-                        hasTemplate = profile.rootTemplate != null,
+                        hasTemplate = true,
                         onModeChange = {
                             // Template mode must not itself change the profile.
                             if (it == Mode.Default || it == Mode.Custom) {

@@ -61,7 +61,7 @@ fun TemplateEditorScreen(template: TemplateViewModel.TemplateInfo, readOnly: Boo
     )
 
     fun saveCurrentTemplate() {
-        when (idCheck(currentTemplate.id)) {
+        when (if (isCreation) idCheck(currentTemplate.id) else 0) {
             1 -> {
                 showToast(idConflictError)
                 return

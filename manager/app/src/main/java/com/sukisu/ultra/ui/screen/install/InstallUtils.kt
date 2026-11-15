@@ -85,6 +85,15 @@ fun InstallMethod.withArchiveSlot(slot: String?): InstallMethod = when (this) {
     else -> this
 }
 
+val InstallMethod?.isReadyToInstall: Boolean
+    get() = when (this) {
+        is InstallMethod.SelectFile -> uri != null
+        is InstallMethod.HorizonKernel -> uri != null
+        is InstallMethod.DownloadFile -> !url.isNullOrBlank() && !partition.isNullOrBlank()
+        InstallMethod.DirectInstall, InstallMethod.DirectInstallToInactiveSlot -> true
+        null -> false
+    }
+
 fun isKoFile(context: Context, uri: Uri): Boolean {
     val seg = uri.lastPathSegment ?: ""
     if (seg.endsWith(".ko", ignoreCase = true)) return true

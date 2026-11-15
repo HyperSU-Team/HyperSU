@@ -203,7 +203,7 @@ fun InstallScreen(
     }
 
     val onInstall = {
-        installMethod?.let { method ->
+        installMethod?.takeIf { it.isReadyToInstall }?.let { method ->
             when (method) {
                 // The archive row goes through the kernel-flash route.
                 is InstallMethod.HorizonKernel -> {
@@ -422,6 +422,7 @@ fun InstallScreen(
             }
         },
         onNext = {
+            if (!installMethod.isReadyToInstall) return@InstallScreenActions
             val isLkmSelected = lkmSelection != LkmSelection.KmiNone
             val isKmiUnknown = currentKmi.isBlank()
             val isKmiUnresolved = when (installMethod) {

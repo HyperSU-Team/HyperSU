@@ -112,7 +112,6 @@ fun AppProfileScreen(uid: Int) {
                         return@launch
                     }
                     if (!profileToSave.rootUseDefault
-                        && profileToSave.rules.isNotEmpty()
                         && !primaryAppInfo.special
                         && !setSepolicy(profileToSave.name, profileToSave.rules)
                     ) {
