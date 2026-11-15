@@ -75,7 +75,13 @@ internal suspend fun prepareWebView(
         webUIState.modDir = "/data/adb/modules/${moduleId}"
 
         if (SuperUserViewModel.apps.isEmpty()) {
-            SuperUserViewModel().fetchAppList()
+            // The app store owns the shared instance; constructing a ViewModel by hand left its
+            // search collector running for the life of the process.
+            withContext(Dispatchers.Main) {
+                androidx.lifecycle.ViewModelProvider(activity.application)[SuperUserViewModel::class.java]
+                    .loadAppList()
+                    .join()
+            }
         }
         val shell = createRootShell(true)
         webUIState.rootShell = shell
@@ -134,13 +140,23 @@ internal suspend fun prepareWebView(
                                 .find { it.packageName == packageName }
                                 ?.packageInfo?.applicationInfo
                             if (appInfo != null) {
-                                val icon = AppIconCache.loadIconSync(activity, appInfo.withMainUserUid(activity), 512)
-                                val stream = java.io.ByteArrayOutputStream()
-                                icon.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
+                                val icon = runCatching {
+                                    AppIconCache.loadIconSync(activity, appInfo.withMainUserUid(activity), 512)
+                                }.getOrNull()
+                                if (icon != null) {
+                                    val stream = java.io.ByteArrayOutputStream()
+                                    icon.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, stream)
+                                    return WebResourceResponse(
+                                        "image/png", null, 200, "OK",
+                                        mapOf("Access-Control-Allow-Origin" to "*"),
+                                        java.io.ByteArrayInputStream(stream.toByteArray())
+                                    )
+                                }
+                                val errorMsg = "Icon unavailable"
                                 return WebResourceResponse(
-                                    "image/png", null, 200, "OK",
+                                    "text/plain", "utf-8", 404, "Not Found",
                                     mapOf("Access-Control-Allow-Origin" to "*"),
-                                    java.io.ByteArrayInputStream(stream.toByteArray())
+                                    java.io.ByteArrayInputStream(errorMsg.toByteArray(Charsets.UTF_8))
                                 )
                             } else {
                                 val errorMsg = "No such package"

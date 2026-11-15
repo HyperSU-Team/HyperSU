@@ -45,6 +45,9 @@ object ThemeManager {
     private const val SETTINGS_PREFS = "settings"
     private const val THEME_EXTENSION = "fpt"
 
+    /** `theme.json` describes a theme; anything this large is not a description. */
+    private const val MAX_CONFIG_BYTES = 4 * 1024 * 1024
+
     /** Appearance keys exported with a theme, in the order they are shown in settings. */
     val appearanceKeys = listOf(
         "color_mode",
@@ -1271,7 +1274,20 @@ object ThemeManager {
                         name.endsWith("/${ThemeArchive.CONFIG_ENTRY}") ||
                         name.endsWith("/${ThemeArchive.LEGACY_CONFIG_ENTRY}")
                     ) {
-                        return JSONObject(zip.readBytes().toString(Charsets.UTF_8))
+                        // A .fpt is a user-supplied archive; the config is small, so an entry that
+                        // claims to be larger is a bomb rather than a theme description.
+                        val out = java.io.ByteArrayOutputStream()
+                        val buffer = ByteArray(8192)
+                        while (true) {
+                            val read = zip.read(buffer)
+                            if (read < 0) break
+                            if (read == 0) throw java.io.IOException("stalled theme config read")
+                            if (out.size() + read > MAX_CONFIG_BYTES) {
+                                throw java.io.IOException("theme config is too large")
+                            }
+                            out.write(buffer, 0, read)
+                        }
+                        return JSONObject(out.toByteArray().toString(Charsets.UTF_8))
                     }
                 }
             }

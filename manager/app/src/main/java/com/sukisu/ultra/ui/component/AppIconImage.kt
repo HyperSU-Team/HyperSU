@@ -51,7 +51,9 @@ fun AppIconImage(
 
         if (!initiallyCached) {
             LaunchedEffect(iconKey) {
-                appBitmap = AppIconCache.loadIcon(context, applicationInfo, targetSizePx)
+                appBitmap = runCatching {
+                    AppIconCache.loadIcon(context, applicationInfo, targetSizePx)
+                }.getOrNull()
             }
         }
 

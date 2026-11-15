@@ -212,14 +212,28 @@ fun GithubMarkdown(
                         override fun shouldOverrideUrlLoading(
                             view: WebView, request: WebResourceRequest
                         ): Boolean {
-                            try {
-                                val intent = Intent(Intent.ACTION_VIEW, request.url)
-                                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                context.startActivity(intent)
-                            } catch (_: ActivityNotFoundException) {
-                                Log.w("GithubMarkdown", "No activity to handle: ${request.url}")
+                            // Release notes are remote HTML. Opening whatever scheme a link names
+                            // would let them launch intents (intent:, file:, tel:) from the
+                            // manager; only web links belong in a browser.
+                            val scheme = request.url.scheme
+                            if (scheme.equals("http", true) || scheme.equals("https", true)) {
+                                try {
+                                    val intent = Intent(Intent.ACTION_VIEW, request.url)
+                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    context.startActivity(intent)
+                                } catch (_: ActivityNotFoundException) {
+                                    Log.w("GithubMarkdown", "No activity to handle: ${request.url}")
+                                }
                             }
                             return true
+                        }
+
+                        override fun onReceivedError(
+                            view: WebView,
+                            request: WebResourceRequest,
+                            error: android.webkit.WebResourceError,
+                        ) {
+                            if (request.isForMainFrame) onLoadingChange(false)
                         }
 
                         override fun onPageCommitVisible(view: WebView?, url: String?) {

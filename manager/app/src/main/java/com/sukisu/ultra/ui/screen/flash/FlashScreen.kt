@@ -90,7 +90,7 @@ fun FlashScreen(flashIt: FlashIt) {
                 navigator.pop()
             }
         },
-        onSaveLog = saveLog(logContent, scope) { showMessage(it) },
+        onSaveLog = saveLog(context, logContent, scope) { showMessage(it) },
         onReboot = {
             scope.launch {
                 withContext(Dispatchers.IO) {

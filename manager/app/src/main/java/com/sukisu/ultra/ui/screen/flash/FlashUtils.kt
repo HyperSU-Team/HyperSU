@@ -1,7 +1,6 @@
 package com.sukisu.ultra.ui.screen.flash
 
 import android.net.Uri
-import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.os.Parcelable
@@ -29,6 +28,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
 import com.sukisu.ultra.R
+import com.sukisu.ultra.ksuApp
+import com.sukisu.ultra.ui.util.saveTextToDownloads
 import com.sukisu.ultra.ui.util.FlashResult
 import com.sukisu.ultra.ui.util.LkmSelection
 import com.sukisu.ultra.ui.util.downloadBoot
@@ -110,13 +111,26 @@ fun flashModulesSequentially(
     onStderr: (String) -> Unit
 ): FlashResult {
     for (uri in uris) {
-        flashModule(uri, onStdout, onStderr).apply {
-            if (code != 0) {
-                return FlashResult(code, err, showReboot)
-            }
+        val result = try {
+            flashModule(uri, onStdout, onStderr)
+        } finally {
+            // A module shared into the manager is copied into the cache by the intent handler;
+            // that copy has no other owner and used to stay there for the life of the install.
+            deleteCachedModuleCopy(uri)
+        }
+        if (result.code != 0) {
+            return FlashResult(result.code, result.err, result.showReboot)
         }
     }
     return FlashResult(0, "", true)
+}
+
+private fun deleteCachedModuleCopy(uri: Uri) {
+    if (uri.scheme != "file") return
+    val file = uri.path?.let(::File) ?: return
+    if (file.parentFile?.absolutePath == ksuApp.cacheDir.absolutePath && file.name.startsWith("module_")) {
+        file.delete()
+    }
 }
 
 fun flashIt(
@@ -215,6 +229,7 @@ fun FlashEffect(
 }
 
 fun saveLog(
+    context: android.content.Context,
     logContent: StringBuilder,
     scope: CoroutineScope,
     showMessage: (String) -> Unit
@@ -223,12 +238,16 @@ fun saveLog(
         scope.launch {
             val format = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.getDefault())
             val date = format.format(Date())
-            val file = File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                "HyperSU_install_log_${date}.log"
-            )
-            file.writeText(logContent.toString())
-            showMessage("Log saved to ${file.absolutePath}")
+            val fileName = "HyperSU_install_log_${date}.log"
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    saveTextToDownloads(context, fileName, logContent.toString())
+                }
+            }.onSuccess {
+                showMessage("Log saved to $it")
+            }.onFailure {
+                showMessage("Failed to save log: ${it.message ?: "unknown error"}")
+            }
         }
     }
 }

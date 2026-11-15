@@ -12,6 +12,11 @@ import java.io.File
  */
 class ModuleBannerStorage(context: Context, private val dirName: String) {
 
+    private companion object {
+        /** A banner is a card decoration; the same cap as the API and module-directory sources. */
+        const val MAX_BYTES = 12L * 1024 * 1024
+    }
+
     private val dir: File = File(context.filesDir, dirName).apply {
         if (!exists()) mkdirs()
     }
@@ -22,12 +27,11 @@ class ModuleBannerStorage(context: Context, private val dirName: String) {
 
     fun read(key: String): ByteArray? = runCatching {
         val file = getBannerFile(key)
-        if (file.exists()) file.readBytes().takeIf { it.isNotEmpty() } else null
+        if (file.exists()) file.inputStream().use { readBounded(it) } else null
     }.getOrNull()
 
     fun write(context: Context, key: String, uri: Uri): ByteArray? {
-        val data = context.contentResolver.openInputStream(uri)
-            ?.use { it.readBytes() }
+        val data = context.contentResolver.openInputStream(uri)?.use { readBounded(it) }
             ?: return null
         getBannerFile(key).outputStream().use { it.write(data) }
         return data
@@ -36,5 +40,18 @@ class ModuleBannerStorage(context: Context, private val dirName: String) {
     fun clear(key: String): Boolean {
         val file = getBannerFile(key)
         return !file.exists() || file.delete()
+    }
+
+    private fun readBounded(input: java.io.InputStream): ByteArray? {
+        val out = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(16 * 1024)
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) break
+            if (read == 0) throw java.io.IOException("stalled banner read")
+            if (out.size().toLong() + read > MAX_BYTES) return null
+            out.write(buffer, 0, read)
+        }
+        return out.toByteArray().takeIf { it.isNotEmpty() }
     }
 }

@@ -113,6 +113,10 @@ fun WebUIScreen(webUIState: WebUIState) {
             AndroidView(
                 modifier = Modifier.fillMaxSize(),
                 factory = { _ ->
+                    // The state object outlives one composition (and a loading crossfade can
+                    // detach and re-attach this view). A WebView still owned by its previous
+                    // parent cannot be added again.
+                    (webView.parent as? ViewGroup)?.removeView(webView)
                     webView.apply {
                         layoutParams = ViewGroup.LayoutParams(
                             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT

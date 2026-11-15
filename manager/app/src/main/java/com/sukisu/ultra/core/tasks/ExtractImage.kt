@@ -43,7 +43,6 @@ class ExtractImage(
                             }
                         }
                     }
-                    zipFile.getRawInputStream(payload)
                     extractFromOTAPackage(payload, channel, target)
                 } else {
                     extractFromFactoryImage(zipFile, channel, target)
@@ -87,6 +86,7 @@ class ExtractImage(
         zipFile: ZipFile,
         channel: DataSourceChannel,
         target: String,
+        depth: Int = 0,
     ) {
         onConsole("- Processing as factory image package")
 
@@ -94,13 +94,16 @@ class ExtractImage(
             return extractImageFile(zipFile, entry, channel)
         }
 
+        if (depth >= MAX_NESTING) {
+            throw IOException("Factory image package is nested too deeply")
+        }
+
         val imageZipEntry = zipFile.entries.asSequence().find { entry ->
             val fileName = entry.name.substringAfterLast('/')
             fileName.startsWith("image-") && fileName.endsWith(".zip")
         }
         if (imageZipEntry != null) {
-            zipFile.getRawInputStream(imageZipEntry)
-            return extractFromInnerImageZip(imageZipEntry, channel, target)
+            return extractFromInnerImageZip(imageZipEntry, channel, target, depth + 1)
         }
 
         throw IOException("inner image ZIP not found in factory image package")
@@ -118,11 +121,15 @@ class ExtractImage(
         entry: ZipArchiveEntry,
         channel: DataSourceChannel,
         target: String,
+        depth: Int,
     ) {
         onConsole("Found inner image ZIP: ${entry.name}")
 
         if (entry.method != ZipMethod.STORED.code) {
             throw IOException("image ZIP is compressed, expected STORED method")
+        }
+        if (entry.size <= 0 || entry.size > MAX_IMAGE_SIZE) {
+            throw IOException("Invalid image ZIP size: ${entry.size}")
         }
 
         channel.slice(entry.dataOffset, entry.size).use { innerZipChannel ->
@@ -204,6 +211,10 @@ class ExtractImage(
         // central directory from asking for a mapping or an extraction that cannot fit.
         private const val MAX_IMAGE_SIZE = 512L * 1024 * 1024
 
+        // A factory image is one wrapper around one image zip; anything deeper is a crafted
+        // archive, not a package.
+        private const val MAX_NESTING = 2
+
         private val BOOT_IMAGE_NAMES = mapOf(
             "boot" to "boot.img",
             "init_boot" to "init_boot.img",
@@ -237,6 +248,7 @@ class ExtractImage(
             channel: DataSourceChannel,
             withKmi: Boolean,
             onProgress: ((String) -> Unit)?,
+            depth: Int = 0,
         ): ProbeResult {
             ZipFile.builder()
                 .setSeekableByteChannel(channel)
@@ -247,7 +259,6 @@ class ExtractImage(
                         if (payload.method != ZipMethod.STORED.code) {
                             throw IOException("payload.bin is compressed, expected STORED method")
                         }
-                        zipFile.getRawInputStream(payload)
                         channel.slice(payload.dataOffset, payload.size).use { payloadChannel ->
                             val payload = Payload(payloadChannel)
                             return ProbeResult(
@@ -285,9 +296,14 @@ class ExtractImage(
                         if (imageZip.method != ZipMethod.STORED.code) {
                             throw IOException("image ZIP is compressed, expected STORED method")
                         }
-                        zipFile.getRawInputStream(imageZip)
+                        if (depth >= MAX_NESTING) {
+                            throw IOException("Factory image package is nested too deeply")
+                        }
+                        if (imageZip.size <= 0 || imageZip.size > MAX_IMAGE_SIZE) {
+                            throw IOException("Invalid image ZIP size: ${imageZip.size}")
+                        }
                         channel.slice(imageZip.dataOffset, imageZip.size).use { innerChannel ->
-                            return probeEntries(innerChannel, withKmi, onProgress)
+                            return probeEntries(innerChannel, withKmi, onProgress, depth + 1)
                         }
                     }
 

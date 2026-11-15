@@ -49,6 +49,10 @@ object ThemeStoreRepository {
     private const val PAGES = 2
     private const val CACHE_TTL_MS = 10 * 60 * 1000L
 
+    /** A theme archive is an image pack; these caps keep a bad mirror from filling the device. */
+    private const val MAX_THEME_BYTES = 512L * 1024 * 1024
+    private const val DOWNLOAD_HEADROOM_BYTES = 32L * 1024 * 1024
+
     // The shared client's 10s connect timeout is short for a mobile connection and a 100-release
     // response; the catalogue request gets a little more room before the screen declares failure.
     private val client by lazy {
@@ -232,9 +236,20 @@ object ThemeStoreRepository {
         theme: StoreTheme,
         onProgress: (Int) -> Unit,
     ): File? = withContext(Dispatchers.IO) {
+        if (theme.sizeBytes > MAX_THEME_BYTES) {
+            Log.w(TAG, "theme ${theme.tag} is too large: ${theme.sizeBytes} bytes")
+            return@withContext null
+        }
         val directory = File(context.cacheDir, "theme_store").apply { mkdirs() }
-        val target = File(directory, "${theme.tag.safeFileName()}.fpt")
-        val partial = File(directory, "${theme.tag.safeFileName()}.part")
+        // Two tags can sanitise to the same name; the hash keeps their transfer files apart.
+        val base = "${theme.tag.safeFileName()}-${Integer.toHexString(theme.tag.hashCode())}"
+        val target = File(directory, "$base.fpt")
+        val partial = File(directory, "$base.part")
+        val maxBytes = if (theme.sizeBytes > 0L) {
+            minOf(theme.sizeBytes + DOWNLOAD_HEADROOM_BYTES, MAX_THEME_BYTES)
+        } else {
+            MAX_THEME_BYTES
+        }
 
         // Direct first, then the acceleration mirrors: whichever answers first wins, and progress
         // restarts from zero on a new attempt so the bar does not jump backwards mid-way. The list
@@ -243,9 +258,12 @@ object ThemeStoreRepository {
 
         var lastError: Throwable? = null
         for (url in candidates) {
-            val fetched = runCatching { fetch(url, partial, onProgress) }
+            val fetched = runCatching { fetch(url, partial, maxBytes, onProgress) }
                 .onFailure { error ->
-                    if (error is CancellationException) throw error
+                    if (error is CancellationException) {
+                        partial.delete()
+                        throw error
+                    }
                     lastError = error
                 }
                 .isSuccess
@@ -300,12 +318,13 @@ object ThemeStoreRepository {
         }.getOrDefault(false)
     }
 
-    private fun fetch(url: String, partial: File, onProgress: (Int) -> Unit) {
+    private fun fetch(url: String, partial: File, maxBytes: Long, onProgress: (Int) -> Unit) {
         val request = Request.Builder().url(url).build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) error("HTTP ${response.code}")
             val body = response.body ?: error("empty response")
             val total = body.contentLength()
+            if (total > maxBytes) error("theme archive is too large")
             var written = 0L
             onProgress(0)
             partial.outputStream().use { output ->
@@ -314,8 +333,10 @@ object ThemeStoreRepository {
                     while (true) {
                         val read = input.read(buffer)
                         if (read == -1) break
-                        output.write(buffer, 0, read)
                         written += read
+                        // contentLength is -1 for a chunked response; the stream is capped too.
+                        if (written > maxBytes) error("theme archive is too large")
+                        output.write(buffer, 0, read)
                         if (total > 0L) {
                             onProgress(((written * 100L) / total).toInt().coerceIn(0, 100))
                         }

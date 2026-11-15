@@ -226,7 +226,7 @@ object SuSFSRepository {
         // visible to the kernel-side SuFile reader.
         val bytes: ByteArray = try {
             context.contentResolver.openInputStream(Uri.parse(sourceUri)).use { input ->
-                input?.readBytes() ?: return false
+                input?.let { readBounded(it, MAX_CMDLINE_BYTES) } ?: return false
             }
         } catch (e: Exception) {
             Log.e("SuSFSRepository", "Failed to read cmdline source uri", e)
@@ -253,7 +253,7 @@ object SuSFSRepository {
 
         // Hand the file off to the kernel.
         val result = SuSFSCommands.executeSusfsCommandDirect(
-            "set-cmdline-or-bootconfig '${SuSFSConfig.shellQuote(targetPath)}'"
+            "set-cmdline-or-bootconfig ${SuSFSConfig.shellQuote(targetPath)}"
         )
         if (!result.isSuccess) {
             withContext(Dispatchers.Main) {
@@ -271,4 +271,21 @@ object SuSFSRepository {
         if (isAutoStartEnabled()) SuSFSCommands.updateMagiskModule()
         return true
     }
+
+    private fun readBounded(input: java.io.InputStream, maxBytes: Long): ByteArray {
+        val out = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(8192)
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) break
+            if (read == 0) throw java.io.IOException("stalled cmdline read")
+            if (out.size().toLong() + read > maxBytes) {
+                throw java.io.IOException("cmdline file is too large")
+            }
+            out.write(buffer, 0, read)
+        }
+        return out.toByteArray()
+    }
+
+    private const val MAX_CMDLINE_BYTES = 1024L * 1024
 }

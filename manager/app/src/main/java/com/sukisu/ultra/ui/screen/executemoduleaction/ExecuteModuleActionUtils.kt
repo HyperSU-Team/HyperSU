@@ -1,6 +1,5 @@
 package com.sukisu.ultra.ui.screen.executemoduleaction
 
-import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
@@ -15,7 +14,7 @@ import kotlinx.coroutines.withContext
 import com.sukisu.ultra.R
 import com.sukisu.ultra.data.repository.ModuleRepositoryImpl
 import com.sukisu.ultra.ui.util.runModuleAction
-import java.io.File
+import com.sukisu.ultra.ui.util.saveTextToDownloads
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -93,6 +92,7 @@ fun ExecuteModuleActionEffect(
 }
 
 fun saveLog(
+    context: android.content.Context,
     logContent: StringBuilder,
     scope: CoroutineScope,
     showMessage: (String) -> Unit
@@ -101,12 +101,16 @@ fun saveLog(
         scope.launch {
             val format = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.getDefault())
             val date = format.format(Date())
-            val file = File(
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                "HyperSU_module_action_log_${date}.log"
-            )
-            file.writeText(logContent.toString())
-            showMessage("Log saved to ${file.absolutePath}")
+            val fileName = "HyperSU_module_action_log_${date}.log"
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    saveTextToDownloads(context, fileName, logContent.toString())
+                }
+            }.onSuccess {
+                showMessage("Log saved to $it")
+            }.onFailure {
+                showMessage("Failed to save log: ${it.message ?: "unknown error"}")
+            }
         }
     }
 }

@@ -1,7 +1,6 @@
 package com.sukisu.ultra.ui.kernelFlash
 
 import android.net.Uri
-import android.os.Environment
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -22,7 +21,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -151,11 +149,24 @@ fun KernelFlashScreen(
             scope.launch {
                 val format = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.getDefault())
                 val date = format.format(Date())
-                val file = File(
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
-                    "HyperSU_kernel_flash_log_${date}.log"
-                )
-                file.writeText(logContentValue)
+                val fileName = "HyperSU_kernel_flash_log_${date}.log"
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        com.sukisu.ultra.ui.util.saveTextToDownloads(context, fileName, logContentValue)
+                    }
+                }.onSuccess {
+                    android.widget.Toast.makeText(
+                        context,
+                        "Log saved to $it",
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
+                }.onFailure {
+                    android.widget.Toast.makeText(
+                        context,
+                        "Failed to save log: ${it.message ?: "unknown error"}",
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
+                }
             }
         },
         onReboot = {

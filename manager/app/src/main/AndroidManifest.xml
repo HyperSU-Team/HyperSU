@@ -145,6 +145,12 @@
             tools:targetApi="S" />
 
         <service
+            android:name=".ui.KsuService"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:process=":root" />
+
+        <service
             android:name=".ui.util.DownloadService"
             android:exported="false"
             android:foregroundServiceType="dataSync"
@@ -154,7 +160,7 @@
             android:name=".magica.BootCompletedReceiver"
             android:directBootAware="true"
             android:enabled="false"
-            android:exported="true"
+            android:exported="false"
             android:process=":magica_boot">
             <intent-filter>
                 <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />

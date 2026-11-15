@@ -282,9 +282,20 @@ class Payload(private val channel: DataSourceChannel) {
                 processOperation(outChannel, operation, size)
             }
 
+            // Hashed in chunks: mapping the whole partition could need gigabytes of address
+            // space on a device where this runs, while the data itself is already on disk.
             val digest = MessageDigest.getInstance("SHA-256")
-            val buffer = outChannel.map(FileChannel.MapMode.READ_WRITE, 0, size)
-            digest.update(buffer)
+            val buffer = ByteBuffer.allocate(1024 * 1024)
+            var position = 0L
+            while (position < size) {
+                buffer.clear()
+                val read = outChannel.read(buffer, position)
+                if (read < 0) throw IOException("Invalid payload: truncated partition data")
+                if (read == 0) throw IOException("Invalid payload: stalled partition read")
+                buffer.flip()
+                digest.update(buffer)
+                position += read
+            }
             return digest.digest()
         }
     }
@@ -307,54 +318,119 @@ class Payload(private val channel: DataSourceChannel) {
             throw IOException("Invalid payload: negative data offset")
         }
 
-        val dataBuffer = ByteBuffer.allocate(operation.dataLength.toInt())
-        channel.read(dataBuffer, dataBase + operation.dataOffset)
-        dataBuffer.flip()
-
         val blockSize = manifest.blockSize
         if (blockSize <= 0) throw IOException("Invalid payload: block size $blockSize")
-        if (operation.dstExtentsCount == 0) {
+        val extents = operation.dstExtentsList
+        if (extents.isEmpty()) {
             throw IOException("Invalid payload: operation has no destination extent")
         }
-        val dstExtent = operation.getDstExtents(0)
-        val outOffset = try {
-            Math.multiplyExact(dstExtent.startBlock, blockSize)
-        } catch (_: ArithmeticException) {
-            throw IOException("Invalid payload: extent out of range")
+
+        // A destination can be split over several extents; the operation's bytes are written
+        // across them in order. Writing the whole stream at the first extent (what this used to
+        // do) put data into blocks the manifest never meant this operation to touch, which
+        // produces a corrupt image whenever a boot image is laid out in more than one extent.
+        val ranges = ArrayList<Pair<Long, Long>>(extents.size)
+        var totalDstSize = 0L
+        for (extent in extents) {
+            if (extent.numBlocks <= 0) {
+                throw IOException("Invalid payload: empty destination extent")
+            }
+            val start = try {
+                Math.multiplyExact(extent.startBlock, blockSize)
+            } catch (_: ArithmeticException) {
+                throw IOException("Invalid payload: extent out of range")
+            }
+            val length = try {
+                Math.multiplyExact(extent.numBlocks, blockSize)
+            } catch (_: ArithmeticException) {
+                throw IOException("Invalid payload: extent out of range")
+            }
+            if (start < 0 || length <= 0 || start > partitionSize - length) {
+                throw IOException("Invalid payload: extent at $start is outside the partition")
+            }
+            totalDstSize = try {
+                Math.addExact(totalDstSize, length)
+            } catch (_: ArithmeticException) {
+                throw IOException("Invalid payload: destination extents overflow")
+            }
+            ranges += start to length
         }
-        if (outOffset < 0 || outOffset > partitionSize) {
-            throw IOException("Invalid payload: extent at $outOffset is outside the partition")
+        if (totalDstSize > MAX_PARTITION_SIZE) {
+            throw IOException("Invalid payload: destination extents too large")
+        }
+
+        val data = channel.readFully(dataBase + operation.dataOffset, operation.dataLength)
+            ?: throw IOException("Invalid payload: truncated operation data")
+        if (data.size.toLong() != operation.dataLength) {
+            throw IOException("Invalid payload: truncated operation data")
         }
 
         when (dataType) {
             InstallOperation.Type.REPLACE -> {
-                if (outOffset + dataBuffer.remaining() > partitionSize) {
-                    throw IOException("Invalid payload: operation writes past the partition")
+                ByteArrayInputStream(data).use { source ->
+                    writeAcrossExtents(outChannel, ranges, source)
                 }
-                outChannel.write(dataBuffer, outOffset)
             }
 
             InstallOperation.Type.REPLACE_BZ, InstallOperation.Type.REPLACE_XZ -> {
-                val inputStream = dataBuffer.array().inputStream()
+                val inputStream = ByteArrayInputStream(data)
                 if (dataType == InstallOperation.Type.REPLACE_BZ) {
                     BZip2CompressorInputStream(inputStream)
                 } else {
                     XZCompressorInputStream(inputStream)
                 }.use { decompressor ->
-                    val bytes = ByteArray(8192)
-                    var bytesRead: Int
-                    var bytesWritten = 0
-                    while (decompressor.read(bytes).also { bytesRead = it } != -1) {
-                        if (outOffset + bytesWritten + bytesRead > partitionSize) {
-                            throw IOException("Invalid payload: operation writes past the partition")
-                        }
-                        val buffer = ByteBuffer.wrap(bytes, 0, bytesRead)
-                        bytesWritten += outChannel.write(buffer, outOffset + bytesWritten)
-                    }
+                    writeAcrossExtents(outChannel, ranges, decompressor)
                 }
             }
 
             else -> throw IOException("Unsupported operation type: $dataType")
+        }
+    }
+
+    /**
+     * Writes [source] across [ranges] (`start offset` to `length`), in order.
+     *
+     * Runs out of destination space is an error: it means the manifest and the operation disagree,
+     * and silently dropping the tail would produce an image whose hash does not match. Running out
+     * of source is not: the remaining destination blocks stay zero, which is what an operation
+     * that writes fewer blocks than it covers means.
+     */
+    @Throws(IOException::class)
+    private fun writeAcrossExtents(
+        outChannel: FileChannel,
+        ranges: List<Pair<Long, Long>>,
+        source: InputStream,
+    ) {
+        val buffer = ByteArray(64 * 1024)
+        var rangeIndex = 0
+        var offsetInRange = 0L
+
+        while (true) {
+            val read = source.read(buffer)
+            if (read < 0) return
+            if (read == 0) throw IOException("Invalid payload: stalled operation stream")
+
+            var consumed = 0
+            while (consumed < read) {
+                while (rangeIndex < ranges.size && offsetInRange == ranges[rangeIndex].second) {
+                    rangeIndex++
+                    offsetInRange = 0L
+                }
+                if (rangeIndex >= ranges.size) {
+                    throw IOException("Invalid payload: operation writes past its extents")
+                }
+                val (rangeStart, rangeLength) = ranges[rangeIndex]
+                val chunk = minOf((read - consumed).toLong(), rangeLength - offsetInRange).toInt()
+                var position = rangeStart + offsetInRange
+                val target = ByteBuffer.wrap(buffer, consumed, chunk)
+                while (target.hasRemaining()) {
+                    val written = outChannel.write(target, position)
+                    if (written <= 0) throw IOException("Invalid payload: stalled partition write")
+                    position += written
+                }
+                consumed += chunk
+                offsetInRange += chunk
+            }
         }
     }
 

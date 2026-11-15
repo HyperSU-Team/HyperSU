@@ -550,8 +550,8 @@ private fun RepoInfoPage(
                 FolkSettingsGroup(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 ) {
-                    module.authorsList.forEach { author ->
-                        item(key = author.name) {
+                    module.authorsList.forEachIndexed { index, author ->
+                        item(key = "${author.name}-$index") {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()

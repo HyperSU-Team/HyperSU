@@ -40,7 +40,7 @@ data class TemplateInfo(
                 val flagsJsonArray = templateJson.optJSONArray("flags")
                 val context = templateJson.optString("context").takeIf { it.isNotEmpty() }
                     ?: Natives.KERNEL_SU_DOMAIN
-                val namespace = templateJson.optString("namespace").takeIf { it.isNotEmpty() }
+                val namespaceName = templateJson.optString("namespace").takeIf { it.isNotEmpty() }
                     ?: Natives.Profile.Namespace.INHERITED.name
 
                 val rulesJsonArray = templateJson.optJSONArray("rules")
@@ -50,9 +50,9 @@ data class TemplateInfo(
                     description = getLocaleString(templateJson, "description"),
                     author = templateJson.optString("author"),
                     local = templateJson.optBoolean("local"),
-                    namespace = Natives.Profile.Namespace.valueOf(
-                        namespace.uppercase()
-                    ).ordinal,
+                    namespace = runCatching {
+                        Natives.Profile.Namespace.valueOf(namespaceName.uppercase(Locale.ROOT))
+                    }.getOrDefault(Natives.Profile.Namespace.INHERITED).ordinal,
                     uid = templateJson.optInt("uid", Natives.ROOT_UID),
                     gid = templateJson.optInt("gid", Natives.ROOT_GID),
                     groups = getEnumOrdinals(groupsJsonArray, Groups::class.java).map { it.gid },
@@ -108,7 +108,7 @@ data class TemplateInfo(
             jsonArray: JSONArray?, enumClass: Class<T>
         ): List<T> {
             return jsonArray?.mapCatching<String, T>({ name ->
-                enumValueOf(name.uppercase())
+                enumValueOf(name.uppercase(Locale.ROOT))
             }, {
                 Log.e(TAG, "ignore invalid enum ${enumClass.simpleName}: $it", it)
             }).orEmpty()
@@ -125,7 +125,8 @@ data class TemplateInfo(
             if (template.author.isNotEmpty()) {
                 put("author", template.author)
             }
-            put("namespace", Natives.Profile.Namespace.entries[template.namespace].name)
+            put("namespace", Natives.Profile.Namespace.entries.getOrNull(template.namespace)?.name
+                ?: Natives.Profile.Namespace.INHERITED.name)
             put("uid", template.uid)
             put("gid", template.gid)
 

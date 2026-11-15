@@ -167,6 +167,32 @@ private const val ModuleChipAnimationMillis = 120
 private const val UpdateChipAnimationMillis = 120
 
 /**
+ * Decodes a module banner at a bounded size.
+ *
+ * The bytes can come from the module's own directory or from a URL it names, so the declared
+ * dimensions are not trustworthy: decoding a 30000x30000 PNG would need gigabytes. A bounds-only
+ * pass picks a sample size that keeps the longest side at 2048px before the full decode.
+ */
+private fun decodeBannerBitmap(data: ByteArray): android.graphics.Bitmap? {
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeByteArray(data, 0, data.size, bounds)
+    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+    var sampleSize = 1
+    while (bounds.outWidth / sampleSize > MAX_BANNER_SIDE ||
+        bounds.outHeight / sampleSize > MAX_BANNER_SIDE
+    ) {
+        sampleSize *= 2
+    }
+    val options = BitmapFactory.Options().apply {
+        inSampleSize = sampleSize
+        inPreferredConfig = android.graphics.Bitmap.Config.ARGB_8888
+    }
+    return BitmapFactory.decodeByteArray(data, 0, data.size, options)
+}
+
+private const val MAX_BANNER_SIDE = 2048
+
+/**
  * The Module tab in the FolkPatch design.
  *
  * Each module is one surface: name, version and author, an expanding
@@ -920,7 +946,7 @@ private fun BoxScope.ModuleBannerLayer(module: Module) {
     val bitmap by produceState<ImageBitmap?>(initialValue = null, key1 = bytes) {
         value = bytes?.let { data ->
             withContext(Dispatchers.IO) {
-                runCatching { BitmapFactory.decodeByteArray(data, 0, data.size) }
+                runCatching { decodeBannerBitmap(data) }
                     .getOrNull()
                     ?.asImageBitmap()
             }

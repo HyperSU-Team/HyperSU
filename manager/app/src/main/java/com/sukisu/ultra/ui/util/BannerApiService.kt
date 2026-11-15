@@ -39,6 +39,9 @@ object BannerApiService {
      */
     private const val FETCH_TIMEOUT_MS = 4_000L
 
+    /** Same cap as a module banner: this is a decorative image, not a download. */
+    private const val MAX_BANNER_BYTES = 12L * 1024 * 1024
+
     private val IMAGE_EXTENSIONS = setOf("jpg", "jpeg", "png", "webp", "gif", "bmp")
 
     /** 取模块横幅；任何一步失败都返回 null，调用方据此回落到模块自带的横幅。 */
@@ -105,7 +108,8 @@ object BannerApiService {
             }
 
             // 模块 ID 的哈希决定索引，同一模块固定拿同一张。
-            imageFiles[getIndexFromModuleId(moduleId, imageFiles.size)].readBytes()
+            val index = getIndexFromModuleId(moduleId, imageFiles.size)
+            imageFiles[index].inputStream().use { readBounded(it) }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load image from local directory: ${e.message}", e)
             null
@@ -147,7 +151,9 @@ object BannerApiService {
                                     Log.w(TAG, "API request failed with code: ${it.code}")
                                     null
                                 } else {
-                                    runCatching { it.body?.bytes() }.getOrNull()
+                                    runCatching {
+                                        it.body?.byteStream()?.use { stream -> readBounded(stream) }
+                                    }.getOrNull()
                                 }
                                 continuation.resumeWith(Result.success(bytes))
                             }
@@ -167,8 +173,11 @@ object BannerApiService {
         return if (baseUrl.contains("?")) "$baseUrl&seed=$seed" else "$baseUrl?seed=$seed"
     }
 
-    private fun getIndexFromModuleId(moduleId: String, listSize: Int): Int =
-        kotlin.math.abs(moduleId.hashCode()) % listSize
+    private fun getIndexFromModuleId(moduleId: String, listSize: Int): Int {
+        // Math.abs(Int.MIN_VALUE) is still negative; floorMod keeps the index in range for
+        // every hash, including that one.
+        return Math.floorMod(moduleId.hashCode(), listSize)
+    }
 
     private fun getSeedFromModuleId(moduleId: String): String {
         val digest = MessageDigest.getInstance("MD5").digest(moduleId.toByteArray())
@@ -196,7 +205,7 @@ object BannerApiService {
                 file.delete()
                 return@withContext null
             }
-            file.readBytes()
+            file.inputStream().use { readBounded(it) }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to read cached banner: ${e.message}", e)
             null
@@ -234,6 +243,22 @@ object BannerApiService {
         }.onFailure {
             Log.e(TAG, "Failed to clear module cache: ${it.message}", it)
         }
+    }
+
+    private fun readBounded(input: java.io.InputStream): ByteArray? {
+        val out = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(16 * 1024)
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) break
+            if (read == 0) throw IOException("stalled banner read")
+            if (out.size().toLong() + read > MAX_BANNER_BYTES) {
+                Log.w(TAG, "banner source is larger than $MAX_BANNER_BYTES bytes")
+                return null
+            }
+            out.write(buffer, 0, read)
+        }
+        return out.toByteArray().takeIf { it.isNotEmpty() }
     }
 
     private fun sanitizeModuleId(raw: String): String =

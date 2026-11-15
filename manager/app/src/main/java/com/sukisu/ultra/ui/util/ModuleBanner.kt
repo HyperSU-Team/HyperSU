@@ -97,43 +97,48 @@ object ModuleBanner {
         moduleId: String,
         reload: Boolean = false,
     ): ByteArray? {
-        if (!reload && memory.containsKey(moduleId)) {
-            return synchronized(memory) { memory[moduleId] }
+        // The map is access-ordered, so even a lookup is a structural change; it is only safe
+        // while holding the same monitor the writers take.
+        val cached = synchronized(memory) {
+            if (!reload && memory.containsKey(moduleId)) memory[moduleId] else null
         }
+        if (!reload && cached != null) return cached
+
         // One fetch per module at a time: the card can be asked for its banner again while the
         // first request is still out (a recomposition, a scroll back), and firing a second identical
-        // request only made both slower.
-        val pending = synchronized(inFlight) { inFlight[moduleId] }
-        if (pending != null) return pending.await()
-
-        val job = scope.async {
-            loadSemaphore.withPermit {
-                val resolved = withContext(Dispatchers.IO) {
-                    // One retry: the two sources are a third-party image endpoint and a root shell
-                    // read of the module directory, and both fail transiently - the shell is busy
-                    // right after the list loads, the endpoint answers slowly or not at all. A
-                    // single retry a moment later turns "the banner did not load this time" into a
-                    // banner that appears a few hundred milliseconds later, which is what the
-                    // card's fade is for. `resolve` is cheap on success, so a healthy module pays
-                    // nothing for this.
-                    resolve(context, moduleId) ?: run {
-                        delay(BANNER_RETRY_DELAY_MS)
-                        resolve(context, moduleId)
+        // request only made both slower. Checked and registered under one lock so two callers
+        // cannot both start a fetch.
+        val job = synchronized(inFlight) {
+            inFlight[moduleId] ?: scope.async {
+                loadSemaphore.withPermit {
+                    val resolved = withContext(Dispatchers.IO) {
+                        // One retry: the two sources are a third-party image endpoint and a root shell
+                        // read of the module directory, and both fail transiently - the shell is busy
+                        // right after the list loads, the endpoint answers slowly or not at all. A
+                        // single retry a moment later turns "the banner did not load this time" into
+                        // a banner that appears a few hundred milliseconds later, which is what the
+                        // card's fade is for. `resolve` is cheap on success, so a healthy module pays
+                        // nothing for this.
+                        resolve(context, moduleId) ?: run {
+                            delay(BANNER_RETRY_DELAY_MS)
+                            resolve(context, moduleId)
+                        }
                     }
+                    // A null means the fetch did not succeed; leaving it out of the cache lets the next
+                    // visit try again instead of pinning the card blank for the life of the process.
+                    if (resolved != null) {
+                        synchronized(memory) { memory[moduleId] = resolved }
+                    }
+                    resolved
                 }
-                // A null means the fetch did not succeed; leaving it out of the cache lets the next
-                // visit try again instead of pinning the card blank for the life of the process.
-                if (resolved != null) {
-                    synchronized(memory) { memory[moduleId] = resolved }
-                }
-                resolved
-            }
+            }.also { inFlight[moduleId] = it }
         }
-        synchronized(inFlight) { inFlight[moduleId] = job }
         try {
             return job.await()
         } finally {
-            synchronized(inFlight) { inFlight.remove(moduleId) }
+            synchronized(inFlight) {
+                if (inFlight[moduleId] === job) inFlight.remove(moduleId)
+            }
         }
     }
 
@@ -214,7 +219,9 @@ object ModuleBanner {
             candidates.firstNotNullOfOrNull { name ->
                 val file = su(if (name.startsWith("/")) name else "$dirPath/$name")
                 if (!file.isFile) return@firstNotNullOfOrNull null
-                runCatching { SuFileInputStream.open(file).use { it.readBytes() } }
+                // Bounded: the file comes from the module's own directory, so it is not necessarily
+                // a banner - a multi-hundred-megabyte file must not be pulled into the heap.
+                runCatching { SuFileInputStream.open(file).use { readBounded(it) } }
                     .getOrNull()
                     ?.takeIf { it.isNotEmpty() }
             }
@@ -250,6 +257,25 @@ object ModuleBanner {
         }.getOrDefault(defaultDir)
     }
 
+    /**
+     * Reads a banner up to [MAX_BANNER_BYTES]; null when it is larger than that.
+     *
+     * The path comes from `module.prop` or a fixed name in the module's directory, so the file is
+     * only as trustworthy as the module: read it through a cap instead of `readBytes()`.
+     */
+    private fun readBounded(input: java.io.InputStream): ByteArray? {
+        val out = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(8192)
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) break
+            if (read == 0) throw java.io.IOException("stalled banner read")
+            if (out.size().toLong() + read > MAX_BANNER_BYTES) return null
+            out.write(buffer, 0, read)
+        }
+        return out.toByteArray()
+    }
+
     /** Downloads a banner that `module.prop` declares as a url. */
     private fun fetchRemoteBanner(url: String): ByteArray? = runCatching {
         val client = ksuApp.okhttpClient.newBuilder()
@@ -260,12 +286,13 @@ object ModuleBanner {
             if (!response.isSuccessful) return@use null
             val body = response.body ?: return@use null
             // The banner is drawn as a decorative layer, so an oversized image is not worth the
-            // memory: reject it rather than reading tens of megabytes into the heap.
+            // memory: reject it rather than reading tens of megabytes into the heap. contentLength
+            // is -1 for a chunked response, so the stream is capped as it is read as well.
             if (body.contentLength() > MAX_BANNER_BYTES) {
                 Log.w(TAG, "banner $url is ${body.contentLength()} bytes, skipping")
                 return@use null
             }
-            body.bytes().takeIf { it.isNotEmpty() && it.size <= MAX_BANNER_BYTES }
+            body.byteStream().use { readBounded(it) }
         }
     }.onFailure { Log.w(TAG, "could not fetch banner $url: ${it.message}") }.getOrNull()
 

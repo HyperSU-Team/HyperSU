@@ -106,55 +106,63 @@ fun SettingPagerFolk(
                 if (urls.isNotEmpty()) {
                     scope.launch {
                         loadingDialog.show()
-                        // The release-asset host and its mirrors are different hosts; a timeout on
-                        // the first one is the usual failure on a partly-reachable network, so the
-                        // rest are tried before giving up.
-                        var lastError: Throwable? = null
-                        val installed = urls.any { url ->
-                            runCatching {
-                                var downloaded: android.net.Uri? = null
-                                download(
-                                    url,
-                                    "HyperSU-${available.versionName}.apk",
-                                    onDownloaded = { uri -> downloaded = uri },
-                                )
-                                val apk = downloaded ?: error("download returned no file")
-                                // The bytes may have come from an acceleration mirror, not from
-                                // GitHub: compare them with the digest the release publishes
-                                // before handing the file to the installer.
-                                val expected = available.apkDigest
-                                if (expected != null) {
-                                    val actual = sha256Of(context, apk)
-                                    if (!expected.equals(actual, ignoreCase = true)) {
-                                        error("downloaded apk does not match the release digest")
+                        try {
+                            // The release-asset host and its mirrors are different hosts; a timeout on
+                            // the first one is the usual failure on a partly-reachable network, so the
+                            // rest are tried before giving up.
+                            var lastError: Throwable? = null
+                            val installed = urls.any { url ->
+                                runCatching {
+                                    var downloaded: android.net.Uri? = null
+                                    download(
+                                        url,
+                                        "HyperSU-${available.versionName}.apk",
+                                        onDownloaded = { uri -> downloaded = uri },
+                                    )
+                                    val apk = downloaded ?: error("download returned no file")
+                                    // The bytes may have come from an acceleration mirror, not from
+                                    // GitHub: compare them with the digest the release publishes
+                                    // before handing the file to the installer.
+                                    val expected = available.apkDigest
+                                    if (expected != null) {
+                                        val actual = sha256Of(context, apk)
+                                        if (!expected.equals(actual, ignoreCase = true)) {
+                                            // A mirror that served something else left a file behind;
+                                            // remove it rather than leaving a bad APK in Downloads.
+                                            runCatching { context.contentResolver.delete(apk, null, null) }
+                                            error("downloaded apk does not match the release digest")
+                                        }
                                     }
-                                }
-                                installApk(context, apk)
-                            }.onFailure { error ->
-                                // runCatching catches cancellation too; the manual check must not
-                                // keep trying mirrors after the screen is gone.
-                                if (error is kotlinx.coroutines.CancellationException) throw error
-                                lastError = error
-                            }.onSuccess {
-                                // Remember which acceleration host worked, so the next download (a
-                                // theme, a module) starts there instead of on the blocked host.
-                                GithubMirrors.recordSuccess(url)
-                            }.isSuccess
-                        }
-                        if (!installed) {
-                            Log.w("SettingsFolk", "manager update download failed", lastError)
-                            snackBarHost.showSnackbar(
-                                context.getString(R.string.settings_manager_update_failed),
-                            )
-                            // Falling back to the release page at least leaves the user with a
-                            // working way to get the build.
-                            runCatching {
-                                context.startActivity(
-                                    Intent(Intent.ACTION_VIEW, available.pageUrl.toUri()),
-                                )
+                                    if (!installApk(context, apk)) {
+                                        error("no package installer available")
+                                    }
+                                }.onFailure { error ->
+                                    // runCatching catches cancellation too; the manual check must not
+                                    // keep trying mirrors after the screen is gone.
+                                    if (error is kotlinx.coroutines.CancellationException) throw error
+                                    lastError = error
+                                }.onSuccess {
+                                    // Remember which acceleration host worked, so the next download (a
+                                    // theme, a module) starts there instead of on the blocked host.
+                                    GithubMirrors.recordSuccess(url)
+                                }.isSuccess
                             }
+                            if (!installed) {
+                                Log.w("SettingsFolk", "manager update download failed", lastError)
+                                snackBarHost.showSnackbar(
+                                    context.getString(R.string.settings_manager_update_failed),
+                                )
+                                // Falling back to the release page at least leaves the user with a
+                                // working way to get the build.
+                                runCatching {
+                                    context.startActivity(
+                                        Intent(Intent.ACTION_VIEW, available.pageUrl.toUri()),
+                                    )
+                                }
+                            }
+                        } finally {
+                            loadingDialog.hide()
                         }
-                        loadingDialog.hide()
                     }
                 }
             },

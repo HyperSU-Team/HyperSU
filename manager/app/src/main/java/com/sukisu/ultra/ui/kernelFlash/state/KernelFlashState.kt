@@ -54,7 +54,9 @@ class HorizonKernelState {
     }
 
     fun setError(error: String) {
-        _state.update { it.copy(error = error) }
+        // A failed run is no longer flashing: leaving the flag set kept the screen locked and made
+        // a re-entry look like a live job.
+        _state.update { it.copy(error = error, isFlashing = false) }
     }
 
     fun startFlashing() {
@@ -250,8 +252,13 @@ class HorizonKernelWorker(
         // the kernel version read as one, which is what made the line confusing.
         state.addLog(context.getString(R.string.kernel_version_log, version))
         val patchCommand = "sed -i ${"/chmod -R 755 tools bin;/i cp -f ${toolPath.shellArg()} \"\$AKHOME/tools\";".shellArg()} ${binaryPath.shellArg()}"
-        if (runCommand(false, patchCommand) != 0) {
+        if (runCommand(false, patchCommand, log = false) != 0) {
             throw IOException("Failed to patch update-binary")
+        }
+        // sed exits 0 even when the anchor line is absent, in which case the archive would be
+        // flashed with the stock mkbootfs and the ramdisk the patch is for would be missing.
+        if (runCommand(false, "grep -qF ${toolPath.shellArg()} ${binaryPath.shellArg()}", log = false) != 0) {
+            throw IOException("Unsupported update-binary layout")
         }
     }
 

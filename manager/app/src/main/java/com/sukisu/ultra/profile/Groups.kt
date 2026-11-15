@@ -74,7 +74,7 @@ enum class Groups(val gid: Int, val display: String, val desc: String) {
     OTA_UPDATE(1061, "ota_update", "resource tracking UID for OTA updates"),
     AUTOMOTIVE_EVS(1062, "automotive_evs", "Automotive rear and surround view system"),
     LOWPAN(1063, "lowpan", "LoWPAN subsystem"),
-    HSM(1064, "lowpan", "hardware security module subsystem"),
+    HSM(1064, "hsm", "hardware security module subsystem"),
     RESERVED_DISK(1065, "reserved_disk", "GID that has access to reserved disk space"),
     STATSD(1066, "statsd", "statsd daemon"),
     INCIDENTD(1067, "incidentd", "incidentd daemon"),

@@ -37,6 +37,11 @@ object BootKernelVersion {
     // cap keeps a decompression bomb from exhausting the heap.
     private const val MAX_DECOMPRESSED_SIZE = 32 * 1024 * 1024
 
+    // The banner lives in the first few megabytes of a real kernel. The header's kernel_size is
+    // attacker-controlled and can claim gigabytes, so every probe walk stops here instead of
+    // allocating what the file asked for.
+    private const val MAX_KERNEL_PROBE = 32L * 1024 * 1024
+
     // Boot header total sizes per header version (android_bootimg layouts)
     private val HEADER_TOTAL_SIZE = mapOf(
         0L to 1632L,
@@ -61,11 +66,13 @@ object BootKernelVersion {
             while (true) {
                 val data = readRange(channel, kernelOffset.toLong(), probeSize) ?: return null
                 parseKmi(data)?.let { return it }
-                if (probeSize >= kernelSize) {
+                if (probeSize >= kernelSize || probeSize >= MAX_KERNEL_PROBE) {
                     decompressPartial(data)?.let { parseKmi(it) }?.let { return it }
                     return null
                 }
-                probeSize = minOf(probeSize * 4, kernelSize.toLong())
+                val grown = minOf(probeSize * 4, kernelSize.toLong(), MAX_KERNEL_PROBE)
+                if (grown <= probeSize) return null
+                probeSize = grown
             }
         }
     }
@@ -91,9 +98,11 @@ object BootKernelVersion {
                 stream.readFully(data, previousSize, data.size - previousSize)
                 parseKmi(data)?.let { return it }
                 decompressPartial(data)?.let { parseKmi(it) }?.let { return it }
-                if (data.size >= kernelSize) return null
+                if (data.size >= kernelSize || data.size >= MAX_KERNEL_PROBE) return null
                 previousSize = data.size
-                data = data.copyOf(minOf(data.size.toLong() * 4, kernelSize.toLong()).toInt())
+                data = data.copyOf(
+                    minOf(data.size.toLong() * 4, kernelSize.toLong(), MAX_KERNEL_PROBE).toInt()
+                )
             }
             @Suppress("UNREACHABLE_CODE")
             null
@@ -112,8 +121,10 @@ object BootKernelVersion {
         while (true) {
             val data = channel.readFully(0, probeSize) ?: return null
             parseKmiFromBootData(data)?.let { return it }
-            if (probeSize >= maxSize) return null
-            probeSize = minOf(probeSize * REMOTE_PROBE_GROWTH, maxSize)
+            if (probeSize >= maxSize || probeSize >= MAX_KERNEL_PROBE) return null
+            val grown = minOf(probeSize * REMOTE_PROBE_GROWTH, maxSize, MAX_KERNEL_PROBE)
+            if (grown <= probeSize) return null
+            probeSize = grown
         }
     }
 
@@ -124,9 +135,9 @@ object BootKernelVersion {
      */
     fun parseKmiFromBootData(data: ByteArray, fromPrefixOffset: Int = 0): String? {
         val (kernelOffset, kernelSize) = bootKernelBlock(data) ?: return null
-        if (data.size <= kernelOffset + 4) return null
+        if (data.size <= kernelOffset.toLong() + 4L) return null
 
-        val kernelEnd = minOf(data.size, kernelOffset + kernelSize)
+        val kernelEnd = minOf(data.size.toLong(), kernelOffset.toLong() + kernelSize.toLong()).toInt()
         if (kernelEnd <= kernelOffset) return null
 
         // Scan only the new bytes, with overlap for a banner straddling the
@@ -174,12 +185,13 @@ object BootKernelVersion {
     }
 
     private fun readRange(channel: FileChannel, position: Long, length: Long): ByteArray? {
-        if (length > Int.MAX_VALUE) return null
+        if (length <= 0 || length > Int.MAX_VALUE) return null
         val buffer = ByteBuffer.allocate(length.toInt())
         var total = 0
         while (total < buffer.capacity()) {
             val read = channel.read(buffer, position + total)
             if (read < 0) break
+            if (read == 0) return null
             total += read
         }
         if (total == 0) return null

@@ -98,17 +98,19 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.46 - one acceleration table for every download, checked against the real thing.
+            HyperSU v4.2.47 - extraction and download paths fail safely instead of corrupting or crashing.
 
-            Themes, modules and manager APKs all fall back through the same mirrors now, and the table was tested against a real release asset instead of being copied from a list.
+            A full pass over the manager's archive, payload and download code, plus the screens that write files.
 
-            - ghproxy.cc was removed: its certificate expired, so every request failed the TLS handshake. ghfast.top and ghm.078465.xyz answered a range request on an actual HyperSU APK and are first in line; gh-proxy.com and ghproxy.net stay as fallbacks.
-            - The mirror that last worked is remembered and tried first, so a blocked direct host costs one timeout per session instead of one per download.
-            - Theme downloads check the payload before importing it: a proxy that answers 200 with its own HTML error page is rejected and the next mirror is tried (an encrypted theme starts with a random IV, so only a real HTML header is treated as a failure).
-            - Manager updates are verified before installation: the downloaded APK is hashed and compared with the digest GitHub publishes for the release asset, so a mirror cannot substitute its own file.
-            - The theme client's connect timeout is 8s, so a dead mirror is skipped quickly instead of holding the download for the usual 20s.
+            - OTA payload extraction writes an operation's bytes across every destination extent, not just the first, and fails on a short read instead of filling the missing bytes with zeros. The output hash is now computed while streaming rather than by mapping the whole partition.
+            - KMI probing is bounded: the header's kernel size is attacker-controlled, and the walk no longer allocates whatever it claims (32 MiB cap, on file, stream and HTTP probes).
+            - Theme, module and manager downloads are size-capped, so a bad mirror cannot fill the device; theme archive entries and `theme.json` have their own caps, and the downloaded APK is deleted when its digest does not match.
+            - Flash and module-action logs go through MediaStore now. Writing `/sdcard/Download` directly failed on Android 10+ and crashed the save coroutine; failures are reported in the UI.
+            - Markdown links are restricted to http/https, so release notes cannot launch arbitrary intents. Module banner and shortcut icons are decoded at a sampled size, so one oversized image cannot exhaust the heap.
+            - The Magica boot receiver is no longer exported. SuSFS command arguments are quoted once, the music player is always released, and the WebUI detaches and cancels its file chooser cleanly.
+            - Template JSON parsing uses a fixed locale, payload/image ZIP nesting is bounded, and a failed flash clears its in-flight flag.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.45...v4.2.46
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.46...v4.2.47
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

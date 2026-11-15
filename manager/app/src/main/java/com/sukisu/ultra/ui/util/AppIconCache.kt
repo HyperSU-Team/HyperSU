@@ -127,7 +127,7 @@ object AppIconCache {
      * Synchronous icon loading for non-UI callers (e.g. WebView shouldInterceptRequest).
      * Returns a software bitmap suitable for compress/encode. Does NOT copy to HARDWARE config.
      */
-    fun loadIconSync(context: Context, applicationInfo: ApplicationInfo, size: Int): Bitmap {
+    fun loadIconSync(context: Context, applicationInfo: ApplicationInfo, size: Int): Bitmap? {
         val key = buildKey(applicationInfo, size)
 
         lruCache.get(key)?.let {
@@ -135,13 +135,17 @@ object AppIconCache {
             lruCache.remove(key)
         }
 
-        val bitmap = loadIconBitmap(context, applicationInfo, size)
-        bitmap.prepareToDraw()
-        lruCache.put(key, bitmap)
-        return bitmap
+        return runCatching {
+            loadIconBitmap(context, applicationInfo, size).also { bitmap ->
+                bitmap.prepareToDraw()
+                lruCache.put(key, bitmap)
+            }
+        }.onFailure {
+            Log.w(TAG, "could not load the icon for ${applicationInfo.packageName}", it)
+        }.getOrNull()
     }
 
-    suspend fun loadIcon(context: Context, applicationInfo: ApplicationInfo, size: Int): Bitmap {
+    suspend fun loadIcon(context: Context, applicationInfo: ApplicationInfo, size: Int): Bitmap? {
         val key = buildKey(applicationInfo, size)
 
         lruCache.get(key)?.let {
@@ -156,20 +160,24 @@ object AppIconCache {
             }
 
             withContext(Dispatchers.IO) {
-                val bitmap = loadIconBitmap(context, applicationInfo, size)
+                runCatching {
+                    val bitmap = loadIconBitmap(context, applicationInfo, size)
 
-                val gpuBitmap = try {
-                    bitmap.copy(Bitmap.Config.HARDWARE, false)?.also {
-                        bitmap.recycle()
-                    } ?: bitmap.also { it.prepareToDraw() }
-                } catch (e: Exception) {
-                    Log.d(TAG, "Failed to copy bitmap to HARDWARE config", e)
-                    bitmap.also { it.prepareToDraw() }
-                }
+                    val gpuBitmap = try {
+                        bitmap.copy(Bitmap.Config.HARDWARE, false)?.also {
+                            bitmap.recycle()
+                        } ?: bitmap.also { it.prepareToDraw() }
+                    } catch (e: Exception) {
+                        Log.d(TAG, "Failed to copy bitmap to HARDWARE config", e)
+                        bitmap.also { it.prepareToDraw() }
+                    }
 
-                lruCache.put(key, gpuBitmap)
+                    lruCache.put(key, gpuBitmap)
 
-                gpuBitmap
+                    gpuBitmap
+                }.onFailure {
+                    Log.w(TAG, "could not load the icon for ${applicationInfo.packageName}", it)
+                }.getOrNull()
             }
         }
     }

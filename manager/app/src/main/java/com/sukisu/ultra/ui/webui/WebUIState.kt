@@ -72,11 +72,16 @@ class WebUIState {
 
     fun dispose(activity: Activity) {
         activity.setTaskDescription(activity.getString(R.string.app_name))
+        // A file chooser left open while the activity closes must be answered, or the WebView
+        // keeps the pending callback for the rest of the process.
+        filePathCallback?.onReceiveValue(null)
+        filePathCallback = null
         webView?.let { view ->
             (view.parent as? android.view.ViewGroup)?.removeView(view)
             view.destroy()
         }
         webView = null
         rootShell?.close()
+        rootShell = null
     }
 }

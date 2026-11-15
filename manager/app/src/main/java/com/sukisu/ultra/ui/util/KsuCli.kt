@@ -2,7 +2,6 @@ package com.sukisu.ultra.ui.util
 
 import android.content.ContentResolver
 import android.content.Context
-import android.database.Cursor
 import android.net.Uri
 import android.os.Environment
 import android.os.Parcelable
@@ -71,15 +70,13 @@ inline fun <T> withNewRootShell(
 }
 
 fun Uri.getFileName(context: Context): String? {
-    var fileName: String? = null
     val contentResolver: ContentResolver = context.contentResolver
-    val cursor: Cursor? = contentResolver.query(this, null, null, null, null)
-    cursor?.use {
-        if (it.moveToFirst()) {
-            fileName = it.getString(it.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
+    return runCatching {
+        contentResolver.query(this, null, null, null, null)?.use { cursor ->
+            val index = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (index >= 0 && cursor.moveToFirst()) cursor.getString(index) else null
         }
-    }
-    return fileName
+    }.getOrNull()
 }
 
 fun createRootShell(globalMnt: Boolean = false): Shell {
@@ -392,116 +389,130 @@ fun downloadBoot(
     onStdout: (String) -> Unit,
     onStderr: (String) -> Unit,
 ): FlashResult {
-    val bootFile = File(ksuApp.cacheDir, "download-boot.img")
-    var probedKmi: String? = null
+    // A fixed name made two downloads overwrite each other's image.
+    val bootFile = try {
+        File.createTempFile("download-boot-", ".img", ksuApp.cacheDir)
+    } catch (e: Exception) {
+        return FlashResult(-1, e.message ?: "Unable to create a temporary boot image", false)
+    }
+    var lkmFile: File? = null
     try {
         onStdout("- Downloading and extracting boot image")
         val channel = DataSourceChannel(newDownloadClient(), url)
-        val magic = readMagic(channel)
-        val image = ExtractImage(bootFile, onStdout)
-        // Extract the KMI here while the payload is open. ZipFile closes the
-        // channel it is built on, so probe on a separate channel.
-        val probeChannel = DataSourceChannel(newDownloadClient(), url)
-        probedKmi = try {
+        val magic: String
+        val probedKmi: String?
+        try {
+            magic = readMagic(channel)
+            val image = ExtractImage(bootFile, onStdout)
+            // Extract the KMI here while the payload is open. ZipFile closes the
+            // channel it is built on, so probe on a separate channel.
+            val probeChannel = DataSourceChannel(newDownloadClient(), url)
+            probedKmi = try {
+                if (magic == "CrAU") {
+                    ExtractImage.probePayload(
+                        probeChannel,
+                        withKmi = lkm is LkmSelection.KmiNone,
+                        onProgress = onStdout,
+                    ).kmi
+                } else {
+                    ExtractImage.probe(
+                        probeChannel,
+                        withKmi = lkm is LkmSelection.KmiNone,
+                        onProgress = onStdout,
+                    ).kmi
+                }
+            } finally {
+                probeChannel.close()
+            }
             if (magic == "CrAU") {
-                ExtractImage.probePayload(
-                    probeChannel,
-                    withKmi = lkm is LkmSelection.KmiNone,
-                    onProgress = onStdout,
-                ).kmi
+                image.consumePayload(channel, partition)
             } else {
-                ExtractImage.probe(
-                    probeChannel,
-                    withKmi = lkm is LkmSelection.KmiNone,
-                    onProgress = onStdout,
-                ).kmi
+                image.consume(channel, partition)
             }
         } finally {
-            probeChannel.close()
+            channel.close()
         }
-        if (magic == "CrAU") {
-            image.consumePayload(channel, partition)
+
+        // init_boot/vendor_boot carry no kernel, so their KMI comes from the
+        // payload's boot probe and must be passed explicitly. A remote download
+        // is unrelated to this device, so ksud must not use the local kernel.
+        val autoKmi = if (lkm is LkmSelection.KmiNone) {
+            (probedKmi ?: BootKernelVersion.parseKmiFromBoot(bootFile))?.also {
+                onStdout("- Auto detected KMI: $it")
+            }
         } else {
-            image.consume(channel, partition)
+            null
         }
+        if (autoKmi == null && lkm is LkmSelection.KmiNone) {
+            throw IOException("Failed to determine KMI from the package")
+        }
+
+        var cmd = "${getKsuDaemonPath()} boot-patch -b ${bootFile.absolutePath.shellArg()}"
+        cmd += bootPatchFlags(allowShell, enableAdb, forceBackup)
+
+        if (spoofRelease.isNotBlank()) {
+            cmd += " --spoof-release ${spoofRelease.shellArg()}"
+        }
+
+        if (spoofVersion.isNotBlank()) {
+            cmd += " --spoof-version ${spoofVersion.shellArg()}"
+        }
+
+        lkmFile = writeLkmFile(lkm)
+        if (lkmFile != null) {
+            cmd += " -m ${lkmFile.absolutePath.shellArg()}"
+        } else if (lkm is LkmSelection.KmiString) {
+            cmd += " --kmi ${lkm.value.shellArg()}"
+        }
+        if (autoKmi != null) cmd += " --kmi ${autoKmi.shellArg()}"
+        cmd += " --partition ${partition.shellArg()}"
+        // ksud defaults to cwd, which is read-only in the su session; use Downloads.
+        val downloadsDir =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        cmd += " -o ${downloadsDir.absolutePath.shellArg()}"
+
+        val stdoutCallback: CallbackList<String?> = object : CallbackList<String?>() {
+            override fun onAddElement(s: String?) {
+                onStdout(s ?: "")
+            }
+        }
+        val stderrCallback: CallbackList<String?> = object : CallbackList<String?>() {
+            override fun onAddElement(s: String?) {
+                onStderr(s ?: "")
+            }
+        }
+
+        val result = withNewRootShell {
+            newJob().add(cmd).to(stdoutCallback, stderrCallback).exec()
+        }
+        return FlashResult(result, false)
     } catch (e: Exception) {
-        bootFile.delete()
         return FlashResult(-1, e.message ?: "Download failed", false)
-    }
-
-    // init_boot/vendor_boot carry no kernel, so their KMI comes from the
-    // payload's boot probe and must be passed explicitly. A remote download
-    // is unrelated to this device, so ksud must not use the local kernel.
-    val autoKmi = if (lkm is LkmSelection.KmiNone) {
-        (probedKmi ?: BootKernelVersion.parseKmiFromBoot(bootFile))?.also {
-            onStdout("- Auto detected KMI: $it")
-        }
-    } else {
-        null
-    }
-    if (autoKmi == null && lkm is LkmSelection.KmiNone) {
+    } finally {
+        lkmFile?.delete()
         bootFile.delete()
-        return FlashResult(-1, "Failed to determine KMI from the package", false)
     }
-
-    var cmd = "${getKsuDaemonPath()} boot-patch -b ${bootFile.absolutePath.shellArg()}"
-    cmd += bootPatchFlags(allowShell, enableAdb, forceBackup)
-
-    if (spoofRelease.isNotBlank()) {
-        cmd += " --spoof-release ${spoofRelease.shellArg()}"
-    }
-
-    if (spoofVersion.isNotBlank()) {
-        cmd += " --spoof-version ${spoofVersion.shellArg()}"
-    }
-
-    val lkmFile = writeLkmFile(lkm)
-    if (lkmFile != null) {
-        cmd += " -m ${lkmFile.absolutePath.shellArg()}"
-    } else if (lkm is LkmSelection.KmiString) {
-        cmd += " --kmi ${lkm.value.shellArg()}"
-    }
-    if (autoKmi != null) cmd += " --kmi ${autoKmi.shellArg()}"
-    cmd += " --partition ${partition.shellArg()}"
-    // ksud defaults to cwd, which is read-only in the su session; use Downloads.
-    val downloadsDir =
-        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-    cmd += " -o ${downloadsDir.absolutePath.shellArg()}"
-
-    val stdoutCallback: CallbackList<String?> = object : CallbackList<String?>() {
-        override fun onAddElement(s: String?) {
-            onStdout(s ?: "")
-        }
-    }
-    val stderrCallback: CallbackList<String?> = object : CallbackList<String?>() {
-        override fun onAddElement(s: String?) {
-            onStderr(s ?: "")
-        }
-    }
-
-    val result = withNewRootShell {
-        newJob().add(cmd).to(stdoutCallback, stderrCallback).exec()
-    }
-    lkmFile?.delete()
-    bootFile.delete()
-    return FlashResult(result, false)
 }
 
 suspend fun probeRemoteBootPartitions(url: String): ProbeResult = withContext(Dispatchers.IO) {
     Log.d(TAG, "probe start: $url")
     val channel = DataSourceChannel(newDownloadClient(), url)
-    Log.d(TAG, "probe connected, size=${channel.size()}")
-    val magic = readMagic(channel)
-    Log.d(TAG, "probe magic: $magic")
-    // Only list the partitions here; the KMI is extracted later when the
-    // payload is downloaded for patching.
-    val result = if (magic == "CrAU") {
-        ExtractImage.probePayload(channel, withKmi = false)
-    } else {
-        ExtractImage.probe(channel, withKmi = false)
+    try {
+        Log.d(TAG, "probe connected, size=${channel.size()}")
+        val magic = readMagic(channel)
+        Log.d(TAG, "probe magic: $magic")
+        // Only list the partitions here; the KMI is extracted later when the
+        // payload is downloaded for patching.
+        val result = if (magic == "CrAU") {
+            ExtractImage.probePayload(channel, withKmi = false)
+        } else {
+            ExtractImage.probe(channel, withKmi = false)
+        }
+        Log.d(TAG, "probe partitions: ${result.partitions}")
+        result
+    } finally {
+        channel.close()
     }
-    Log.d(TAG, "probe partitions: ${result.partitions}")
-    result
 }
 
 private fun newDownloadClient(): OkHttpClient {
@@ -514,9 +525,14 @@ private fun newDownloadClient(): OkHttpClient {
 
 private fun readMagic(channel: DataSourceChannel): String {
     val buffer = ByteBuffer.allocate(4)
-    channel.read(buffer)
+    var read = 0
+    while (read < 4) {
+        val count = channel.read(ByteBuffer.wrap(buffer.array(), read, 4 - read), read.toLong())
+        if (count <= 0) break
+        read += count
+    }
     channel.position(0)
-    return String(buffer.array(), StandardCharsets.ISO_8859_1)
+    return String(buffer.array(), 0, read, StandardCharsets.ISO_8859_1)
 }
 
 internal fun String.shellArg(): String {
@@ -534,7 +550,10 @@ fun reboot(reason: String = "") {
         // KEYCODE_POWER = 26, hide incorrect "Factory data reset" message
         ShellUtils.fastCmd(shell, "/system/bin/input keyevent 26")
     }
-    ShellUtils.fastCmd(shell, "/system/bin/svc power reboot $reason || /system/bin/reboot $reason")
+    // The target comes from a fixed menu, but it still reaches a shell: quote it so a future
+    // caller cannot turn it into a second command.
+    val target = if (reason.isBlank()) "" else " ${reason.shellArg()}"
+    ShellUtils.fastCmd(shell, "/system/bin/svc power reboot$target || /system/bin/reboot$target")
 }
 
 fun rootAvailable(): Boolean {
@@ -567,9 +586,13 @@ suspend fun getDefaultPartition(): String = withContext(Dispatchers.IO) {
         val cmd = "boot-info default-partition"
         ShellUtils.fastCmd(shell, "${getKsuDaemonPath()} $cmd").trim()
     } else {
-        if (!Os.uname().release.contains("android12-")) "init_boot" else "boot"
+        // init_boot exists from Android 13 on; Android 12 and older (including non-GKI kernels)
+        // keep the ramdisk in boot.
+        if (ANDROID_13_OR_NEWER.containsMatchIn(Os.uname().release)) "init_boot" else "boot"
     }
 }
+
+private val ANDROID_13_OR_NEWER = Regex("android1[3-9]-")
 
 suspend fun getSlotSuffix(ota: Boolean): String = withContext(Dispatchers.IO) {
     val shell = getRootShell()
@@ -651,7 +674,7 @@ fun deleteAppProfileTemplate(id: String): Boolean {
 fun forceStopApp(packageName: String, userId: Int? = null) {
     val shell = getRootShell()
     val userArg = userId?.let { " --user $it" } ?: ""
-    val result = shell.newJob().add("am force-stop$userArg $packageName").exec()
+    val result = shell.newJob().add("am force-stop$userArg ${packageName.shellArg()}").exec()
     Log.i(TAG, "force stop $packageName result: $result")
 }
 
@@ -660,7 +683,7 @@ fun launchApp(packageName: String, userId: Int? = null) {
     val userArg = userId?.let { " --user $it" } ?: ""
     val result =
         shell.newJob()
-            .add("cmd package resolve-activity --brief$userArg $packageName | tail -n 1 | xargs cmd activity start-activity$userArg -n")
+            .add("cmd package resolve-activity --brief$userArg ${packageName.shellArg()} | tail -n 1 | xargs cmd activity start-activity$userArg -n")
             .exec()
     Log.i(TAG, "launch $packageName result: $result")
 }

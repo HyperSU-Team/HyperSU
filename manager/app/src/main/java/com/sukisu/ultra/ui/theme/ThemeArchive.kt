@@ -40,6 +40,15 @@ internal object ThemeArchive {
 
     private const val IV_SIZE = 16
 
+    /**
+     * Caps for one extracted entry and the whole archive.
+     *
+     * A theme carries wallpapers, a font and short audio files; these limits are far above any
+     * real theme and keep a crafted archive from filling the partition or the heap.
+     */
+    private const val MAX_ENTRY_BYTES = 256L * 1024 * 1024
+    private const val MAX_TOTAL_BYTES = 512L * 1024 * 1024
+
     /** The entry holding the theme JSON, named to match FolkPatch. */
     const val CONFIG_ENTRY = "theme.json"
 
@@ -136,8 +145,10 @@ internal object ThemeArchive {
         val written = mutableListOf<String>()
         val stream = openZipStream(context, uri, format) ?: return emptyList()
 
+        var totalBytes = 0L
         stream.use { input ->
             ZipInputStream(input).use { zip ->
+                val buffer = ByteArray(64 * 1024)
                 while (true) {
                     val entry = zip.nextEntry ?: break
                     val name = entry.name
@@ -145,7 +156,20 @@ internal object ThemeArchive {
 
                     val target = File(targetDir, name)
                     target.parentFile?.mkdirs()
-                    FileOutputStream(target).use { zip.copyTo(it) }
+                    var entryBytes = 0L
+                    FileOutputStream(target).use { out ->
+                        while (true) {
+                            val read = zip.read(buffer)
+                            if (read < 0) break
+                            if (read == 0) throw java.io.IOException("stalled theme entry: $name")
+                            entryBytes += read
+                            totalBytes += read
+                            if (entryBytes > MAX_ENTRY_BYTES || totalBytes > MAX_TOTAL_BYTES) {
+                                throw java.io.IOException("theme archive is too large")
+                            }
+                            out.write(buffer, 0, read)
+                        }
+                    }
                     written += name
                 }
             }

@@ -84,6 +84,10 @@ class ModuleViewModel(
 
     private var fetchJob: Job? = null
 
+    // The previous job's `finally` runs after the new one has started; a generation stamp stops
+    // it from clearing the spinner and hasLoaded flag that belong to the new fetch.
+    private val fetchGeneration = java.util.concurrent.atomic.AtomicInteger(0)
+
     var isNeedRefresh = false
         private set
 
@@ -281,6 +285,7 @@ class ModuleViewModel(
 
     fun fetchModuleList(checkUpdate: Boolean = false, resort: Boolean = true) {
         fetchJob?.cancel()
+        val generation = fetchGeneration.incrementAndGet()
         _uiState.update { it.copy(isRefreshing = true) }
         fetchJob = viewModelScope.launch {
             try {
@@ -292,7 +297,9 @@ class ModuleViewModel(
 
                 Log.i(TAG, "load cost: ${SystemClock.elapsedRealtime() - start}, modules: ${_uiState.value.modules}")
             } finally {
-                _uiState.update { it.copy(isRefreshing = false, hasLoaded = true) }
+                if (fetchGeneration.get() == generation) {
+                    _uiState.update { it.copy(isRefreshing = false, hasLoaded = true) }
+                }
             }
         }
     }

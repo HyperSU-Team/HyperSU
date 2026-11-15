@@ -224,16 +224,19 @@ object MusicManager {
     }
 
     fun stop() {
-        try {
-            progressJob?.cancel()
-            mediaPlayer?.stop()
-            mediaPlayer?.release()
-            mediaPlayer = null
-            _isPlaying.value = false
-            _currentPosition.value = 0
-            _duration.value = 0
-        } catch (e: Exception) {
-            Log.e(TAG, "Error in stop()", e)
+        progressJob?.cancel()
+        progressJob = null
+        val player = mediaPlayer
+        // Detach before releasing: a callback that arrives while the old player is being torn
+        // down must not restart it, and a throw from stop() in the Preparing state used to leave
+        // the player allocated and unreleased.
+        mediaPlayer = null
+        _isPlaying.value = false
+        _currentPosition.value = 0
+        _duration.value = 0
+        if (player != null) {
+            runCatching { player.stop() }
+            runCatching { player.release() }
         }
     }
 

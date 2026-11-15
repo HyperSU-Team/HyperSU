@@ -113,6 +113,9 @@ class SettingsRepositoryImpl : SettingsRepository {
     private companion object {
         private const val INTENT_TOKEN_KEY = "intent_token"
         private val secureRandom = SecureRandom()
+        // Several repository instances are created on demand; the token must be one value for the
+        // process, not one per instance racing to write the same preference.
+        private val intentTokenLock = Any()
     }
 
     private val prefs by lazy {
@@ -267,7 +270,7 @@ class SettingsRepositoryImpl : SettingsRepository {
 
     override var suLogFilters: Set<String>?
         get() = prefs.getStringSet("sulog_filters", null)?.toSet()
-        set(filters) = prefs.edit { putStringSet("sulog_filters", filters) }
+        set(filters) = prefs.edit { putStringSet("sulog_filters", filters?.toSet()) }
 
     // Its own key, not FolkPatch's "show_fingerprint". That one means "hide the fingerprint" and
     // defaults to false, so a theme imported from there - or a user who had set it - would have
@@ -332,14 +335,14 @@ class SettingsRepositoryImpl : SettingsRepository {
         set(value) = prefs.edit { putBoolean(KEY_USE_SOFT_REBOOT, value) }
 
     override val intentToken: String
-        get() {
-        val existing = prefs.stringPref(INTENT_TOKEN_KEY, null)
-        if (!existing.isNullOrBlank()) return existing
-        val token = ByteArray(32).also(secureRandom::nextBytes)
-            .joinToString(separator = "") { "%02x".format(it) }
-        prefs.edit { putString(INTENT_TOKEN_KEY, token) }
-        return token
-    }
+        get() = synchronized(intentTokenLock) {
+            val existing = prefs.stringPref(INTENT_TOKEN_KEY, null)
+            if (!existing.isNullOrBlank()) return@synchronized existing
+            val token = ByteArray(32).also(secureRandom::nextBytes)
+                .joinToString(separator = "") { "%02x".format(it) }
+            prefs.edit { putString(INTENT_TOKEN_KEY, token) }
+            token
+        }
 
     override suspend fun getSuCompatStatus(): String = getFeatureStatus("su_compat")
 

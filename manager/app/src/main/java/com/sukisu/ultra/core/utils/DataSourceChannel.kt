@@ -94,16 +94,21 @@ class DataSourceChannel private constructor(
         return DataSourceChannel(client, url, fileChannel, startOffset + offset, sliceSize, sourceSize)
     }
 
-    /** Reads up to [length] bytes at [position] into a fresh array. */
+    /** Reads exactly [length] bytes at [position], or null when the range is not fully readable. */
     fun readFully(position: Long, length: Long): ByteArray? {
-        if (length > Int.MAX_VALUE) return null
+        if (length < 0 || length > Int.MAX_VALUE) return null
+        if (length == 0L) return ByteArray(0)
+        if (position < 0 || position > totalSize || length > totalSize - position) return null
         val buffer = ByteBuffer.allocate(length.toInt())
-        val bytesRead = read(buffer, position)
-        if (bytesRead <= 0) return null
-        buffer.flip()
-        val data = ByteArray(bytesRead)
-        buffer.get(data)
-        return data
+        var currentPosition = position
+        while (buffer.hasRemaining()) {
+            // A read may return short (an HTTP range body can end early); looping is what makes
+            // the result usable as a payload header or an operation's data.
+            val read = read(buffer, currentPosition)
+            if (read <= 0) return null
+            currentPosition += read
+        }
+        return buffer.array()
     }
 
     fun streamRead(position: Long, length: Long): InputStream {

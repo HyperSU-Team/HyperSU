@@ -208,12 +208,12 @@ object Shortcut {
                     val suFile = SuFile(path)
                     suFile.shell = shell
                     SuFileInputStream.open(suFile).use { input ->
-                        BitmapFactory.decodeStream(input)
+                        decodeBoundedIcon(input)
                     }
                 } else null
             } else {
                 context.contentResolver.openInputStream(uri)?.use { input ->
-                    BitmapFactory.decodeStream(input)
+                    decodeBoundedIcon(input)
                 }
             }
             if (rawBitmap != null) {
@@ -258,6 +258,44 @@ object Shortcut {
         val bitmap = loadShortcutBitmap(context, iconUri) ?: return null
         return IconCompat.createWithBitmap(bitmap)
     }
+
+    /**
+     * Decodes an icon with a bounded read and a sampled full decode.
+     *
+     * The uri comes from a module's metadata, so it can point at any file the root shell can read.
+     * Reading it whole and decoding at its declared size let one oversized image exhaust the heap.
+     */
+    private fun decodeBoundedIcon(input: java.io.InputStream): Bitmap? {
+        val out = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(16 * 1024)
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) break
+            if (read == 0) throw java.io.IOException("stalled icon read")
+            if (out.size().toLong() + read > MAX_ICON_BYTES) return null
+            out.write(buffer, 0, read)
+        }
+        val bytes = out.toByteArray()
+        if (bytes.isEmpty()) return null
+
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+        var sampleSize = 1
+        while (bounds.outWidth / sampleSize > MAX_ICON_SIDE ||
+            bounds.outHeight / sampleSize > MAX_ICON_SIDE
+        ) {
+            sampleSize *= 2
+        }
+        val options = BitmapFactory.Options().apply {
+            inSampleSize = sampleSize
+            inPreferredConfig = Bitmap.Config.ARGB_8888
+        }
+        return BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
+    }
+
+    private const val MAX_ICON_BYTES = 16L * 1024 * 1024
+    private const val MAX_ICON_SIDE = 1024
 
     private fun hasPinnedShortcut(context: Context, id: String): Boolean {
         return try {
