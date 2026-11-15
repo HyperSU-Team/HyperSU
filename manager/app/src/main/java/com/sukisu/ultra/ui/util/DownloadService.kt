@@ -127,6 +127,9 @@ class DownloadService : Service() {
                 val call = client.newCall(Request.Builder().url(url).build())
                 activeCalls[id] = call
                 ensureActive()
+                // The name comes from a remote document (an asset title, a link). MediaStore
+                // rejects separators and control characters, so sanitise before inserting.
+                val safeName = sanitizeFileName(fileName)
                 val uri = call.execute()
                     .use { resp ->
                         if (!resp.isSuccessful) throw IOException("HTTP ${resp.code}")
@@ -135,7 +138,7 @@ class DownloadService : Service() {
 
                         ensureActive()
                         val values = ContentValues().apply {
-                            put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                            put(MediaStore.Downloads.DISPLAY_NAME, safeName)
                             put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
                             put(MediaStore.Downloads.IS_PENDING, 1)
                         }

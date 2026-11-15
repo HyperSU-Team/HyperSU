@@ -313,6 +313,9 @@ class Payload(private val channel: DataSourceChannel) {
 
         val blockSize = manifest.blockSize
         if (blockSize <= 0) throw IOException("Invalid payload: block size $blockSize")
+        if (operation.dstExtentsCount == 0) {
+            throw IOException("Invalid payload: operation has no destination extent")
+        }
         val dstExtent = operation.getDstExtents(0)
         val outOffset = try {
             Math.multiplyExact(dstExtent.startBlock, blockSize)

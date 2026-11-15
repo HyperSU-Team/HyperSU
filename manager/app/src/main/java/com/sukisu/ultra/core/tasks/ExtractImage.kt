@@ -146,7 +146,11 @@ class ExtractImage(
         onConsole("- Found boot image entry: ${entry.name} (${entry.size} bytes)")
         onConsole("- Downloading")
 
-        zipFile.getRawInputStream(entry)
+        // The size comes from the archive's central directory, so it is attacker-controlled.
+        if (entry.size <= 0 || entry.size > MAX_IMAGE_SIZE) {
+            throw IOException("Invalid boot image size: ${entry.size}")
+        }
+
         when (entry.method) {
             ZipMethod.STORED.code -> {
                 FileChannel.open(
@@ -157,8 +161,14 @@ class ExtractImage(
                     StandardOpenOption.TRUNCATE_EXISTING
                 ).use { fileChannel ->
                     val mapped = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0, entry.size)
-                    val sourceChannel = channel.slice(entry.dataOffset, entry.size)
-                    sourceChannel.read(mapped)
+                    channel.slice(entry.dataOffset, entry.size).use { sourceChannel ->
+                        // A single read may return short (a remote range read often does); the
+                        // image has to be filled completely or it boots as garbage.
+                        while (mapped.hasRemaining()) {
+                            val read = sourceChannel.read(mapped)
+                            if (read <= 0) throw IOException("Truncated boot image entry")
+                        }
+                    }
                 }
             }
 
@@ -169,7 +179,18 @@ class ExtractImage(
                     16 * 1024
                 ).use { input ->
                     FileOutputStream(outFile).use { out ->
-                        input.copyTo(out)
+                        val buffer = ByteArray(64 * 1024)
+                        var written = 0L
+                        while (true) {
+                            val read = input.read(buffer)
+                            if (read < 0) break
+                            written += read
+                            // A deflated entry can claim one size and expand to another.
+                            if (written > MAX_IMAGE_SIZE) {
+                                throw IOException("Boot image entry expands past the size limit")
+                            }
+                            out.write(buffer, 0, read)
+                        }
                     }
                 }
             }
@@ -179,6 +200,10 @@ class ExtractImage(
     }
 
     companion object {
+        // A boot/init_boot/vendor_boot image is tens of megabytes; this cap keeps a hostile
+        // central directory from asking for a mapping or an extraction that cannot fit.
+        private const val MAX_IMAGE_SIZE = 512L * 1024 * 1024
+
         private val BOOT_IMAGE_NAMES = mapOf(
             "boot" to "boot.img",
             "init_boot" to "init_boot.img",
