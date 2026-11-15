@@ -319,7 +319,7 @@ class DownloadService : Service() {
         )
         builder.addAction(
             android.R.drawable.ic_menu_close_clear_cancel,
-            getString(R.string.download_cancel),
+            getString(R.string.delete),
             dismissPendingIntent
         )
 

@@ -98,12 +98,14 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.44 - the kernel flash log stops printing the unpacker's own output, and the update check is manual again.
+            HyperSU v4.2.45 - downloads cannot hang the screen any more.
 
-            - The flash page showed `Archive: ...` and `inflating: ...` in the middle of its log: that was busybox unzip reporting every entry while the manager extracted `update-binary`. The extraction runs with `-q -o` now, and the helper that runs it has a `log` switch, so its output is drained but not shown.
-            - The manager update check is a button again. The automatic check ran on every launch, which on a filtered network kept failing and prompting; the switch and the startup checker are removed and the settings row checks when tapped, as before.
+            - A download whose service was killed (backgrounded and reaped, or a crash) never reported a final state, and the caller waited for a status that would never arrive: the dialog stayed on 'downloading' forever. The wait now has a fifteen minute deadline; when it passes, the download is forgotten and the caller gets an error it can show.
+            - Forgetting it also clears the 'same url is already downloading' entry, so tapping again starts a fresh attempt instead of joining a dead one.
+            - The manager update check no longer walks the remaining mirrors after the screen that started it is gone; a cancelled coroutine propagates instead of being swallowed by runCatching.
+            - The completion notification's second action is labelled Delete instead of Cancel: it deletes the downloaded file, it never cancelled anything.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.43...v4.2.44
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.44...v4.2.45
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

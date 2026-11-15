@@ -115,7 +115,12 @@ fun SettingPagerFolk(
                                     "HyperSU-${available.versionName}.apk",
                                     onDownloaded = { uri -> installApk(context, uri) },
                                 )
-                            }.onFailure { lastError = it }.isSuccess
+                            }.onFailure { error ->
+                                // runCatching catches cancellation too; the manual check must not
+                                // keep trying mirrors after the screen is gone.
+                                if (error is kotlinx.coroutines.CancellationException) throw error
+                                lastError = error
+                            }.isSuccess
                         }
                         if (!installed) {
                             Log.w("SettingsFolk", "manager update download failed", lastError)

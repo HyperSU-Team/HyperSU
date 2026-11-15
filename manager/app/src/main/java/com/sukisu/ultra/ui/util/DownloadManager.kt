@@ -110,4 +110,15 @@ object DownloadManager {
         }
         completionCallbacks.remove(id)
     }
+
+    /**
+     * Forgets a download whose service never reported back.
+     *
+     * The entry is dropped instead of marked failed so a later request for the same url is not
+     * rejected as "already downloading" by the reuse check.
+     */
+    internal fun abandon(id: Int) {
+        _downloads.update { it - id }
+        completionCallbacks.remove(id)
+    }
 }
