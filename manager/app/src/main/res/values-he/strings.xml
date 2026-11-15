@@ -947,5 +947,5 @@
     <string name="music_pause">השהה מוזיקה</string>
     <string name="module_download_failed">ההורדה נכשלה</string>
     <string name="settings_manager_auto_update">בדיקת עדכונים אוטומטית</string>
-    <string name="settings_manager_auto_update_summary">לבדוק גרסה חדשה של המנהל בעת ההפעלה ולהתריע כשהיא זמינה</string>
+    <string name="settings_manager_auto_update_summary">בדוק אם קיימת גרסה חדשה של המנהל בכל פעם שהאפליקציה נפתחת, והצג הנחיה כשהיא זמינה</string>
 </resources>

@@ -950,5 +950,5 @@
     <string name="music_pause">Pausar la música</string>
     <string name="module_download_failed">Error de descarga</string>
     <string name="settings_manager_auto_update">Comprobación automática de actualizaciones</string>
-    <string name="settings_manager_auto_update_summary">Buscar una nueva versión del manager al iniciar y avisar cuando esté disponible</string>
+    <string name="settings_manager_auto_update_summary">Comprueba si hay una nueva versión del administrador cada vez que se abre la app y avisa cuando haya una disponible</string>
 </resources>

@@ -8,9 +8,9 @@ import androidx.compose.runtime.setValue
 /**
  * The manager's own update check.
  *
- * It used to be a row the user had to tap. It is automatic now and on by default, so the setting is
- * only about turning it off, and it remembers when the last automatic check ran: opening the app ten
- * times in a row must not mean ten requests to GitHub.
+ * It used to be a row the user had to tap. It is automatic now and on by default, and it runs every
+ * time the app comes to the foreground. The timestamp is only a debounce: without it every activity
+ * recreation (a rotation, a theme change) would fire another request.
  */
 object ManagerUpdateSettings {
 
@@ -18,8 +18,8 @@ object ManagerUpdateSettings {
     private const val KEY_ENABLED = "manager_auto_update"
     private const val KEY_LAST_CHECK = "manager_auto_update_last_check"
 
-    /** How long an automatic check stays good for. */
-    private const val CHECK_INTERVAL_MS = 12L * 60L * 60L * 1000L
+    /** Short debounce, so "opened the app" means a check but a rotation does not. */
+    private const val CHECK_INTERVAL_MS = 60L * 1000L
 
     /** Observed by the settings row, so the switch follows the stored value. */
     var isEnabled by mutableStateOf(true)

@@ -947,5 +947,5 @@
     <string name="music_pause">တေးဂီတ ခေတ္တရပ်</string>
     <string name="module_download_failed">ဒေါင်းလုဒ် မအောင်မြင်ပါ</string>
     <string name="settings_manager_auto_update">အလိုအလျောက် အပ်ဒိတ် စစ်ဆေးမှု</string>
-    <string name="settings_manager_auto_update_summary">စတင်ချိန်တွင် မန်နေဂျာ၏ ဗားရှင်းအသစ်ကို စစ်ဆေးပြီး ရရှိနိုင်ပါက အသိပေးပါ</string>
+    <string name="settings_manager_auto_update_summary">အက်ပ်ဖွင့်တိုင်း မန်နေဂျာ၏ ဗားရှင်းအသစ်ကို စစ်ဆေးပြီး ရရှိနိုင်ပါက အသိပေးချက် ပြပါ</string>
 </resources>

@@ -947,5 +947,5 @@
     <string name="music_pause">సంగీతం ఆపివేయి</string>
     <string name="module_download_failed">డౌన్‌లోడ్ విఫలమైంది</string>
     <string name="settings_manager_auto_update">స్వయంచాలక నవీకరణ తనిఖీ</string>
-    <string name="settings_manager_auto_update_summary">ప్రారంభంలో మేనేజర్ కొత్త బిల్డ్ కోసం చూసి, అందుబాటులో ఉంటే తెలియజేయి</string>
+    <string name="settings_manager_auto_update_summary">యాప్ తెరిచిన ప్రతిసారీ మేనేజర్ కొత్త బిల్డ్ కోసం తనిఖీ చేసి, అందుబాటులో ఉన్నప్పుడు ప్రాంప్ట్ చూపించండి</string>
 </resources>

@@ -1008,5 +1008,5 @@
 
     <string name="module_download_failed">Download failed</string>
     <string name="settings_manager_auto_update">Automatic update check</string>
-    <string name="settings_manager_auto_update_summary">Check for a new manager build at startup and prompt when one is available</string>
+    <string name="settings_manager_auto_update_summary">Check for a new manager build every time the app opens and prompt when one is available</string>
 </resources>

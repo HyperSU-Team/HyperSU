@@ -949,5 +949,5 @@
     <string name="music_pause">संगीत रोकें</string>
     <string name="module_download_failed">डाउनलोड विफल</string>
     <string name="settings_manager_auto_update">स्वचालित अपडेट जाँच</string>
-    <string name="settings_manager_auto_update_summary">शुरू होने पर मैनेजर का नया संस्करण जाँचें और उपलब्ध होने पर सूचित करें</string>
+    <string name="settings_manager_auto_update_summary">हर बार ऐप खुलने पर मैनेजर का नया बिल्ड जांचें और उपलब्ध होने पर प्रॉम्प्ट दिखाएं</string>
 </resources>

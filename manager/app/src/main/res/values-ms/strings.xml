@@ -949,5 +949,5 @@
     <string name="music_pause">Jeda muzik</string>
     <string name="module_download_failed">Muat turun gagal</string>
     <string name="settings_manager_auto_update">Semakan kemas kini automatik</string>
-    <string name="settings_manager_auto_update_summary">Semak binaan pengurus baharu semasa mula dan beritahu apabila tersedia</string>
+    <string name="settings_manager_auto_update_summary">Semak versi baharu pengurus setiap kali aplikasi dibuka dan tunjukkan gesaan apabila tersedia</string>
 </resources>

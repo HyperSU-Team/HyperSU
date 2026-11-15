@@ -997,5 +997,5 @@
     <string name="release_no_releases">暂无发布版本</string>
     <string name="module_download_failed">下载失败</string>
     <string name="settings_manager_auto_update">自动检查更新</string>
-    <string name="settings_manager_auto_update_summary">启动时检查是否有新的管理器版本，有更新时提示</string>
+    <string name="settings_manager_auto_update_summary">每次打开应用时检查是否有新的管理器版本，有更新时提示</string>
 </resources>

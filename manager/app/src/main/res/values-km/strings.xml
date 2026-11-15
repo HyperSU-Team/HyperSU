@@ -947,5 +947,5 @@
     <string name="music_pause">ផ្អាកតន្ត្រី</string>
     <string name="module_download_failed">ការទាញយកបានបរាជ័យ</string>
     <string name="settings_manager_auto_update">ការពិនិត្យធ្វើបច្ចុប្បន្នភាពស្វ័យប្រវត្តិ</string>
-    <string name="settings_manager_auto_update_summary">ពិនិត្យកំណែថ្មីរបស់កម្មវិធីគ្រប់គ្រងពេលចាប់ផ្ដើម ហើយជូនដំណឹងពេលមាន</string>
+    <string name="settings_manager_auto_update_summary">ពិនិត្យរកកំណែថ្មីរបស់អ្នកគ្រប់គ្រងរាល់ពេលបើកកម្មវិធី ហើយបង្ហាញការរំលឹកនៅពេលមាន</string>
 </resources>

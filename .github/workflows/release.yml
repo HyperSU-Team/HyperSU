@@ -98,13 +98,11 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.40 - the install path keeps hardening: boot image extraction, payload extents and download names.
+            HyperSU v4.2.41 - the automatic update check runs on every launch again.
 
-            - Boot image extraction: the STORED path did a single read into the mapped file, and a remote range read often returns short - a truncated image that boots as garbage. It fills the mapping completely now and rejects a short read. A deflated entry is bounded instead of copied without limit, and both paths reject an entry size that is zero, negative or past 512 MiB.
-            - Payload: an operation with no destination extent threw IndexOutOfBounds instead of an IOException.
-            - Downloads: the file name goes through the existing sanitiser before it is inserted into MediaStore, which rejects separators and control characters - a title from the release page could fail the whole download.
+            The check was throttled to one request every twelve hours, so opening the app the next day was the only way to see it - and often not even then. It now runs every time the app comes to the foreground, with a one minute debounce so an activity recreation (a rotation, a theme switch) does not fire a second request. Turning the switch off still disables it entirely, and turning it back on checks right away instead of waiting for the next launch.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.39...v4.2.40
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.40...v4.2.41
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
