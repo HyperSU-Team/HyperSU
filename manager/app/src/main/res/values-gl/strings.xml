@@ -946,6 +946,4 @@
     <string name="music_play">Reproducir música</string>
     <string name="music_pause">Pausar a música</string>
     <string name="module_download_failed">Erro na descarga</string>
-    <string name="settings_manager_auto_update">Comprobación automática de actualizacións</string>
-    <string name="settings_manager_auto_update_summary">Comproba se hai unha nova versión do xestor cada vez que se abre a app e avisa cando haxa unha dispoñible</string>
 </resources>

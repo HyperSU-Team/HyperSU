@@ -948,6 +948,4 @@
     <string name="music_play">মিউজিক চালান</string>
     <string name="music_pause">মিউজিক থামান</string>
     <string name="module_download_failed">ডাউনলোড ব্যর্থ হয়েছে</string>
-    <string name="settings_manager_auto_update">স্বয়ংক্রিয় আপডেট পরীক্ষা</string>
-    <string name="settings_manager_auto_update_summary">অ্যাপ খোলার প্রতিবার ম্যানেজারের নতুন সংস্করণ যাচাই করুন এবং উপলব্ধ থাকলে প্রম্পট দেখান</string>
 </resources>

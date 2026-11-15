@@ -948,6 +948,4 @@
     <string name="music_play">음악 재생</string>
     <string name="music_pause">음악 일시정지</string>
     <string name="module_download_failed">다운로드 실패</string>
-    <string name="settings_manager_auto_update">자동 업데이트 확인</string>
-    <string name="settings_manager_auto_update_summary">앱을 열 때마다 관리자의 새 빌드를 확인하고 사용 가능하면 알림을 표시합니다</string>
 </resources>

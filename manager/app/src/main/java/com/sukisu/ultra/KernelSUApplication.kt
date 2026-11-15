@@ -103,10 +103,6 @@ class KernelSUApplication : Application(), ViewModelStoreOwner {
         loaded = true
 
         runCatching {
-            com.sukisu.ultra.ui.util.ManagerUpdateSettings.load(this)
-        }.onFailure { android.util.Log.e(TAG, "update settings load failed", it) }
-
-        runCatching {
             // Wallpaper settings must be in memory before the first frame decides whether the
             // page background is transparent, so read them once here rather than in composition.
             com.sukisu.ultra.ui.theme.BackgroundConfig.load(this)

@@ -950,6 +950,4 @@
     <string name="music_play">เล่นเพลง</string>
     <string name="music_pause">หยุดเพลงชั่วคราว</string>
     <string name="module_download_failed">ดาวน์โหลดไม่สำเร็จ</string>
-    <string name="settings_manager_auto_update">ตรวจหาการอัปเดตอัตโนมัติ</string>
-    <string name="settings_manager_auto_update_summary">ตรวจหาการอัปเดตใหม่ของตัวจัดการทุกครั้งที่เปิดแอป และแจ้งเตือนเมื่อมีให้ใช้งาน</string>
 </resources>

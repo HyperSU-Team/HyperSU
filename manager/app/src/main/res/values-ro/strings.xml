@@ -950,6 +950,4 @@
     <string name="music_play">Redă muzica</string>
     <string name="music_pause">Pauză muzică</string>
     <string name="module_download_failed">Descărcarea a eșuat</string>
-    <string name="settings_manager_auto_update">Verificare automată a actualizărilor</string>
-    <string name="settings_manager_auto_update_summary">Verifică dacă există o versiune nouă a managerului la fiecare deschidere a aplicației și afișează un mesaj când este disponibilă</string>
 </resources>

@@ -948,6 +948,4 @@
     <string name="music_play">I-play ang music</string>
     <string name="music_pause">I-pause ang music</string>
     <string name="module_download_failed">Nabigo ang pag-download</string>
-    <string name="settings_manager_auto_update">Awtomatikong pagsusuri ng update</string>
-    <string name="settings_manager_auto_update_summary">Suriin kung may bagong build ng manager sa tuwing bubukas ang app at magpakita ng prompt kapag mayroon</string>
 </resources>

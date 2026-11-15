@@ -948,6 +948,4 @@
     <string name="music_play">音楽を再生</string>
     <string name="music_pause">音楽を一時停止</string>
     <string name="module_download_failed">ダウンロードに失敗しました</string>
-    <string name="settings_manager_auto_update">自動アップデート確認</string>
-    <string name="settings_manager_auto_update_summary">アプリを開くたびにマネージャーの新しいビルドを確認し、利用可能な場合はプロンプトを表示します</string>
 </resources>

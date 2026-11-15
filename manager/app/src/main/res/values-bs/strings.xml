@@ -948,6 +948,4 @@
     <string name="music_play">Pusti muziku</string>
     <string name="music_pause">Pauziraj muziku</string>
     <string name="module_download_failed">Preuzimanje nije uspjelo</string>
-    <string name="settings_manager_auto_update">Automatska provjera ažuriranja</string>
-    <string name="settings_manager_auto_update_summary">Provjeri ima li nove verzije menadžera svaki put kada se aplikacija otvori i prikaži obavještenje kada je dostupna</string>
 </resources>

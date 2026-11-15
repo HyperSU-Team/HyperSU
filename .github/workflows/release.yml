@@ -98,15 +98,12 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.43 - the SuSFS screens stop freezing the window.
+            HyperSU v4.2.44 - the kernel flash log stops printing the unpacker's own output, and the update check is manual again.
 
-            Loading the SuSFS configuration means fifteen sequential ksud calls, and the read was wrapped in runBlocking at the call site: on the main dispatcher that froze the UI for the whole read. The install screen also read the stored spoof values inline in rememberSaveable, so the first frame waited for two more process starts.
+            - The flash page showed `Archive: ...` and `inflating: ...` in the middle of its log: that was busybox unzip reporting every entry while the manager extracted `update-binary`. The extraction runs with `-q -o` now, and the helper that runs it has a `log` switch, so its output is drained but not shown.
+            - The manager update check is a button again. The automatic check ran on every launch, which on a filtered network kept failing and prompting; the switch and the startup checker are removed and the settings row checks when tapped, as before.
 
-            - SuSFSRepository/SuSFSManager gained suspend read variants; the SuSFS view model, the repository implementation and the auto-start check use them.
-            - The install screen loads the stored spoof values in produceState, off the main thread, and merges them with the boot image values as they arrive (the boot image still wins when it carries a value).
-            - The blocking wrappers remain for the few synchronous call sites, so nothing else changes.
-
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.42...v4.2.43
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.43...v4.2.44
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

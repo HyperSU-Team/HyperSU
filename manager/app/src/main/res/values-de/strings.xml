@@ -950,6 +950,4 @@
     <string name="music_play">Musik abspielen</string>
     <string name="music_pause">Musik pausieren</string>
     <string name="module_download_failed">Download fehlgeschlagen</string>
-    <string name="settings_manager_auto_update">Automatische Update-Prüfung</string>
-    <string name="settings_manager_auto_update_summary">Prüft bei jedem Öffnen der App auf eine neue Manager-Version und zeigt einen Hinweis, wenn eine verfügbar ist</string>
 </resources>

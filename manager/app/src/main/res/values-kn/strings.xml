@@ -946,6 +946,4 @@
     <string name="music_play">ಸಂಗೀತ ಪ್ಲೇ ಮಾಡಿ</string>
     <string name="music_pause">ಸಂಗೀತ ವಿರಾಮಗೊಳಿಸಿ</string>
     <string name="module_download_failed">ಡೌನ್‌ಲೋಡ್ ವಿಫಲವಾಗಿದೆ</string>
-    <string name="settings_manager_auto_update">ಸ್ವಯಂಚಾಲಿತ ನವೀಕರಣ ಪರಿಶೀಲನೆ</string>
-    <string name="settings_manager_auto_update_summary">ಆ್ಯಪ್ ತೆರೆದ ಪ್ರತಿ ಬಾರಿಯೂ ಮ್ಯಾನೇಜರ್ನ ಹೊಸ ಬಿಲ್ಡ್ ಪರಿಶೀಲಿಸಿ ಮತ್ತು ಲಭ್ಯವಿದ್ದಾಗ ಪ್ರಾಂಪ್ಟ್ ತೋರಿಸಿ</string>
 </resources>

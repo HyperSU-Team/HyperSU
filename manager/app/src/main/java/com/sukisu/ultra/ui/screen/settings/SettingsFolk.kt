@@ -63,7 +63,6 @@ import com.sukisu.ultra.ui.component.uninstalldialog.UninstallDialog
 import com.sukisu.ultra.ui.util.LocaleHelper
 import com.sukisu.ultra.ui.util.ManagerUpdate
 import com.sukisu.ultra.ui.util.ManagerUpdateChecker
-import com.sukisu.ultra.ui.util.ManagerUpdateSettings
 import com.sukisu.ultra.ui.util.download
 import com.sukisu.ultra.ui.util.installApk
 import kotlinx.coroutines.launch
@@ -192,18 +191,43 @@ fun SettingPagerFolk(
                 }
             }
 
-            // The manager's own update check: automatic now, and on by default. The row is the
-            // switch for it; there is no manual button any more, the check runs at startup.
+            // The manager's own update check. Offered on its own section rather than beside the
+            // module one, because it is a different question: this build, not a module. It is
+            // manual again: the automatic check was flaky on a filtered network and kept prompting
+            // on every launch.
             item {
                 FolkSettingsSectionGroup(title = stringResource(R.string.settings_manager_update)) {
                     item {
-                        FolkSwitchPreference(
-                            title = stringResource(R.string.settings_manager_auto_update),
-                            summary = stringResource(R.string.settings_manager_auto_update_summary),
+                        FolkValuePreference(
+                            title = stringResource(R.string.settings_manager_check_update),
+                            summary = stringResource(R.string.settings_manager_check_update_summary),
                             icon = Icons.Rounded.SystemUpdate,
-                            checked = ManagerUpdateSettings.isEnabled,
-                            onCheckedChange = { enabled ->
-                                ManagerUpdateSettings.setEnabled(context, enabled)
+                            onClick = {
+                                if (checking) return@FolkValuePreference
+                                checking = true
+                                scope.launch {
+                                    val result = ManagerUpdateChecker.check()
+                                    checking = false
+                                    result
+                                        .onSuccess { found ->
+                                            if (found != null) {
+                                                update = found
+                                            } else {
+                                                snackBarHost.showSnackbar(
+                                                    context.getString(
+                                                        R.string.settings_manager_update_none,
+                                                    ),
+                                                )
+                                            }
+                                        }
+                                        .onFailure {
+                                            snackBarHost.showSnackbar(
+                                                context.getString(
+                                                    R.string.settings_manager_update_failed,
+                                                ),
+                                            )
+                                        }
+                                }
                             },
                         )
                     }

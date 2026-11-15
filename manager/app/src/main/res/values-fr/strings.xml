@@ -948,6 +948,4 @@
     <string name="music_play">Lire la musique</string>
     <string name="music_pause">Mettre la musique en pause</string>
     <string name="module_download_failed">Échec du téléchargement</string>
-    <string name="settings_manager_auto_update">Recherche automatique des mises à jour</string>
-    <string name="settings_manager_auto_update_summary">Vérifie s\'il existe une nouvelle version du gestionnaire à chaque ouverture de l\'app et affiche une invite lorsqu\'une est disponible</string>
 </resources>

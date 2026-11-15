@@ -208,7 +208,13 @@ class HorizonKernelWorker(
     }
 
     private fun getBinary() {
-        val result = runCommand(false, "unzip ${filePath.shellArg()} 'META-INF/com/google/android/update-binary' -d ${workDir.shellArg()}")
+        // Quiet: busybox unzip prints "Archive:" and one "inflating:" line per entry, and that raw
+        // output used to land in the flash log the user is watching.
+        val result = runCommand(
+            false,
+            "unzip -q -o ${filePath.shellArg()} 'META-INF/com/google/android/update-binary' -d ${workDir.shellArg()}",
+            log = false,
+        )
         if (result != 0) throw IOException("Failed to extract update-binary")
         if (!File(binaryPath).exists()) {
             throw IOException("Failed to extract update-binary")
@@ -309,13 +315,18 @@ class HorizonKernelWorker(
         }
     }
 
-    private fun runCommand(su: Boolean, cmd: String): Int {
+    private fun runCommand(su: Boolean, cmd: String, log: Boolean = true): Int {
         val shell = if (su) "su" else "sh"
         val process = ProcessBuilder(shell, "-c", cmd).redirectErrorStream(true).start()
 
         return try {
             process.inputStream.bufferedReader().use { reader ->
-                reader.lineSequence().forEach(state::addLog)
+                if (log) {
+                    reader.lineSequence().forEach(state::addLog)
+                } else {
+                    // Drain the pipe all the same: a full buffer would block the child.
+                    reader.lineSequence().forEach { /* discarded on purpose */ }
+                }
             }
             process.waitFor()
         } finally {

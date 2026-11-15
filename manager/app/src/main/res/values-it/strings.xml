@@ -950,6 +950,4 @@
     <string name="music_play">Riproduci musica</string>
     <string name="music_pause">Metti in pausa la musica</string>
     <string name="module_download_failed">Download non riuscito</string>
-    <string name="settings_manager_auto_update">Controllo automatico aggiornamenti</string>
-    <string name="settings_manager_auto_update_summary">Controlla se è disponibile una nuova versione del gestore ogni volta che apri l\'app e mostra un avviso quando c\'è</string>
 </resources>

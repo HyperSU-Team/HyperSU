@@ -946,6 +946,4 @@
     <string name="music_play">Putar musik</string>
     <string name="music_pause">Jeda musik</string>
     <string name="module_download_failed">Unduhan gagal</string>
-    <string name="settings_manager_auto_update">Pemeriksaan pembaruan otomatis</string>
-    <string name="settings_manager_auto_update_summary">Periksa versi baru manajer setiap kali aplikasi dibuka dan tampilkan peringatan saat tersedia</string>
 </resources>

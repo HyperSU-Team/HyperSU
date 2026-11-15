@@ -948,6 +948,4 @@
     <string name="music_play">Leisti muziką</string>
     <string name="music_pause">Pristabdyti muziką</string>
     <string name="module_download_failed">Atsisiuntimas nepavyko</string>
-    <string name="settings_manager_auto_update">Automatinis atnaujinimų tikrinimas</string>
-    <string name="settings_manager_auto_update_summary">Kiekvieną kartą atidarius programėlę tikrinti, ar yra nauja tvarkyklės versija, ir parodyti pranešimą, kai ji pasiekiama</string>
 </resources>

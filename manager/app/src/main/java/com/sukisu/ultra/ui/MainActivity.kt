@@ -113,7 +113,6 @@ import com.sukisu.ultra.ui.theme.LocalModuleDescriptionMaxLines
 import com.sukisu.ultra.ui.theme.LocalSimpleListBottomBar
 import com.sukisu.ultra.ui.theme.VibrationConfig
 import com.sukisu.ultra.ui.theme.HyperSUTheme
-import com.sukisu.ultra.ui.component.ManagerUpdateAutoCheck
 import com.sukisu.ultra.ui.component.folk.FolkLanguageSwitch
 import com.sukisu.ultra.ui.component.folk.FolkLoadingIndicator
 import com.sukisu.ultra.ui.util.LanguageSwitchState
@@ -242,7 +241,6 @@ class MainActivity : ComponentActivity() {
                 LocalIsFloatingNavMode provides uiState.enableFloatingBottomBar,
             ) {
                 HyperSUTheme(appSettings = appSettings) {
-                    ManagerUpdateAutoCheck()
                     // Fires once per activity instance, when the first frame is composed: the
                     // startup sound is played after the splash condition can be released rather
                     // than during onCreate, and never again on a configuration recreation.

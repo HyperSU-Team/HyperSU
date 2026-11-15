@@ -948,6 +948,4 @@
     <string name="music_play">Пусни музика</string>
     <string name="music_pause">Пауза на музиката</string>
     <string name="module_download_failed">Изтеглянето е неуспешно</string>
-    <string name="settings_manager_auto_update">Автоматична проверка за актуализации</string>
-    <string name="settings_manager_auto_update_summary">Проверява за нова версия на мениджъра при всяко отваряне на приложението и показва подкана, когато има налична</string>
 </resources>

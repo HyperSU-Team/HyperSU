@@ -948,6 +948,4 @@
     <string name="music_play">Esita muusikat</string>
     <string name="music_pause">Peata muusika</string>
     <string name="module_download_failed">Allalaadimine ebaõnnestus</string>
-    <string name="settings_manager_auto_update">Automaatne uuenduste kontroll</string>
-    <string name="settings_manager_auto_update_summary">Kontrollib iga rakenduse avamise korral halduri uut versiooni ja näitab teavitust, kui see on saadaval</string>
 </resources>

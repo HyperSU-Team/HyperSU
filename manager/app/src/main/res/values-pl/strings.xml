@@ -950,6 +950,4 @@
     <string name="music_play">Odtwarzaj muzykę</string>
     <string name="music_pause">Wstrzymaj muzykę</string>
     <string name="module_download_failed">Pobieranie nie powiodło się</string>
-    <string name="settings_manager_auto_update">Automatyczne sprawdzanie aktualizacji</string>
-    <string name="settings_manager_auto_update_summary">Sprawdzaj dostępność nowej wersji menedżera przy każdym otwarciu aplikacji i pokazuj monit, gdy będzie dostępna</string>
 </resources>

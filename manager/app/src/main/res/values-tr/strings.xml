@@ -950,6 +950,4 @@
     <string name="music_play">Müziği çal</string>
     <string name="music_pause">Müziği duraklat</string>
     <string name="module_download_failed">İndirme başarısız</string>
-    <string name="settings_manager_auto_update">Otomatik güncelleme denetimi</string>
-    <string name="settings_manager_auto_update_summary">Başlangıçta yeni bir yönetici sürümü olup olmadığını denetle ve varsa bildir</string>
 </resources>

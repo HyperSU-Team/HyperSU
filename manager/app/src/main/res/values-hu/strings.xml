@@ -948,6 +948,4 @@
     <string name="music_play">Zene lejátszása</string>
     <string name="music_pause">Zene szüneteltetése</string>
     <string name="module_download_failed">A letöltés nem sikerült</string>
-    <string name="settings_manager_auto_update">Automatikus frissítésellenőrzés</string>
-    <string name="settings_manager_auto_update_summary">Minden alkalommal, amikor megnyílik az alkalmazás, ellenőrzi a kezelő új verzióját, és értesítést jelenít meg, ha elérhető</string>
 </resources>
