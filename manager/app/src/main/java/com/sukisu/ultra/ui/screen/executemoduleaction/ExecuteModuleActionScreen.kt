@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.dropUnlessResumed
 import kotlinx.coroutines.launch
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
@@ -18,6 +19,7 @@ import com.sukisu.ultra.ui.navigation3.LocalNavigator
 fun ExecuteModuleActionScreen(moduleId: String, fromShortcut: Boolean = false) {
     val navigator = LocalNavigator.current
     val activity = LocalActivity.current
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var text by rememberSaveable { mutableStateOf("") }
     val logContent = remember { StringBuilder() }

@@ -78,7 +78,7 @@ internal suspend fun prepareWebView(
             // The app store owns the shared instance; constructing a ViewModel by hand left its
             // search collector running for the life of the process.
             withContext(Dispatchers.Main) {
-                androidx.lifecycle.ViewModelProvider(activity.application)[SuperUserViewModel::class.java]
+                androidx.lifecycle.ViewModelProvider(com.sukisu.ultra.ksuApp)[SuperUserViewModel::class.java]
                     .loadAppList()
                     .join()
             }
