@@ -98,19 +98,13 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.47 - extraction and download paths fail safely instead of corrupting or crashing.
+            HyperSU v4.2.48 - two kernel-side fixes from BakaSU.
 
-            A full pass over the manager's archive, payload and download code, plus the screens that write files.
+            - `preinit.h`: the manual-hook stub for `ksu_preinit_handle_execve_manual` was declared `void` but returned `false`, which does not compile when `CONFIG_KSU_MANUAL_HOOK` is enabled.
+            - `preinit_runner.mk`: the UAPI headers were installed with `make -C $(srctree) O=$(objtree)`, which fails against a read-only source tree and on kernels that reject `O=` for `headers_install`. The kernel Makefile is invoked directly from the build directory instead, so the headers land in `$(objtree)/usr` as expected.
+            - `inline_hook_check.mk`: the SUSFS inline build now verifies that `ksu_handle_vfs_fstat` is present in the target kernel's `fs/stat.c`, the same way the other hooks are checked. A kernel that lacks the guard fails early with the hook's name instead of silently dropping the fstat spoofing.
 
-            - OTA payload extraction writes an operation's bytes across every destination extent, not just the first, and fails on a short read instead of filling the missing bytes with zeros. The output hash is now computed while streaming rather than by mapping the whole partition.
-            - KMI probing is bounded: the header's kernel size is attacker-controlled, and the walk no longer allocates whatever it claims (32 MiB cap, on file, stream and HTTP probes).
-            - Theme, module and manager downloads are size-capped, so a bad mirror cannot fill the device; theme archive entries and `theme.json` have their own caps, and the downloaded APK is deleted when its digest does not match.
-            - Flash and module-action logs go through MediaStore now. Writing `/sdcard/Download` directly failed on Android 10+ and crashed the save coroutine; failures are reported in the UI.
-            - Markdown links are restricted to http/https, so release notes cannot launch arbitrary intents. Module banner and shortcut icons are decoded at a sampled size, so one oversized image cannot exhaust the heap.
-            - The Magica boot receiver is no longer exported. SuSFS command arguments are quoted once, the music player is always released, and the WebUI detaches and cancels its file chooser cleanly.
-            - Template JSON parsing uses a fixed locale, payload/image ZIP nesting is bounded, and a failed flash clears its in-flight flag.
-
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.46...v4.2.47
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.47...v4.2.48
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
