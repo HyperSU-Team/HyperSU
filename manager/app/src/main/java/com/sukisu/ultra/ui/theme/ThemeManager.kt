@@ -957,6 +957,7 @@ object ThemeManager {
             val tempDir = File(context.cacheDir, "theme_import")
             try {
                 val json = openConfig(context, uri) ?: return@withContext null
+                validateMediaReferences(json)
 
                 // Images first: the preference URIs written below must already resolve.
                 val localUris = unzipImages(context, uri, tempDir, json)
@@ -967,7 +968,11 @@ object ThemeManager {
                 val hasNativeSections = json.has("hsSettings")
 
                 json.optJSONObject("hsSettings")?.let { section ->
-                    writeKeys(context.getSharedPreferences(SETTINGS_PREFS, Context.MODE_PRIVATE), section)
+                    val appearance = JSONObject()
+                    appearanceKeys.forEach { key ->
+                        if (section.has(key)) appearance.put(key, section.get(key))
+                    }
+                    writeKeys(context.getSharedPreferences(SETTINGS_PREFS, Context.MODE_PRIVATE), appearance)
                 }
                 val language = if (!hasNativeSections) {
                     applyFolkPatchAppearance(context, json)
@@ -1096,6 +1101,37 @@ object ThemeManager {
         runCatching { ThemeLibrary.add(context, staged, source.nameWithoutExtension) }
             .onFailure { Log.w(TAG, "could not keep ${source.name} in the library", it) }
         staged.delete()
+    }
+
+    private fun validateMediaReferences(json: JSONObject) {
+        val references = buildList {
+            add(json.optString("musicFilename"))
+            add(json.optString("soundEffectFilename"))
+            json.optJSONObject("hsFont")?.let { section ->
+                val name = section.optString("custom_font_path")
+                if (name.isNotBlank() && name != "null") {
+                    require(FONT_EXTENSIONS.any { name.endsWith(it, ignoreCase = true) }) {
+                        "Invalid theme font file"
+                    }
+                }
+                add(name)
+            }
+            json.optJSONObject("hsMusic")?.let { add(it.optString("music_filename")) }
+            json.optJSONObject("hsSound")?.let {
+                add(it.optString("sound_effect_filename"))
+                add(it.optString("startup_sound_filename"))
+            }
+            json.optJSONObject("navIcons")?.let { icons ->
+                icons.keys().forEach { key ->
+                    val name = icons.optString(key)
+                    require(name.endsWith(".png", ignoreCase = true)) { "Invalid theme navigation icon" }
+                    add(name)
+                }
+            }
+        }
+        references.filter { it.isNotBlank() && it != "null" }.forEach { name ->
+            require(ThemeArchive.isSafeFileName(name)) { "Invalid theme media file: $name" }
+        }
     }
 
     /** A finished import: the language it asked for, or null when it named none. */
@@ -1362,7 +1398,7 @@ object ThemeManager {
             val target = File(context.filesDir, mediaDestination)
             // `music/…` 与 `sound_effects/…` 在全新安装上可能还不存在。
             target.parentFile?.mkdirs()
-            runCatching { source.copyTo(target, overwrite = true) }
+            source.copyTo(target, overwrite = true)
 
             if (isWallpaper) {
                 localUris[base] = Uri.fromFile(target).toString()

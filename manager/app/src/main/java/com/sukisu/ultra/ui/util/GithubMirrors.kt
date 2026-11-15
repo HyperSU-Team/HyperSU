@@ -2,6 +2,7 @@ package com.sukisu.ultra.ui.util
 
 import android.net.Uri
 import android.util.Log
+import kotlinx.coroutines.CancellationException
 
 /**
  * The urls a GitHub asset is tried from, best first.
@@ -56,6 +57,7 @@ object GithubMirrors {
             }
             if (outcome.isSuccess) return result
             lastError = outcome.exceptionOrNull()
+            if (lastError is CancellationException) throw lastError
             Log.w(TAG, "attempt failed: $candidate", lastError)
         }
         Log.w(TAG, "download failed: $url", lastError)

@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.Channel
@@ -329,15 +330,24 @@ class ModuleViewModel(
             }
         }
 
-        val fetchedEntries = coroutineScope {
-            modulesToFetch.map { (id, module, signature) ->
-                async {
-                    val info = withTimeoutOrNull(5_000L.milliseconds) {
-                        withContext(Dispatchers.IO) { checkUpdate(module) }
-                    } ?: ModuleUpdateInfo.Empty
-                    id to ModuleUpdateCache(signature, info)
+        val fetchedEntries = try {
+            coroutineScope {
+                modulesToFetch.map { (id, module, signature) ->
+                    async {
+                        val info = withTimeoutOrNull(5_000L.milliseconds) {
+                            withContext(Dispatchers.IO) { checkUpdate(module) }
+                        } ?: ModuleUpdateInfo.Empty
+                        id to ModuleUpdateCache(signature, info)
+                    }
+                }.awaitAll()
+            }
+        } catch (error: Throwable) {
+            withContext(NonCancellable) {
+                updateInfoMutex.withLock {
+                    modulesToFetch.forEach { (id, _, _) -> updateInfoInFlight.remove(id) }
                 }
-            }.awaitAll()
+            }
+            throw error
         }
 
         val changedEntries = mutableListOf<Pair<String, ModuleUpdateInfo>>()
@@ -546,7 +556,9 @@ class ModuleViewModel(
             runCatching {
                 ksuApp.okhttpClient.newCall(
                     Request.Builder().url(changelogUrl).build()
-                ).execute().body.string()
+                ).execute().use { response ->
+                    if (response.isSuccessful) response.body.string() else null
+                }
             }.getOrNull()?.takeIf { it.isNotBlank() }?.let { return@withContext it }
         }
 

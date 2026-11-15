@@ -78,9 +78,9 @@ object SoundEffectManager {
 
             mediaPlayer?.apply {
                 if (sourceType == SoundEffectConfig.SOURCE_TYPE_PRESET) {
-                    val afd = context.assets.openFd("$assetDir/$presetName.wav")
-                    setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
-                    afd.close()
+                    context.assets.openFd("$assetDir/$presetName.wav").use { afd ->
+                        setDataSource(afd.fileDescriptor, afd.startOffset, afd.length)
+                    }
                 } else {
                     if (filename == null) return
                     val file = File(SoundEffectConfig.getSoundEffectDir(context), filename)
@@ -98,6 +98,7 @@ object SoundEffectManager {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to play sound effect", e)
+            mediaPlayer?.release()
             mediaPlayer = null
         }
     }

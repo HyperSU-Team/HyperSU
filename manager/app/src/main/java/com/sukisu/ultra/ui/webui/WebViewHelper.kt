@@ -26,6 +26,7 @@ import com.sukisu.ultra.ui.util.createRootShell
 import com.sukisu.ultra.ui.util.withMainUserUid
 import com.sukisu.ultra.ui.viewmodel.SuperUserViewModel
 import java.io.File
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 fun Activity.setTaskDescription(label: String) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
@@ -37,6 +38,12 @@ fun Activity.setTaskDescription(label: String) {
             .build()
         setTaskDescription(taskDescription)
     }
+}
+
+internal fun isModuleWebUiUrl(url: String): Boolean {
+    val parsed = url.toHttpUrlOrNull() ?: return false
+    return parsed.isHttps && parsed.host == "mui.kernelsu.org" && parsed.port == 443 &&
+        parsed.username.isEmpty() && parsed.password.isEmpty()
 }
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -86,6 +93,7 @@ internal suspend fun prepareWebView(
                 javaScriptEnabled = true
                 domStorageEnabled = true
                 allowFileAccess = false
+                allowContentAccess = false
             }
 
             val webRoot = File("${webUIState.modDir}/webroot")
@@ -104,8 +112,21 @@ internal suspend fun prepareWebView(
 
             // WebViewClient
             webView.webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                    if (isModuleWebUiUrl(request.url.toString())) return false
+                    if (request.isForMainFrame && request.hasGesture() &&
+                        request.url.scheme in listOf("http", "https")
+                    ) {
+                        runCatching { activity.startActivity(Intent(Intent.ACTION_VIEW, request.url)) }
+                    }
+                    return true
+                }
+
                 override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
                     val url = request.url
+                    if (request.isForMainFrame && !isModuleWebUiUrl(url.toString())) {
+                        return WebResourceResponse(null, null, null)
+                    }
                     if (url.scheme.equals("ksu", ignoreCase = true) && url.host.equals("icon", ignoreCase = true)) {
                         val packageName = url.path?.substring(1)
                         if (!packageName.isNullOrEmpty()) {

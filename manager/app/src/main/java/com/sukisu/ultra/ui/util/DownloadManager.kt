@@ -40,6 +40,7 @@ object DownloadManager {
         }
     }
 
+    @Synchronized
     fun enqueue(
         context: Context,
         url: String,
@@ -71,7 +72,12 @@ object DownloadManager {
             putExtra(DownloadService.EXTRA_URL, url)
             putExtra(DownloadService.EXTRA_FILE_NAME, fileName)
         }
-        ContextCompat.startForegroundService(context, intent)
+        try {
+            ContextCompat.startForegroundService(context, intent)
+        } catch (e: Exception) {
+            markFailed(id, e.message ?: "Unable to start download service")
+            throw e
+        }
 
         return id
     }
@@ -83,6 +89,7 @@ object DownloadManager {
         }
     }
 
+    @Synchronized
     internal fun markCompleted(id: Int, uri: Uri) {
         _downloads.update { map ->
             val state = map[id] ?: return@update map
@@ -95,6 +102,7 @@ object DownloadManager {
         }
     }
 
+    @Synchronized
     internal fun markFailed(id: Int, error: String) {
         _downloads.update { map ->
             val state = map[id] ?: return@update map

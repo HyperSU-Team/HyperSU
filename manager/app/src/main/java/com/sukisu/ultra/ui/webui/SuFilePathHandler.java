@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -212,7 +213,11 @@ public final class SuFilePathHandler implements WebViewAssetLoader.PathHandler {
             if (file != null) {
                 InputStream is = openFile(file, mShell);
                 String mimeType = guessMimeType(path);
-                return new WebResourceResponse(mimeType, null, is);
+                WebResourceResponse response = new WebResourceResponse(mimeType, null, is);
+                // The native bridge is exposed to every frame, not only the top-level page.
+                response.setResponseHeaders(Collections.singletonMap(
+                        "Content-Security-Policy", "frame-src 'self'; object-src 'none'"));
+                return response;
             } else {
                 Log.e(TAG, String.format(
                         "The requested file: %s is outside the mounted directory: %s", path,

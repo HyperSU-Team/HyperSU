@@ -53,7 +53,7 @@ fun saveTemplate(template: TemplateInfo, isCreation: Boolean = false): Boolean {
 }
 
 fun isValidTemplateId(id: String): Boolean {
-    return Regex("""^([A-Za-z][A-Za-z\d_]*\.)*[A-Za-z][A-Za-z\d_]*$""").matches(id)
+    return id.length < 256 && Regex("""^([A-Za-z][A-Za-z\d_]*\.)*[A-Za-z][A-Za-z\d_]*$""").matches(id)
 }
 
 fun isTemplateExist(id: String): Boolean {

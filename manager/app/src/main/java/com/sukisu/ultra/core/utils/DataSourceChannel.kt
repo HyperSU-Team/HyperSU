@@ -3,6 +3,7 @@ package com.sukisu.ultra.core.utils
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.apache.commons.io.input.BoundedInputStream
+import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.io.InputStream
 import java.nio.ByteBuffer
@@ -18,6 +19,7 @@ class DataSourceChannel private constructor(
     private val fileChannel: FileChannel?,
     private val startOffset: Long,
     private val totalSize: Long,
+    private val sourceSize: Long = totalSize,
 ) : SeekableByteChannel {
 
     constructor(client: OkHttpClient, url: String) : this(client, url, null, 0, fetchTotalSize(client, url))
@@ -55,10 +57,9 @@ class DataSourceChannel private constructor(
     fun read(dst: ByteBuffer, position: Long): Int {
         if (!open) throw ClosedChannelException()
         if (position < 0) throw IllegalArgumentException("Position out of bounds: $position")
-        if (position >= totalSize) return -1
-
         val requestSize = dst.remaining()
         if (requestSize == 0) return 0
+        if (position >= totalSize) return -1
 
         if (requestSize > DIRECT_READ_THRESHOLD) {
             return handleLargeRead(dst, position)
@@ -85,11 +86,12 @@ class DataSourceChannel private constructor(
     }
 
     fun slice(offset: Long, sliceSize: Long): DataSourceChannel {
-        if (offset == 0L && sliceSize == totalSize) return this
-        if (offset < 0 || sliceSize <= 0 || offset + sliceSize > totalSize) {
+        if (!open) throw ClosedChannelException()
+        if (offset < 0 || sliceSize <= 0 || offset > totalSize || sliceSize > totalSize - offset) {
             throw IllegalArgumentException("Invalid slice parameters")
         }
-        return DataSourceChannel(client, url, fileChannel, startOffset + offset, sliceSize)
+        if (offset == 0L && sliceSize == totalSize) return this
+        return DataSourceChannel(client, url, fileChannel, startOffset + offset, sliceSize, sourceSize)
     }
 
     /** Reads up to [length] bytes at [position] into a fresh array. */
@@ -105,9 +107,12 @@ class DataSourceChannel private constructor(
     }
 
     fun streamRead(position: Long, length: Long): InputStream {
-        val endPosition = minOf(position + length, totalSize) + startOffset
+        if (!open) throw ClosedChannelException()
+        require(position >= 0 && length >= 0) { "Invalid read range" }
+        if (position >= totalSize || length == 0L) return ByteArrayInputStream(byteArrayOf())
+        val readLength = minOf(length, totalSize - position)
         val startPosition = startOffset + position
-        val readLength = endPosition - startPosition
+        val endPosition = startPosition + readLength
 
         if (fileChannel != null) {
             fileChannel.position(startPosition)
@@ -125,11 +130,26 @@ class DataSourceChannel private constructor(
             .build()
 
         val response = client!!.newCall(request).execute()
-        if (response.code != 206) {
+        try {
+            if (response.code != 206) {
+                throw IOException("Unexpected response code ${response.code}")
+            }
+            val range = CONTENT_RANGE.matchEntire(response.header("Content-Range").orEmpty().trim())
+            if (range == null || range.groupValues[1].toLongOrNull() != startPosition ||
+                range.groupValues[2].toLongOrNull() != endPosition - 1 ||
+                range.groupValues[3].toLongOrNull() != sourceSize
+            ) {
+                throw IOException("Unexpected Content-Range: ${response.header("Content-Range")}")
+            }
+            return BoundedInputStream.builder()
+                .setInputStream(response.body.byteStream())
+                .setMaxCount(readLength)
+                .setPropagateClose(true)
+                .get()
+        } catch (e: Exception) {
             response.close()
-            throw IOException("Unexpected response code ${response.code}")
+            throw e
         }
-        return response.body.byteStream()
     }
 
     private fun handleLargeRead(dst: ByteBuffer, position: Long): Int {
@@ -214,6 +234,7 @@ class DataSourceChannel private constructor(
         private const val SEQ_READ_THRESHOLD = 1024
         private const val DIRECT_READ_THRESHOLD = 512 * 1024
         private val SIZE_CONTENT_RANGE = Regex("bytes 0-0/(\\d+)", RegexOption.IGNORE_CASE)
+        private val CONTENT_RANGE = Regex("bytes (\\d+)-(\\d+)/(\\d+)", RegexOption.IGNORE_CASE)
 
         private fun fetchTotalSize(client: OkHttpClient, url: String): Long {
             val request = Request.Builder()

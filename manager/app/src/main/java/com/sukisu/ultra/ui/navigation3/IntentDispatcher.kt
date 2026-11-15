@@ -69,7 +69,7 @@ private fun resolveIntent(intent: Intent): PendingAction? {
 }
 
 private fun parseValidatedDeepLink(uri: Uri?): KsuDeepLink? {
-    if (uri?.scheme != SCHEME_KSU) return null
+    if (uri == null || uri.scheme != SCHEME_KSU || !uri.isHierarchical) return null
 
     val moduleId = uri.getQueryParameter(PARAM_ID)?.takeIf { it.isNotBlank() } ?: return null
     val token = uri.getQueryParameter(PARAM_TOKEN)?.takeIf { it.isNotBlank() } ?: return null
@@ -90,7 +90,7 @@ fun IntentDispatcher(intentChannel: ReceiveChannel<Intent>) {
     val isManager = Natives.isManager
 
     CollectIntentChannel(intentChannel) { intent ->
-        if (!isManager) return@CollectIntentChannel
+        if (!isManager || NavLock.isBusy) return@CollectIntentChannel
         val action = resolveIntent(intent) ?: return@CollectIntentChannel
 
         when (action) {
@@ -144,6 +144,7 @@ fun HandleZipFileIntent(intentChannel: ReceiveChannel<Intent>) {
     // one-shot read of activity.intent silently dropped it - the app opened with no prompt.
     LaunchedEffect(intentChannel) {
         for (intent in intentChannel) {
+            if (NavLock.isBusy) continue
             val zipUris = withContext(Dispatchers.IO) { extractZipUris(context, intent) }
             if (zipUris.isEmpty()) continue
 
@@ -163,7 +164,9 @@ fun HandleZipFileIntent(intentChannel: ReceiveChannel<Intent>) {
                 continue
             }
 
-            handleConfirmed(finalModuleUris, kernelUris, context, navigator, strings)
+            if (!NavLock.isBusy) {
+                handleConfirmed(finalModuleUris, kernelUris, context, navigator, strings)
+            }
         }
     }
 }
@@ -335,16 +338,19 @@ private suspend fun handleConfirmed(
 }
 
 private fun copyUriToCache(context: Context, uri: Uri): Uri? {
+    var destFile: File? = null
     return try {
-        val fileName = uri.getFileName(context) ?: "module_${System.currentTimeMillis()}.zip"
-        val destFile = File(context.cacheDir, fileName)
-
-        context.contentResolver.openInputStream(uri)?.use { input ->
-            destFile.outputStream().use { output -> input.copyTo(output) }
+        val input = context.contentResolver.openInputStream(uri)
+            ?: throw java.io.IOException("Unable to open archive")
+        val file = input.use {
+            File.createTempFile("module_", ".zip", context.cacheDir).also { target ->
+                destFile = target
+                target.outputStream().use { output -> it.copyTo(output) }
+            }
         }
-
-        Uri.fromFile(destFile)
+        Uri.fromFile(file)
     } catch (e: Exception) {
+        destFile?.delete()
         e.printStackTrace()
         null
     }

@@ -15,7 +15,7 @@ private const val SULOG_DIR = "/data/adb/ksu/log"
 private const val SULOG_LINE_LIMIT = 1000
 private const val SULOG_FILE_PREFIX = "sulog-"
 private const val SULOG_FILE_SUFFIX = ".log"
-private val SULOG_FILE_NAME_REGEX = Regex("""$SULOG_FILE_PREFIX(\d{4}-\d{2}-\d{2})(?:-(\d+))?$SULOG_FILE_SUFFIX""")
+private val SULOG_FILE_NAME_REGEX = Regex("""${Regex.escape(SULOG_FILE_PREFIX)}(\d{4}-\d{2}-\d{2})(?:-(\d+))?${Regex.escape(SULOG_FILE_SUFFIX)}""")
 private const val NS_PER_MILLISECOND = 1_000_000L
 private val SULOG_TIMESTAMP_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.US)
 
@@ -74,8 +74,12 @@ internal fun parseSulogFileNames(fileNames: List<String>): List<String> {
     return fileNames
         .mapNotNull { name ->
             val match = SULOG_FILE_NAME_REGEX.matchEntire(name) ?: return@mapNotNull null
-            val date = LocalDate.parse(match.groupValues[1])
-            val rotation = match.groupValues[2].takeIf { it.isNotEmpty() }?.toInt() ?: 0
+            val date = runCatching { LocalDate.parse(match.groupValues[1]) }.getOrNull()
+                ?: return@mapNotNull null
+            val rotationText = match.groupValues[2]
+            val rotation = if (rotationText.isEmpty()) 0 else {
+                rotationText.toIntOrNull() ?: return@mapNotNull null
+            }
             Triple(name, date, rotation)
         }
         .sortedWith(compareByDescending<Triple<String, LocalDate, Int>> { it.second }.thenByDescending { it.third })

@@ -159,8 +159,11 @@ internal object ThemeArchive {
      * A leading slash, a backslash, a `..` segment or a doubled slash would all place a file
      * outside the intended directory on some platforms.
      */
+    fun isSafeFileName(name: String): Boolean =
+        isSafeEntryName(name) && '/' !in name && name != "."
+
     fun isSafeEntryName(name: String): Boolean {
-        if (name.isBlank()) return false
+        if (name.isBlank() || '\u0000' in name) return false
         if (name.startsWith("/") || name.startsWith("\\")) return false
         if (name.contains("\\")) return false
         if (name.contains("//")) return false

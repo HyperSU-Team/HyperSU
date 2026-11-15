@@ -67,6 +67,7 @@ class Navigator(
      * run gets a screen of its own.
      */
     fun pushFlash(key: NavKey) {
+        if (NavLock.isBusy) return
         popUntil { it !is Route.KernelFlash && it !is Route.Flash }
         push(key)
     }

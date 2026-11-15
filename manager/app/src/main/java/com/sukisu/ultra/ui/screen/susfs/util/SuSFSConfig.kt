@@ -37,14 +37,14 @@ object SuSFSConfig {
 
     private suspend fun configGet(key: String): String = withContext(Dispatchers.IO) {
         val shell = Shell.getShell()
-        runCmd(shell, "${getKsuDaemonPath()} susfs config get $key").trim()
+        runCmd(shell, "${getKsuDaemonPath()} susfs config get ${shellQuote(key)}").trim()
     }
 
     suspend fun get(key: String): String = configGet(key)
 
     suspend fun configSet(key: String, value: String): Boolean = withContext(Dispatchers.IO) {
         val shell = Shell.getShell()
-        shell.newJob().add("${getKsuDaemonPath()} susfs config set $key ${shellQuote(value)}").exec().isSuccess
+        shell.newJob().add("${getKsuDaemonPath()} susfs config set ${shellQuote(key)} ${shellQuote(value)}").exec().isSuccess
     }
 
     suspend fun set(key: String, value: String): Boolean = configSet(key, value)
@@ -52,7 +52,7 @@ object SuSFSConfig {
     suspend fun configSetMulti(key: String, values: Set<String>, separator: String): Boolean = withContext(Dispatchers.IO) {
         val shell = Shell.getShell()
         val raw = values.joinToString(separator)
-        shell.newJob().add("${getKsuDaemonPath()} susfs config set $key ${shellQuote(raw)}").exec().isSuccess
+        shell.newJob().add("${getKsuDaemonPath()} susfs config set ${shellQuote(key)} ${shellQuote(raw)}").exec().isSuccess
     }
 
     suspend fun setMulti(key: String, values: Set<String>, separator: String): Boolean =
@@ -60,7 +60,7 @@ object SuSFSConfig {
 
     private suspend fun configGetMulti(key: String, separator: String = ";"): Set<String> = withContext(Dispatchers.IO) {
         val shell = Shell.getShell()
-        val raw = runCmd(shell, "${getKsuDaemonPath()} susfs config get $key")
+        val raw = runCmd(shell, "${getKsuDaemonPath()} susfs config get ${shellQuote(key)}")
         if (raw.isBlank()) emptySet() else raw.split(separator).filter { it.isNotBlank() }.toSet()
     }
 

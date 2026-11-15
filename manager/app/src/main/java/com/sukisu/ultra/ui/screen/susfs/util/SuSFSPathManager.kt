@@ -116,7 +116,7 @@ object SuSFSPathManager {
 
     @SuppressLint("StringFormatInvalid")
     private suspend fun addSusPathInternal(context: Context, path: String, showToast: Boolean = true): Boolean {
-        val result = SuSFSCommands.executeSusfsCommandWithOutput("add-sus-path '$path'")
+        val result = SuSFSCommands.executeSusfsCommandWithOutput("add-sus-path ${SuSFSConfig.shellQuote(path)}")
         val isActuallySuccessful = result.isSuccess && !result.output.contains("not found, skip adding")
         if (isActuallySuccessful) {
             SuSFSRepository.saveSusPaths(SuSFSRepository.getSusPaths() + path)
@@ -168,7 +168,7 @@ object SuSFSPathManager {
             if (showToast) showToast(context, context.getString(R.string.susfs_invalid_loop_path))
             return false
         }
-        val result = SuSFSCommands.executeSusfsCommandWithOutput("add-sus-path-loop '$path'")
+        val result = SuSFSCommands.executeSusfsCommandWithOutput("add-sus-path-loop ${SuSFSConfig.shellQuote(path)}")
         val isActuallySuccessful = result.isSuccess && !result.output.contains("not found, skip adding")
         if (isActuallySuccessful) {
             SuSFSRepository.saveSusLoopPaths(SuSFSRepository.getSusLoopPaths() + path)
@@ -215,7 +215,7 @@ object SuSFSPathManager {
     }
 
     private suspend fun addSusMapInternal(context: Context, map: String, showToast: Boolean = true): Boolean {
-        val result = SuSFSCommands.executeSusfsCommandWithOutput("add-sus-map '$map'")
+        val result = SuSFSCommands.executeSusfsCommandWithOutput("add-sus-map ${SuSFSConfig.shellQuote(map)}")
         val success = result.isSuccess
         if (success) {
             SuSFSRepository.saveSusMaps(SuSFSRepository.getSusMaps() + map)
@@ -262,7 +262,9 @@ object SuSFSPathManager {
         size: String, atime: String, atimeNsec: String, mtime: String, mtimeNsec: String,
         ctime: String, ctimeNsec: String, blocks: String, blksize: String
     ): Boolean {
-        val command = "add-sus-kstat-statically '$path' '$ino' '$dev' '$nlink' '$size' '$atime' '$atimeNsec' '$mtime' '$mtimeNsec' '$ctime' '$ctimeNsec' '$blocks' '$blksize'"
+        val arguments = listOf(path, ino, dev, nlink, size, atime, atimeNsec, mtime, mtimeNsec, ctime, ctimeNsec, blocks, blksize)
+            .joinToString(" ") { SuSFSConfig.shellQuote(it) }
+        val command = "add-sus-kstat-statically $arguments"
         val success = SuSFSCommands.executeSusfsCommand(context, command)
         if (success) {
             val entry = "$path|$ino|$dev|$nlink|$size|$atime|$atimeNsec|$mtime|$mtimeNsec|$ctime|$ctimeNsec|$blocks|$blksize"
@@ -302,7 +304,7 @@ object SuSFSPathManager {
     }
 
     private suspend fun addKstatInternal(context: Context, path: String): Boolean {
-        val success = SuSFSCommands.executeSusfsCommand(context, "add-sus-kstat '$path'")
+        val success = SuSFSCommands.executeSusfsCommand(context, "add-sus-kstat ${SuSFSConfig.shellQuote(path)}")
         if (success) {
             SuSFSRepository.saveAddKstatPaths(SuSFSRepository.getAddKstatPaths() + path)
             if (SuSFSRepository.isAutoStartEnabled()) SuSFSCommands.updateMagiskModule()
@@ -335,8 +337,8 @@ object SuSFSPathManager {
     }
 
     suspend fun updateKstat(context: Context, path: String): Boolean =
-        SuSFSCommands.executeSusfsCommand(context, "update-sus-kstat '$path'")
+        SuSFSCommands.executeSusfsCommand(context, "update-sus-kstat ${SuSFSConfig.shellQuote(path)}")
 
     suspend fun updateKstatFullClone(context: Context, path: String): Boolean =
-        SuSFSCommands.executeSusfsCommand(context, "update-sus-kstat-full-clone '$path'")
+        SuSFSCommands.executeSusfsCommand(context, "update-sus-kstat-full-clone ${SuSFSConfig.shellQuote(path)}")
 }

@@ -32,6 +32,7 @@ import com.sukisu.ultra.ksuApp
 import okhttp3.OkHttpClient
 import org.json.JSONArray
 import java.io.File
+import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
@@ -162,9 +163,9 @@ fun getSuperuserCount(): Int {
 
 fun toggleModule(id: String, enable: Boolean): Boolean {
     val cmd = if (enable) {
-        "module enable $id"
+        "module enable ${id.shellArg()}"
     } else {
-        "module disable $id"
+        "module disable ${id.shellArg()}"
     }
     val result = execKsud(cmd, true)
     Log.i(TAG, "$cmd result: $result")
@@ -172,14 +173,14 @@ fun toggleModule(id: String, enable: Boolean): Boolean {
 }
 
 fun undoUninstallModule(id: String): Boolean {
-    val cmd = "module undo-uninstall $id"
+    val cmd = "module undo-uninstall ${id.shellArg()}"
     val result = execKsud(cmd, true)
     Log.i(TAG, "undo uninstall module $id result: $result")
     return result
 }
 
 fun uninstallModule(id: String): Boolean {
-    val cmd = "module uninstall $id"
+    val cmd = "module uninstall ${id.shellArg()}"
     val result = execKsud(cmd, true)
     Log.i(TAG, "uninstall module $id result: $result")
     return result
@@ -213,19 +214,24 @@ fun flashModule(
     onStdout: (String) -> Unit,
     onStderr: (String) -> Unit
 ): FlashResult {
-    val resolver = ksuApp.contentResolver
-    with(resolver.openInputStream(uri)) {
-        val file = File(ksuApp.cacheDir, "module.zip")
-        file.outputStream().use { output ->
-            this?.copyTo(output)
+    var file: File? = null
+    return try {
+        val input = ksuApp.contentResolver.openInputStream(uri)
+            ?: throw IOException("Unable to open module archive")
+        val archive = input.use {
+            File.createTempFile("module-", ".zip", ksuApp.cacheDir).also { target ->
+                file = target
+                target.outputStream().use { output -> it.copyTo(output) }
+            }
         }
-        val cmd = "module install ${file.absolutePath.shellArg()}"
+        val cmd = "module install ${archive.absolutePath.shellArg()}"
         val result = flashWithIO("${getKsuDaemonPath()} $cmd", onStdout, onStderr)
         Log.i("KernelSU", "install module $uri result: $result")
-
-        file.delete()
-
-        return FlashResult(result)
+        FlashResult(result)
+    } catch (e: Exception) {
+        FlashResult(-1, e.message ?: "Module installation failed", false)
+    } finally {
+        file?.delete()
     }
 }
 
@@ -282,11 +288,18 @@ sealed class LkmSelection : Parcelable {
 
 private fun writeLkmFile(lkm: LkmSelection): File? {
     if (lkm !is LkmSelection.LkmUri) return null
-    val file = File(ksuApp.cacheDir, "kernelsu-tmp-lkm.ko")
-    ksuApp.contentResolver.openInputStream(lkm.uri)?.use { input ->
-        file.outputStream().use { output -> input.copyTo(output) }
+    val input = ksuApp.contentResolver.openInputStream(lkm.uri)
+        ?: throw IOException("Unable to open kernel module")
+    return input.use {
+        val file = File.createTempFile("kernelsu-lkm-", ".ko", ksuApp.cacheDir)
+        try {
+            file.outputStream().use { output -> it.copyTo(output) }
+            file
+        } catch (e: Exception) {
+            file.delete()
+            throw e
+        }
     }
-    return file
 }
 
 private fun bootPatchFlags(
@@ -312,70 +325,59 @@ fun installBoot(
     onStdout: (String) -> Unit,
     onStderr: (String) -> Unit,
 ): FlashResult {
-    val resolver = ksuApp.contentResolver
-
-    val bootFile = bootUri?.let { uri ->
-        with(resolver.openInputStream(uri)) {
-            val bootFile = File(ksuApp.cacheDir, "boot.img")
-            bootFile.outputStream().use { output ->
-                this?.copyTo(output)
+    var bootFile: File? = null
+    var lkmFile: File? = null
+    try {
+        bootFile = bootUri?.let { uri ->
+            val input = ksuApp.contentResolver.openInputStream(uri)
+                ?: throw IOException("Unable to open boot image")
+            input.use {
+                File.createTempFile("boot-", ".img", ksuApp.cacheDir).also { target ->
+                    bootFile = target
+                    target.outputStream().use { output -> it.copyTo(output) }
+                }
             }
-
-            bootFile
         }
+
+        var cmd = "boot-patch"
+        cmd += bootFile?.let { " -b ${it.absolutePath.shellArg()}" } ?: " -f"
+        cmd += bootPatchFlags(allowShell, enableAdb, forceBackup)
+
+        if (spoofRelease.isNotBlank()) {
+            cmd += " --spoof-release ${spoofRelease.shellArg()}"
+        }
+        if (spoofVersion.isNotBlank()) {
+            cmd += " --spoof-version ${spoofVersion.shellArg()}"
+        }
+        if (ota) {
+            cmd += " -u"
+        }
+
+        lkmFile = writeLkmFile(lkm)
+        if (lkmFile != null) {
+            cmd += " -m ${lkmFile.absolutePath.shellArg()}"
+        } else if (lkm is LkmSelection.KmiString) {
+            cmd += " --kmi ${lkm.value.shellArg()}"
+        }
+
+        if (bootFile != null) {
+            val downloadsDir =
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            cmd += " -o ${downloadsDir.absolutePath.shellArg()}"
+        }
+        partition?.let { part -> cmd += " --partition ${part.shellArg()}" }
+
+        val result = flashWithIO("${getKsuDaemonPath()} $cmd", onStdout, onStderr)
+        Log.i("KernelSU", "install boot result: ${result.isSuccess}")
+        val showReboot = bootUri == null && result.isSuccess
+        if (showReboot) install()
+        return FlashResult(result, showReboot)
+    } catch (e: Exception) {
+        return FlashResult(-1, e.message ?: "Boot installation failed", false)
+    } finally {
+        bootFile?.delete()
+        lkmFile?.delete()
     }
-
-    var cmd = "boot-patch"
-
-    cmd += if (bootFile == null) {
-        // no boot.img, use -f to flash
-        " -f"
-    } else {
-        " -b ${bootFile.absolutePath.shellArg()}"
-    }
-    cmd += bootPatchFlags(allowShell, enableAdb, forceBackup)
-
-    if (spoofRelease.isNotBlank()) {
-        cmd += " --spoof-release ${spoofRelease.shellArg()}"
-    }
-
-    if (spoofVersion.isNotBlank()) {
-        cmd += " --spoof-version ${spoofVersion.shellArg()}"
-    }
-
-    if (ota) {
-        cmd += " -u"
-    }
-
-    val lkmFile = writeLkmFile(lkm)
-    if (lkmFile != null) {
-        cmd += " -m ${lkmFile.absolutePath.shellArg()}"
-    } else if (lkm is LkmSelection.KmiString) {
-        cmd += " --kmi ${lkm.value.shellArg()}"
-    }
-
-    if (bootFile != null) {
-        val downloadsDir =
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        cmd += " -o ${downloadsDir.absolutePath.shellArg()}"
-    }
-
-    partition?.let { part ->
-        cmd += " --partition ${part.shellArg()}"
-    }
-
-    val result = flashWithIO("${getKsuDaemonPath()} $cmd", onStdout, onStderr)
-    Log.i("KernelSU", "install boot result: ${result.isSuccess}")
-
-    bootFile?.delete()
-    lkmFile?.delete()
-
-    // if boot uri is empty, it is direct install, when success, we should show reboot button
-    val showReboot = bootUri == null && result.isSuccess // we create a temporary val here, to avoid calc showReboot double
-    if (showReboot) { // because we decide do not update ksud when startActivity
-        install() // install ksud here
-    }
-    return FlashResult(result, showReboot)
 }
 
 fun downloadBoot(
@@ -477,7 +479,9 @@ fun downloadBoot(
         }
     }
 
-    val result = Shell.getShell().newJob().add(cmd).to(stdoutCallback, stderrCallback).exec()
+    val result = withNewRootShell {
+        newJob().add(cmd).to(stdoutCallback, stderrCallback).exec()
+    }
     lkmFile?.delete()
     bootFile.delete()
     return FlashResult(result, false)
@@ -515,7 +519,10 @@ private fun readMagic(channel: DataSourceChannel): String {
     return String(buffer.array(), StandardCharsets.ISO_8859_1)
 }
 
-private fun String.shellArg(): String = "'${replace("'", "'\\''")}'"
+internal fun String.shellArg(): String {
+    require('\u0000' !in this) { "Shell arguments cannot contain null bytes" }
+    return "'${replace("'", "'\\''")}'"
+}
 
 fun reboot(reason: String = "") {
     if (reason == "soft_reboot") {
@@ -602,7 +609,7 @@ fun isSepolicyValid(rules: String?): Boolean {
 fun getSepolicy(pkg: String): String {
     val shell = getRootShell()
     val result =
-        shell.newJob().add("${getKsuDaemonPath()} profile get-sepolicy $pkg").to(ArrayList(), null)
+        shell.newJob().add("${getKsuDaemonPath()} profile get-sepolicy ${pkg.shellArg()}").to(ArrayList(), null)
             .exec()
     Log.i(TAG, "code: ${result.code}, out: ${result.out}, err: ${result.err}")
     return result.out.joinToString("\n")
@@ -610,7 +617,7 @@ fun getSepolicy(pkg: String): String {
 
 fun setSepolicy(pkg: String, rules: String): Boolean {
     val shell = getRootShell()
-    val result = shell.newJob().add("${getKsuDaemonPath()} profile set-sepolicy $pkg '$rules'")
+    val result = shell.newJob().add("${getKsuDaemonPath()} profile set-sepolicy ${pkg.shellArg()} ${rules.shellArg()}")
         .to(ArrayList(), null).exec()
     Log.i(TAG, "set sepolicy result: ${result.code}")
     return result.isSuccess
@@ -624,21 +631,20 @@ fun listAppProfileTemplates(): List<String> {
 
 fun getAppProfileTemplate(id: String): String {
     val shell = getRootShell()
-    return shell.newJob().add("${getKsuDaemonPath()} profile get-template '${id}'")
+    return shell.newJob().add("${getKsuDaemonPath()} profile get-template ${id.shellArg()}")
         .to(ArrayList(), null).exec().out.joinToString("\n")
 }
 
 fun setAppProfileTemplate(id: String, template: String): Boolean {
     val shell = getRootShell()
-    val escapedTemplate = template.replace("'", "'\\''")
-    val cmd = """${getKsuDaemonPath()} profile set-template "$id" '$escapedTemplate'"""
+    val cmd = "${getKsuDaemonPath()} profile set-template ${id.shellArg()} ${template.shellArg()}"
     return shell.newJob().add(cmd)
         .to(ArrayList(), null).exec().isSuccess
 }
 
 fun deleteAppProfileTemplate(id: String): Boolean {
     val shell = getRootShell()
-    return shell.newJob().add("${getKsuDaemonPath()} profile delete-template '${id}'")
+    return shell.newJob().add("${getKsuDaemonPath()} profile delete-template ${id.shellArg()}")
         .to(ArrayList(), null).exec().isSuccess
 }
 
@@ -688,7 +694,7 @@ suspend fun streamFile(path: String): List<String> = withContext(Dispatchers.IO)
         }
     }
 
-    shell.newJob().add("cat $path || true").to(stdoutCallback, stderrCallback).exec()
+    shell.newJob().add("cat ${path.shellArg()} || true").to(stdoutCallback, stderrCallback).exec()
     outLines
 }
 
@@ -722,7 +728,7 @@ fun spoofKernelUname(release: String, version: String): Boolean {
 fun addUmountPath(path: String, flags: Int): Boolean {
     val shell = getRootShell()
     val flagsArg = if (flags >= 0) "--flags $flags" else ""
-    val cmd = "${getKsuDaemonPath()} umount add $path $flagsArg"
+    val cmd = "${getKsuDaemonPath()} umount add ${path.shellArg()} $flagsArg"
     val result = ShellUtils.fastCmdResult(shell, cmd)
     Log.i(TAG, "add umount path $path result: $result")
     return result
@@ -730,7 +736,7 @@ fun addUmountPath(path: String, flags: Int): Boolean {
 
 fun removeUmountPath(path: String): Boolean {
     val shell = getRootShell()
-    val cmd = "${getKsuDaemonPath()} umount remove $path"
+    val cmd = "${getKsuDaemonPath()} umount remove ${path.shellArg()}"
     val result = ShellUtils.fastCmdResult(shell, cmd)
     Log.i(TAG, "remove umount path $path result: $result")
     return result
@@ -835,6 +841,7 @@ suspend fun getBootConfig(): BootConfig = withContext(Dispatchers.IO) {
 
 private fun parseQuotedValue(value: String): String {
     val trimmed = value.trim()
+    if (trimmed.length < 2) return trimmed
     return if (trimmed.startsWith("\"") && trimmed.endsWith("\"")) {
         trimmed.substring(1, trimmed.length - 1)
     } else if (trimmed.startsWith("'") && trimmed.endsWith("'")) {

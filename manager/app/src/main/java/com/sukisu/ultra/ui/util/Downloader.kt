@@ -24,10 +24,9 @@ suspend fun download(
         context = ksuApp,
         url = url,
         fileName = fileName,
-        onCompleted = onDownloaded,
     )
 
-    DownloadManager.downloads
+    val terminalState = DownloadManager.downloads
         .onEach { map -> map[downloadId]?.let { onProgress(it.progress) } }
         .first { map ->
             val status = map[downloadId]?.status
@@ -38,10 +37,12 @@ suspend fun download(
     // A failed download used to return normally: the caller's runCatching never ran, so the user
     // saw a "download failed" notification and nothing in the app. Report it as an exception so
     // the caller can retry a mirror or explain what happened.
-    val failure = DownloadManager.downloads.value[downloadId]
-    if (failure?.status == DownloadManager.Status.FAILED) {
-        throw java.io.IOException(failure.error ?: "download failed")
+    val completed = terminalState.getValue(downloadId)
+    if (completed.status == DownloadManager.Status.FAILED) {
+        throw java.io.IOException(completed.error ?: "download failed")
     }
+    val uri = completed.resultUri ?: throw java.io.IOException("Missing download URI")
+    withContext(Dispatchers.Main) { onDownloaded(uri) }
 }
 
 internal suspend fun isDownloadAvailable(uri: Uri): Boolean = withContext(Dispatchers.IO) {

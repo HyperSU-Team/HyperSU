@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import com.sukisu.ultra.data.model.TemplateInfo
 import com.sukisu.ultra.ksuApp
+import com.sukisu.ultra.ui.screen.templateeditor.isValidTemplateId
 import com.sukisu.ultra.ui.util.getAppProfileTemplate
 import com.sukisu.ultra.ui.util.listAppProfileTemplates
 import com.sukisu.ultra.ui.util.setAppProfileTemplate
@@ -44,15 +45,17 @@ class TemplateRepositoryImpl : TemplateRepository {
                 }
             }
 
-            (0 until array.length()).forEach { i ->
-                runCatching {
-                    val template = array.getJSONObject(i)
-                    val id = template.getString("id")
-                    template.put("local", true)
-                    setAppProfileTemplate(id, template.toString())
-                }.onFailure { e ->
-                    Log.e(TAG, "ignore invalid template: $array", e)
+            val templates = (0 until array.length()).map { i ->
+                val template = array.getJSONObject(i)
+                val id = template.getString("id")
+                require(isValidTemplateId(id) && TemplateInfo.fromJSON(template) != null) {
+                    "Invalid template: $id"
                 }
+                template.put("local", true)
+                id to template.toString()
+            }
+            templates.forEach { (id, template) ->
+                check(setAppProfileTemplate(id, template)) { "Failed to save template: $id" }
             }
         }
     }
@@ -87,6 +90,7 @@ class TemplateRepositoryImpl : TemplateRepository {
                 Log.i(TAG, "fetchRemoteTemplates: $remoteTemplateIds")
                 (0 until remoteTemplateIds.length()).forEach { i ->
                     val id = remoteTemplateIds.getString(i)
+                    if (!isValidTemplateId(id)) return@forEach
                     Log.i(TAG, "fetch template: $id")
                     val templateJson = ksuApp.okhttpClient.newCall(
                         Request.Builder().url(TEMPLATE_URL.format(id)).build()

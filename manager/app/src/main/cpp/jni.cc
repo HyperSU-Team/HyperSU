@@ -163,17 +163,27 @@ static void fillArrayWithList(JNIEnv *env, jobject list, int *data, int count) {
     }
 }
 
+template<size_t N>
+static bool copyJavaString(JNIEnv *env, jstring value, char (&destination)[N]) {
+    if (value == nullptr || env->GetStringUTFLength(value) >= N) {
+        return false;
+    }
+    const char *utf = env->GetStringUTFChars(value, nullptr);
+    if (utf == nullptr) {
+        return false;
+    }
+    strcpy(destination, utf);
+    env->ReleaseStringUTFChars(value, utf);
+    return true;
+}
+
 extern "C"
 JNIEXPORT jobject JNICALL
 Java_com_sukisu_ultra_Natives_getAppProfile(JNIEnv *env, jobject, jstring pkg, jint uid) {
-    if (env->GetStringLength(pkg) > KSU_MAX_PACKAGE_NAME) {
+    p_key_t key = {};
+    if (!copyJavaString(env, pkg, key)) {
         return nullptr;
     }
-
-    p_key_t key = {};
-    auto cpkg = env->GetStringUTFChars(pkg, nullptr);
-    strcpy(key, cpkg);
-    env->ReleaseStringUTFChars(pkg, cpkg);
 
     app_profile profile = {};
     profile.version = KSU_APP_PROFILE_VER;
@@ -288,14 +298,10 @@ Java_com_sukisu_ultra_Natives_setAppProfile(JNIEnv *env, jobject clazz, jobject 
     if (!key) {
         return false;
     }
-    if (env->GetStringLength((jstring) key) > KSU_MAX_PACKAGE_NAME) {
+    p_key_t p_key = {};
+    if (!copyJavaString(env, (jstring) key, p_key)) {
         return false;
     }
-
-    auto cpkg = env->GetStringUTFChars((jstring) key, nullptr);
-    p_key_t p_key = {};
-    strcpy(p_key, cpkg);
-    env->ReleaseStringUTFChars((jstring) key, cpkg);
 
     auto currentUid = env->GetIntField(profile, currentUidField);
 
@@ -317,10 +323,8 @@ Java_com_sukisu_ultra_Natives_setAppProfile(JNIEnv *env, jobject clazz, jobject 
     if (allowSu) {
         p.rp_config.use_default = env->GetBooleanField(profile, rootUseDefaultField);
         auto templateName = env->GetObjectField(profile, rootTemplateField);
-        if (templateName) {
-            auto ctemplateName = env->GetStringUTFChars((jstring) templateName, nullptr);
-            strcpy(p.rp_config.template_name, ctemplateName);
-            env->ReleaseStringUTFChars((jstring) templateName, ctemplateName);
+        if (templateName && !copyJavaString(env, (jstring) templateName, p.rp_config.template_name)) {
+            return false;
         }
 
         p.rp_config.profile.uid = uid;
@@ -336,9 +340,9 @@ Java_com_sukisu_ultra_Natives_setAppProfile(JNIEnv *env, jobject clazz, jobject 
 
         p.rp_config.profile.capabilities.effective = capListToBits(env, capabilities);
 
-        auto cdomain = env->GetStringUTFChars((jstring) domain, nullptr);
-        strcpy(p.rp_config.profile.selinux_domain, cdomain);
-        env->ReleaseStringUTFChars((jstring) domain, cdomain);
+        if (!copyJavaString(env, (jstring) domain, p.rp_config.profile.selinux_domain)) {
+            return false;
+        }
 
         p.rp_config.profile.namespaces = env->GetIntField(profile, namespacesField);
 

@@ -124,40 +124,41 @@ fun flashIt(
     onStdout: (String) -> Unit,
     onStderr: (String) -> Unit
 ): FlashResult {
-    return when (flashIt) {
-        is FlashIt.FlashBoot -> installBoot(
-            flashIt.boot,
-            flashIt.lkm,
-            flashIt.ota,
-            flashIt.partition,
-            flashIt.allowShell,
-            flashIt.enableAdb,
-            flashIt.backup,
-            flashIt.spoofRelease,
-            flashIt.spoofVersion,
-            onStdout,
-            onStderr
-        )
+    return try {
+        when (flashIt) {
+            is FlashIt.FlashBoot -> installBoot(
+                flashIt.boot,
+                flashIt.lkm,
+                flashIt.ota,
+                flashIt.partition,
+                flashIt.allowShell,
+                flashIt.enableAdb,
+                flashIt.backup,
+                flashIt.spoofRelease,
+                flashIt.spoofVersion,
+                onStdout,
+                onStderr
+            )
 
-        is FlashIt.DownloadBoot -> downloadBoot(
-            flashIt.url,
-            flashIt.partition,
-            flashIt.lkm,
-            flashIt.allowShell,
-            flashIt.enableAdb,
-            flashIt.backup,
-            flashIt.spoofRelease,
-            flashIt.spoofVersion,
-            onStdout,
-            onStderr
-        )
+            is FlashIt.DownloadBoot -> downloadBoot(
+                flashIt.url,
+                flashIt.partition,
+                flashIt.lkm,
+                flashIt.allowShell,
+                flashIt.enableAdb,
+                flashIt.backup,
+                flashIt.spoofRelease,
+                flashIt.spoofVersion,
+                onStdout,
+                onStderr
+            )
 
-        is FlashIt.FlashModules -> {
-            flashModulesSequentially(flashIt.uris, onStdout, onStderr)
+            is FlashIt.FlashModules -> flashModulesSequentially(flashIt.uris, onStdout, onStderr)
+            FlashIt.FlashRestore -> restoreBoot(onStdout, onStderr)
+            FlashIt.FlashUninstall -> uninstallPermanently(onStdout, onStderr)
         }
-
-        FlashIt.FlashRestore -> restoreBoot(onStdout, onStderr)
-        FlashIt.FlashUninstall -> uninstallPermanently(onStdout, onStderr)
+    } catch (e: Exception) {
+        FlashResult(-1, e.message ?: "Flash failed", false)
     }
 }
 

@@ -4,12 +4,13 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.net.Uri
-import androidx.documentfile.provider.DocumentFile
 import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.kernelFlash.util.AssetsUtil
 import com.sukisu.ultra.ui.util.getRootShell
 import com.sukisu.ultra.ui.util.install
 import com.sukisu.ultra.ui.util.rootAvailable
+import com.sukisu.ultra.ui.util.shellArg
+import java.nio.file.Files
 import com.topjohnwu.superuser.ShellUtils
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -95,18 +96,15 @@ class HorizonKernelWorker(
         state.startFlashing()
         state.updateStep(context.getString(R.string.horizon_preparing))
 
-        filePath = "${context.filesDir.absolutePath}/${DocumentFile.fromSingleUri(context, uri!!)?.name}"
-        binaryPath = "${context.filesDir.absolutePath}/META-INF/com/google/android/update-binary"
-        workDir = "${context.filesDir.absolutePath}/work"
-
         try {
+            workDir = Files.createTempDirectory(context.cacheDir.toPath(), "kernel-flash-").toString()
+            filePath = "$workDir/kernel.zip"
+            binaryPath = "$workDir/META-INF/com/google/android/update-binary"
             state.updateStep(context.getString(R.string.horizon_cleaning_files))
             state.updateProgress(0.1f)
-            cleanup()
 
             if (!rootAvailable()) {
-                state.setError(context.getString(R.string.root_required))
-                return
+                throw IOException(context.getString(R.string.root_required))
             }
 
             state.updateStep(context.getString(R.string.horizon_copying_files))
@@ -143,7 +141,10 @@ class HorizonKernelWorker(
 
                 state.updateStep(context.getString(R.string.horizon_setting_target_slot))
                 state.updateProgress(0.74f)
-                runCommand(true, "resetprop -n ro.boot.slot_suffix _$slot")
+                if (originalSlot.isNullOrEmpty()) throw IOException("Unable to determine the original boot slot")
+                if (runCommand(true, "resetprop -n ro.boot.slot_suffix ${"_$slot".shellArg()}") != 0) {
+                    throw IOException("Unable to select the target boot slot")
+                }
             }
 
             flash()
@@ -151,7 +152,10 @@ class HorizonKernelWorker(
             if (isAbDevice && !originalSlot.isNullOrEmpty()) {
                 state.updateStep(context.getString(R.string.horizon_restoring_original_slot))
                 state.updateProgress(0.8f)
-                runCommand(true, "resetprop ro.boot.slot_suffix $originalSlot")
+                if (runCommand(true, "resetprop ro.boot.slot_suffix ${originalSlot!!.shellArg()}") != 0) {
+                    throw IOException("Unable to restore the original boot slot")
+                }
+                originalSlot = null
             }
 
             try {
@@ -168,11 +172,14 @@ class HorizonKernelWorker(
             }
         } catch (e: Exception) {
             state.setError(e.message ?: context.getString(R.string.horizon_unknown_error))
-
-            if (isAbDevice() && !originalSlot.isNullOrEmpty()) {
-                state.updateStep(context.getString(R.string.horizon_restoring_original_slot))
-                state.updateProgress(0.8f)
-                runCommand(true, "resetprop ro.boot.slot_suffix $originalSlot")
+        } finally {
+            originalSlot?.takeIf { it.isNotEmpty() }?.let { suffix ->
+                runCatching { runCommand(true, "resetprop ro.boot.slot_suffix ${suffix.shellArg()}") }
+                    .onFailure { state.addLog("Failed to restore boot slot: ${it.message}") }
+            }
+            if (::workDir.isInitialized) {
+                runCatching { runCommand(true, "rm -rf ${workDir.shellArg()}") }
+                    .onFailure { state.addLog("Failed to remove flash temporary files: ${it.message}") }
             }
         }
     }
@@ -191,23 +198,18 @@ class HorizonKernelWorker(
         }
     }
 
-    private fun cleanup() {
-        runCommand(false, "find ${context.filesDir.absolutePath} -type f ! -name '*.jpg' ! -name '*.png' -delete")
-        runCommand(false, "rm -rf $workDir")
-    }
-
     private fun copy() {
-        uri?.let { safeUri ->
-            context.contentResolver.openInputStream(safeUri)?.use { input ->
-                FileOutputStream(File(filePath)).use { output ->
-                    input.copyTo(output)
-                }
-            }
+        val sourceUri = uri ?: throw IOException("No kernel archive selected")
+        val input = context.contentResolver.openInputStream(sourceUri)
+            ?: throw IOException("Unable to open kernel archive")
+        input.use {
+            FileOutputStream(File(filePath)).use { output -> it.copyTo(output) }
         }
     }
 
     private fun getBinary() {
-        runCommand(false, "unzip \"$filePath\" \"*/update-binary\" -d ${context.filesDir.absolutePath}")
+        val result = runCommand(false, "unzip ${filePath.shellArg()} 'META-INF/com/google/android/update-binary' -d ${workDir.shellArg()}")
+        if (result != 0) throw IOException("Failed to extract update-binary")
         if (!File(binaryPath).exists()) {
             throw IOException("Failed to extract update-binary")
         }
@@ -235,15 +237,16 @@ class HorizonKernelWorker(
         } else {
             "5_15+"
         }
-        val toolPath = "${context.filesDir.absolutePath}/mkbootfs"
+        val toolPath = "$workDir/mkbootfs"
         AssetsUtil.exportFiles(context, "$toolName-mkbootfs", toolPath)
         // Only the kernel version is logged. The tool name ("5_10" / "5_15+") is an internal detail
         // of which mkbootfs variant was unpacked - it is not a patch tool, and printing it next to
         // the kernel version read as one, which is what made the line confusing.
         state.addLog(context.getString(R.string.kernel_version_log, version))
-        runCommand(false,
-            $$"sed -i '/chmod -R 755 tools bin;/i cp -f $$toolPath $AKHOME/tools;' $$binaryPath"
-        )
+        val patchCommand = "sed -i ${"/chmod -R 755 tools bin;/i cp -f ${toolPath.shellArg()} \"\$AKHOME/tools\";".shellArg()} ${binaryPath.shellArg()}"
+        if (runCommand(false, patchCommand) != 0) {
+            throw IOException("Failed to patch update-binary")
+        }
     }
 
     private fun flash() {
@@ -253,20 +256,20 @@ class HorizonKernelWorker(
 
         try {
             process.outputStream.bufferedWriter().use { writer ->
-                writer.write("export POSTINSTALL=${context.filesDir.absolutePath}\n")
+                writer.write("export POSTINSTALL=${workDir.shellArg()}\n")
 
                 // 写入槽位信息到临时文件
                 slot?.let { selectedSlot ->
-                    writer.write("echo \"$selectedSlot\" > ${context.filesDir.absolutePath}/bootslot\n")
+                    writer.write("printf '%s' ${selectedSlot.shellArg()} > ${"$workDir/bootslot".shellArg()}\n")
                 }
 
                 // 构建刷写命令
                 val flashCommand = buildString {
-                    append("sh $binaryPath 3 1 \"$filePath\"")
+                    append("sh ${binaryPath.shellArg()} 3 1 ${filePath.shellArg()}")
                     if (slot != null) {
-                        append(" \"$(cat ${context.filesDir.absolutePath}/bootslot)\"")
+                        append(" ${slot.shellArg()}")
                     }
-                    append(" && touch ${context.filesDir.absolutePath}/done\n")
+                    append(" && touch ${"$workDir/done".shellArg()}\n")
                 }
 
                 writer.write(flashCommand)
@@ -294,20 +297,26 @@ class HorizonKernelWorker(
                     }
                 }
             }
+            if (process.waitFor() != 0) {
+                throw IOException(context.getString(R.string.flash_failed_message))
+            }
         } finally {
             process.destroy()
         }
 
-        if (!File("${context.filesDir.absolutePath}/done").exists()) {
+        if (!File("$workDir/done").exists()) {
             throw IOException(context.getString(R.string.flash_failed_message))
         }
     }
 
     private fun runCommand(su: Boolean, cmd: String): Int {
         val shell = if (su) "su" else "sh"
-        val process = Runtime.getRuntime().exec(arrayOf(shell, "-c", cmd))
+        val process = ProcessBuilder(shell, "-c", cmd).redirectErrorStream(true).start()
 
         return try {
+            process.inputStream.bufferedReader().use { reader ->
+                reader.lineSequence().forEach(state::addLog)
+            }
             process.waitFor()
         } finally {
             process.destroy()

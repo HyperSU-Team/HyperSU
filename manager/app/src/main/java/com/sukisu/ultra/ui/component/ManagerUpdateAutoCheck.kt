@@ -51,9 +51,12 @@ fun ManagerUpdateAutoCheck() {
             scope.launch {
                 // check() already returns a Result, so runCatching around it produced
                 // Result<Result<..>>.
-                ManagerUpdateChecker.check()
-                    .onSuccess { found -> if (found != null) update = found }
-                checking = false
+                try {
+                    ManagerUpdateChecker.check()
+                        .onSuccess { found -> if (found != null) update = found }
+                } finally {
+                    checking = false
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -66,9 +69,12 @@ fun ManagerUpdateAutoCheck() {
         if (!ManagerUpdateSettings.isCheckDue(context)) return@LaunchedEffect
         ManagerUpdateSettings.markChecked(context)
         checking = true
-        ManagerUpdateChecker.check()
-            .onSuccess { found -> if (found != null) update = found }
-        checking = false
+        try {
+            ManagerUpdateChecker.check()
+                .onSuccess { found -> if (found != null) update = found }
+        } finally {
+            checking = false
+        }
     }
 
     update?.let { available ->
@@ -77,23 +83,25 @@ fun ManagerUpdateAutoCheck() {
             onDismiss = { update = null },
             onInstall = {
                 update = null
-                if (!busy) {
+                val url = available.apkUrls.firstOrNull()
+                if (!busy && url != null) {
                     busy = true
                     scope.launch {
-                        // The release host redirects to a host that is loopback on a filtered
-                        // network; the mirrors are the working path there.
-                        val uri = GithubMirrors.downloadThroughMirrors(
-                            url = available.apkUrls.firstOrNull() ?: return@launch,
-                            fileName = "HyperSU-${available.versionName}.apk",
-                        )
-                        if (uri != null) {
-                            installApk(context, uri)
-                        } else {
-                            runCatching {
-                                context.startActivity(Intent(Intent.ACTION_VIEW, available.pageUrl.toUri()))
+                        try {
+                            val uri = GithubMirrors.downloadThroughMirrors(
+                                url = url,
+                                fileName = "HyperSU-${available.versionName}.apk",
+                            )
+                            if (uri != null) {
+                                installApk(context, uri)
+                            } else {
+                                runCatching {
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, available.pageUrl.toUri()))
+                                }
                             }
+                        } finally {
+                            busy = false
                         }
-                        busy = false
                     }
                 }
             },

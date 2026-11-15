@@ -412,9 +412,9 @@ jobs:
           # ======================================
 
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            ./gradlew clean assembleRelease -PIS_PR_BUILD=true
+            ./gradlew clean testDebugUnitTest assembleRelease -PIS_PR_BUILD=true
           else
-            ./gradlew clean assembleRelease
+            ./gradlew clean testDebugUnitTest assembleRelease
           fi
 
 
