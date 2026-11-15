@@ -60,11 +60,13 @@ import com.sukisu.ultra.ui.component.folk.FolkSwitchPreference
 import com.sukisu.ultra.ui.component.folk.FolkTitleStyle
 import com.sukisu.ultra.ui.component.folk.FolkValuePreference
 import com.sukisu.ultra.ui.component.uninstalldialog.UninstallDialog
+import com.sukisu.ultra.ui.util.GithubMirrors
 import com.sukisu.ultra.ui.util.LocaleHelper
 import com.sukisu.ultra.ui.util.ManagerUpdate
 import com.sukisu.ultra.ui.util.ManagerUpdateChecker
 import com.sukisu.ultra.ui.util.download
 import com.sukisu.ultra.ui.util.installApk
+import com.sukisu.ultra.ui.util.sha256Of
 import kotlinx.coroutines.launch
 
 /**
@@ -110,16 +112,33 @@ fun SettingPagerFolk(
                         var lastError: Throwable? = null
                         val installed = urls.any { url ->
                             runCatching {
+                                var downloaded: android.net.Uri? = null
                                 download(
                                     url,
                                     "HyperSU-${available.versionName}.apk",
-                                    onDownloaded = { uri -> installApk(context, uri) },
+                                    onDownloaded = { uri -> downloaded = uri },
                                 )
+                                val apk = downloaded ?: error("download returned no file")
+                                // The bytes may have come from an acceleration mirror, not from
+                                // GitHub: compare them with the digest the release publishes
+                                // before handing the file to the installer.
+                                val expected = available.apkDigest
+                                if (expected != null) {
+                                    val actual = sha256Of(context, apk)
+                                    if (!expected.equals(actual, ignoreCase = true)) {
+                                        error("downloaded apk does not match the release digest")
+                                    }
+                                }
+                                installApk(context, apk)
                             }.onFailure { error ->
                                 // runCatching catches cancellation too; the manual check must not
                                 // keep trying mirrors after the screen is gone.
                                 if (error is kotlinx.coroutines.CancellationException) throw error
                                 lastError = error
+                            }.onSuccess {
+                                // Remember which acceleration host worked, so the next download (a
+                                // theme, a module) starts there instead of on the blocked host.
+                                GithubMirrors.recordSuccess(url)
                             }.isSuccess
                         }
                         if (!installed) {

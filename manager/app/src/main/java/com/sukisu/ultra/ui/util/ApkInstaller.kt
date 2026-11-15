@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
+import java.security.MessageDigest
 
 private const val TAG = "ApkInstaller"
 
@@ -29,3 +30,23 @@ fun installApk(context: Context, uri: Uri): Boolean {
         false
     }
 }
+
+/**
+ * The SHA-256 of a downloaded file, as lowercase hex, or null when it cannot be read.
+ *
+ * Used before installing an update: the APK may have come from an acceleration mirror rather than
+ * GitHub, and the release publishes the digest of the real asset.
+ */
+fun sha256Of(context: Context, uri: Uri): String? = runCatching {
+    val digest = MessageDigest.getInstance("SHA-256")
+    val input = context.contentResolver.openInputStream(uri) ?: return@runCatching null
+    input.use { stream ->
+        val buffer = ByteArray(64 * 1024)
+        while (true) {
+            val read = stream.read(buffer)
+            if (read < 0) break
+            digest.update(buffer, 0, read)
+        }
+    }
+    digest.digest().joinToString("") { "%02x".format(it) }
+}.onFailure { Log.w(TAG, "could not hash the downloaded apk", it) }.getOrNull()

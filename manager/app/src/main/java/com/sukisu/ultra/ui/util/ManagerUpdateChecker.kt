@@ -27,6 +27,14 @@ data class ManagerUpdate(
     val apkUrls: List<String>,
     val pageUrl: String,
     val notes: String,
+    /**
+     * The SHA-256 GitHub publishes for this asset ("sha256:<hex>"), or null for older releases.
+     *
+     * A mirrored download is served by a third party, so the bytes are checked against this before
+     * the installer is started: a proxy that answers with its own file is caught here instead of
+     * being installed.
+     */
+    val apkDigest: String? = null,
 )
 
 /**
@@ -91,15 +99,19 @@ object ManagerUpdateChecker {
                 val assets = assetsOf(json)
                 if (!isNewer(tag, assets)) return@runCatching null
 
+                val apkAsset = apkAssetOf(assets)
                 ManagerUpdate(
                     versionName = tag.removePrefix("v"),
-                    apkUrls = downloadableUrls(apkAssetOf(assets)),
+                    apkUrls = downloadableUrls(apkAsset?.optString("browser_download_url")),
                     pageUrl = json.optString("html_url"),
                     // `optString` turns a JSON null into the four-character string "null", which
                     // is what a release with no body written yet actually contains - and the
                     // dialog then displayed "null" as the release notes. `opt` returns the null
                     // itself, so a missing body reads as empty.
                     notes = (json.opt("body") as? String).orEmpty().trim(),
+                    apkDigest = apkAsset?.optString("digest")
+                        ?.removePrefix("sha256:")
+                        ?.takeIf { it.length == 64 },
                 )
             }
         }.onFailure { Log.w(TAG, "update check failed", it) }
@@ -145,30 +157,22 @@ object ManagerUpdateChecker {
      * first ("release-spoofed" < "release."), so taking the first `.apk` handed the updater the
      * spoofed build. Prefer the plain `-release.apk` name and never fall back to a spoofed asset.
      */
-    private fun apkAssetOf(assets: List<JSONObject>): String? {
+    private fun apkAssetOf(assets: List<JSONObject>): JSONObject? {
         val apks = assets
             .filter { it.optString("name").endsWith(".apk", ignoreCase = true) }
             .filterNot { it.optString("name").contains("spoofed", ignoreCase = true) }
-        val preferred = apks.firstOrNull { it.optString("name").endsWith("-release.apk", ignoreCase = true) }
+        return apks.firstOrNull { it.optString("name").endsWith("-release.apk", ignoreCase = true) }
             ?: apks.firstOrNull()
-            ?: return null
-        return preferred.optString("browser_download_url").takeIf { it.isNotEmpty() }
     }
 
     /**
-     * Public mirrors of a GitHub release asset.
+     * The asset plus its mirrors, in the order they should be tried.
      *
-     * `api.github.com` answering while the release-asset host times out is the normal failure on
-     * networks that only partly reach GitHub, so a mirror is tried when the direct URL fails.
+     * The list itself lives in [GithubMirrors] so the theme store and the module store share one
+     * mirror table (and the one that worked last time).
      */
-    private val MIRROR_PREFIXES = listOf(
-        "https://ghfast.top/",
-        "https://gh-proxy.com/",
-        "https://ghproxy.net/",
-    )
-
     private fun downloadableUrls(assetUrl: String?): List<String> {
         if (assetUrl.isNullOrEmpty()) return emptyList()
-        return listOf(assetUrl) + MIRROR_PREFIXES.map { prefix -> prefix + assetUrl }
+        return GithubMirrors.candidates(assetUrl)
     }
 }

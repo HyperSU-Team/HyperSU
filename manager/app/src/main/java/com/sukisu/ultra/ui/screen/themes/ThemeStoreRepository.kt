@@ -4,6 +4,8 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.sukisu.ultra.ksuApp
+import com.sukisu.ultra.ui.util.GithubMirrors
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -51,7 +53,9 @@ object ThemeStoreRepository {
     // response; the catalogue request gets a little more room before the screen declares failure.
     private val client by lazy {
         ksuApp.okhttpClient.newBuilder()
-            .connectTimeout(20, TimeUnit.SECONDS)
+            // Each mirror attempt waits out a connect timeout before the next one is tried, so this
+            // stays short: a blocked host fails in seconds instead of leaving the download stuck.
+            .connectTimeout(8, TimeUnit.SECONDS)
             .readTimeout(40, TimeUnit.SECONDS)
             .build()
     }
@@ -67,19 +71,6 @@ object ThemeStoreRepository {
 
     /** Width requested from the resizing proxy: the card is 260dp tall on a 1080p phone. */
     private const val PREVIEW_WIDTH = 640
-
-    /**
-     * Public mirrors of a GitHub release asset.
-     *
-     * A theme is a 20MB archive and the release host is slow or unreachable on some networks; the
-     * manager's own update already retries through these, and a theme download benefits the same
-     * way.
-     */
-    private val MIRROR_PREFIXES = listOf(
-        "https://ghfast.top/",
-        "https://gh-proxy.com/",
-        "https://ghproxy.net/",
-    )
 
     /**
      * The urls a cover is tried from, best first.
@@ -245,20 +236,32 @@ object ThemeStoreRepository {
         val target = File(directory, "${theme.tag.safeFileName()}.fpt")
         val partial = File(directory, "${theme.tag.safeFileName()}.part")
 
-        // Direct first, then the mirrors: whichever answers first wins, and progress restarts from
-        // zero on a new attempt so the bar does not jump backwards mid-way.
-        val candidates = listOf(theme.downloadUrl) +
-            MIRROR_PREFIXES.map { prefix -> prefix + theme.downloadUrl }
+        // Direct first, then the acceleration mirrors: whichever answers first wins, and progress
+        // restarts from zero on a new attempt so the bar does not jump backwards mid-way. The list
+        // (and the mirror that worked last time) is shared with the manager update path.
+        val candidates = GithubMirrors.candidates(theme.downloadUrl)
 
         var lastError: Throwable? = null
         for (url in candidates) {
             val fetched = runCatching { fetch(url, partial, onProgress) }
-                .onFailure { lastError = it }
+                .onFailure { error ->
+                    if (error is CancellationException) throw error
+                    lastError = error
+                }
                 .isSuccess
             if (!fetched) {
                 partial.delete()
                 continue
             }
+            // A proxy that answers 200 with its own HTML error page would otherwise be handed to
+            // the importer as a theme; an archive never starts with '<'.
+            if (!looksLikeArchive(partial)) {
+                Log.w(TAG, "not an archive, retrying: $url")
+                partial.delete()
+                lastError = java.io.IOException("not a theme archive")
+                continue
+            }
+            GithubMirrors.recordSuccess(url)
 
             // `renameTo` reports failure on some storage configurations even though the file is
             // there, and the failure surfaced as an IllegalStateException that crashed the app.
@@ -276,6 +279,25 @@ object ThemeStoreRepository {
         Log.w(TAG, "theme download failed: ${theme.downloadUrl}", lastError)
         partial.delete()
         null
+    }
+
+    /**
+     * Whether [file] can be a theme archive.
+     *
+     * An encrypted theme starts with a random 16 byte IV, so a single '<' byte proves nothing; only
+     * an HTML document does. A proxy that answers 200 with its own error page is caught here.
+     */
+    private fun looksLikeArchive(file: File): Boolean {
+        if (file.length() < 1024L) return false
+        return runCatching {
+            file.inputStream().use { input ->
+                val head = ByteArray(16)
+                val read = input.read(head)
+                if (read <= 0) return@use false
+                val prefix = String(head, 0, read, Charsets.US_ASCII).trimStart().lowercase()
+                !prefix.startsWith("<!doctype") && !prefix.startsWith("<html")
+            }
+        }.getOrDefault(false)
     }
 
     private fun fetch(url: String, partial: File, onProgress: (Int) -> Unit) {
