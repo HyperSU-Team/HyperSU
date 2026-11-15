@@ -86,36 +86,31 @@ void ksu_register_manager(u32 uid, u8 signature_index)
 void ksu_unregister_manager(u32 uid)
 {
     struct ksu_manager_node *node, *pos, *tmp;
-    bool mark_another_manager = false;
 
     if (!ksu_is_manager_uid(uid))
         return;
 
     u16 appid = uid % PER_USER_RANGE;
 
-    if (ksu_last_manager_appid == appid)
-        mark_another_manager = true;
-
     spin_lock(&ksu_manager_list_write_lock);
 
     list_for_each_entry_safe (pos, tmp, &ksu_manager_appid_list, list) {
         if (pos->appid == appid) {
             list_del_rcu(&pos->list);
+            if (ksu_last_manager_appid == appid) {
+                ksu_last_manager_appid = KSU_INVALID_APPID;
+                list_for_each_entry (node, &ksu_manager_appid_list, list) {
+                    ksu_last_manager_appid = node->appid;
+                    break;
+                }
+            }
             spin_unlock(&ksu_manager_list_write_lock);
             kfree_rcu(pos, rcu);
             return;
         }
-
-        if (mark_another_manager) {
-            ksu_last_manager_appid = appid;
-            mark_another_manager = false;
-        }
     }
 
     spin_unlock(&ksu_manager_list_write_lock);
-
-    if (mark_another_manager)
-        ksu_last_manager_appid = KSU_INVALID_APPID;
     return;
 }
 
@@ -140,10 +135,10 @@ void ksu_unregister_manager_by_signature_index(u8 signature_index)
         }
     }
 
-    spin_unlock(&ksu_manager_list_write_lock);
-
     if (mark_another_manager)
         ksu_last_manager_appid = last_each_alive_appid;
+
+    spin_unlock(&ksu_manager_list_write_lock);
 }
 
 void ksu_unregister_all_manager(void)
@@ -156,6 +151,7 @@ void ksu_unregister_all_manager(void)
         list_del_rcu(&pos->list);
         kfree_rcu(pos, rcu);
     }
+    ksu_last_manager_appid = KSU_INVALID_APPID;
 
     spin_unlock(&ksu_manager_list_write_lock);
 }
@@ -214,8 +210,9 @@ int ksu_get_manager_signature_index_by_appid(u16 appid)
     rcu_read_lock();
     list_for_each_entry_rcu (pos, &ksu_manager_appid_list, list) {
         if (pos->appid == appid) {
+            int signature_index = pos->signature_index;
             rcu_read_unlock();
-            return pos->signature_index;
+            return signature_index;
         }
     }
     rcu_read_unlock();

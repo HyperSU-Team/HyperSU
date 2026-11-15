@@ -298,6 +298,8 @@ void do_track_throne(void *data)
         char *uid = NULL;
         u32 res;
 
+        if (count < 0 || (count == 0 && pos != line_start))
+            goto close_out;
         if (count != sizeof(chr))
             break;
         if (chr != '\n')
@@ -305,7 +307,7 @@ void do_track_throne(void *data)
 
         count = ksu_kernel_read_compat(fp, buf, sizeof(buf) - 1, &line_start);
         if (count <= 0) {
-            break;
+            goto close_out;
         }
         buf[count] = '\0';
 
@@ -322,13 +324,13 @@ void do_track_throne(void *data)
         if (!uid || !package) {
             pr_err("update_uid: package or uid is NULL!\n");
             kfree(data);
-            break;
+            goto close_out;
         }
 
         if (kstrtou32(uid, 10, &res)) {
             pr_err("update_uid: uid parse err\n");
             kfree(data);
-            break;
+            goto close_out;
         }
         data->uid = res;
         strncpy(data->package, package, KSU_MAX_PACKAGE_NAME);
@@ -339,6 +341,8 @@ void do_track_throne(void *data)
     }
 
     filp_close(fp, 0);
+    if (list_empty(&uid_list))
+        goto out;
 
     if (flags & TRACK_THRONE_PRUNE_ONLY)
         goto prune;
@@ -353,6 +357,9 @@ void do_track_throne(void *data)
 prune:
     // then prune the allowlist
     ksu_prune_allowlist(is_uid_exist, &uid_list);
+    goto out;
+close_out:
+    filp_close(fp, 0);
 out:
     // free uid_list
     list_for_each_entry_safe (np, n, &uid_list, list) {
@@ -365,6 +372,10 @@ out:
 void track_throne(unsigned int flags)
 {
     struct track_throne_struct *tts = kzalloc(sizeof(struct track_throne_struct), GFP_KERNEL);
+    if (!tts) {
+        pr_err("Failed to allocate manager tracking work\n");
+        return;
+    }
     tts->flags = flags;
 
     if (flags & TRACK_THRONE_FORCE_SYNCHRONOUS) {
