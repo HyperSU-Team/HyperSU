@@ -28,6 +28,15 @@ object BootKernelVersion {
     private const val REMOTE_PROBE_GROWTH = 4L
     private const val KMI_SCAN_OVERLAP = 64
 
+    // Android boot headers use 2048/4096 (v0-v2) or a fixed 4096 (v3+).
+    // Anything outside this window is a corrupt header, not a real image.
+    private const val MIN_PAGE_SIZE = 512L
+    private const val MAX_PAGE_SIZE = 64L * 1024L
+
+    // A compressed kernel is expanded only far enough to find the banner; the
+    // cap keeps a decompression bomb from exhausting the heap.
+    private const val MAX_DECOMPRESSED_SIZE = 32 * 1024 * 1024
+
     // Boot header total sizes per header version (android_bootimg layouts)
     private val HEADER_TOTAL_SIZE = mapOf(
         0L to 1632L,
@@ -61,23 +70,35 @@ object BootKernelVersion {
         }
     }
 
-    /** Reads a boot image stream, including a decompressed ZIP entry. */
+    /**
+     * Reads a boot image stream, including a decompressed ZIP entry.
+     *
+     * A truncated or malformed entry simply has no KMI; the probe reports
+     * "unknown" instead of throwing into the caller's coroutine.
+     */
     fun parseKmiFromBoot(input: InputStream): String? {
-        val stream = DataInputStream(input)
-        val header = ByteArray(HEADER_READ_SIZE)
-        if (IOUtils.read(stream, header) < header.size) return null
-        val (kernelOffset, kernelSize) = bootKernelBlock(header) ?: return null
-        IOUtils.skipFully(stream, kernelOffset.toLong() - header.size)
+        return try {
+            val stream = DataInputStream(input)
+            val header = ByteArray(HEADER_READ_SIZE)
+            if (IOUtils.read(stream, header) < header.size) return null
+            val (kernelOffset, kernelSize) = bootKernelBlock(header) ?: return null
+            val skip = kernelOffset.toLong() - header.size
+            if (skip > 0) IOUtils.skipFully(stream, skip)
 
-        var data = ByteArray(minOf(INITIAL_KERNEL_PROBE, kernelSize.toLong()).toInt())
-        var previousSize = 0
-        while (true) {
-            stream.readFully(data, previousSize, data.size - previousSize)
-            parseKmi(data)?.let { return it }
-            decompressPartial(data)?.let { parseKmi(it) }?.let { return it }
-            if (data.size >= kernelSize) return null
-            previousSize = data.size
-            data = data.copyOf(minOf(data.size.toLong() * 4, kernelSize.toLong()).toInt())
+            var data = ByteArray(minOf(INITIAL_KERNEL_PROBE, kernelSize.toLong()).toInt())
+            var previousSize = 0
+            while (true) {
+                stream.readFully(data, previousSize, data.size - previousSize)
+                parseKmi(data)?.let { return it }
+                decompressPartial(data)?.let { parseKmi(it) }?.let { return it }
+                if (data.size >= kernelSize) return null
+                previousSize = data.size
+                data = data.copyOf(minOf(data.size.toLong() * 4, kernelSize.toLong()).toInt())
+            }
+            @Suppress("UNREACHABLE_CODE")
+            null
+        } catch (_: IOException) {
+            null
         }
     }
 
@@ -140,8 +161,10 @@ object BootKernelVersion {
         if (kernelSize <= 0) return null
         val headerTotal = HEADER_TOTAL_SIZE[headerVersion] ?: return null
         val pageSize = if (headerVersion >= 3) 4096L else data.u32le(36)
-        if (pageSize <= 0) return null
-        return align(headerTotal, pageSize).toInt() to kernelSize.toInt()
+        if (pageSize < MIN_PAGE_SIZE || pageSize > MAX_PAGE_SIZE) return null
+        val kernelOffset = align(headerTotal, pageSize)
+        if (kernelOffset > Int.MAX_VALUE || kernelSize > Int.MAX_VALUE) return null
+        return kernelOffset.toInt() to kernelSize.toInt()
     }
 
     private fun isCompressedKernel(data: ByteArray, offset: Int): Boolean {
@@ -205,8 +228,12 @@ object BootKernelVersion {
         val output = ByteArrayOutputStream()
         val buffer = ByteArray(8192)
         try {
-            while (true) {
-                val read = input.read(buffer)
+            while (output.size() < MAX_DECOMPRESSED_SIZE) {
+                val read = input.read(
+                    buffer,
+                    0,
+                    minOf(buffer.size, MAX_DECOMPRESSED_SIZE - output.size()),
+                )
                 if (read < 0) break
                 output.write(buffer, 0, read)
             }

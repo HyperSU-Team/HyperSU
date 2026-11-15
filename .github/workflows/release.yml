@@ -98,15 +98,15 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.38 - a failed module download no longer crashes, updates check themselves, and the last vulnerable dependency is gone.
+            HyperSU v4.2.39 - hardening for the boot image and OTA payload readers, plus the shell-quoting and download fixes from the code audit.
 
-            - Downloading a module from the module store, or from a module's update prompt, called download() inside a coroutine with nothing catching it. On a filtered network the release host redirects to release-assets.githubusercontent.com, which resolves to 127.0.0.1 there, so the transfer threw IOException and took the app down. Both paths go through the mirror helper now and a failure shows a short "download failed" message.
-            - The manager's own update check is automatic and on by default: it runs at startup (at most once every twelve hours) and offers the usual dialog, with the download going through the mirrors too. The old check button is now the switch for it.
-            - The alternate launcher icon row and its state are removed.
-            - figlet-rs is replaced by a static banner. It only drew ASCII art and pulled in a second copy of the zip crate (0.6), the last open Dependabot advisory; zip is 9.5.1 now, and ZipFile::name() returns a Result in that version, which the AnyKernel3 reader handles.
-            - The three new strings are translated into every supported language.
+            - Payload: the manifest and signature lengths are 64-bit fields. They were truncated to Int and used as allocation sizes, so a malformed payload could ask for a negative or multi-gigabyte buffer, and a negative signature length could seek the reader backwards. Both lengths are range-checked now, header reads must be complete, and the data position is tracked instead of moving the channel.
+            - Payload operations: the per-operation data length, the destination extent and the decompressed output are checked against the partition size, so a hostile manifest cannot allocate gigabytes, write outside the partition, or make the output file grow past its declared size.
+            - BootKernelVersion: page sizes outside 512 B - 64 KiB and offsets that do not fit an Int are rejected, decompression stops at 32 MiB, and a truncated ZIP entry now reports an unknown KMI instead of throwing into the caller.
+            - Downloads: a second request for a file that is already downloading never received its completion callback, so the screen that asked for it waited forever. Callbacks are per-download lists now and every caller gets the uri.
+            - ksud invocations quote their arguments: module paths, the boot image, the LKM file, the partition, the KMI, the sepolicy rules and the protected data dir all go through the same single-quote escaping, so a path with a space or a quote no longer splits the command.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.33...v4.2.38
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.38...v4.2.39
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

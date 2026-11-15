@@ -14,6 +14,7 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.channels.FileChannel
+import java.nio.charset.StandardCharsets
 import java.nio.file.StandardOpenOption
 import java.security.MessageDigest
 
@@ -197,46 +198,51 @@ class Payload(private val channel: DataSourceChannel) {
 
     @Throws(IOException::class)
     private fun readPayloadHeader(): DeltaArchiveManifest {
-        val magicBuffer = ByteBuffer.allocate(4)
-        channel.read(magicBuffer)
-        magicBuffer.flip()
-        val magic = String(magicBuffer.array())
+        // The header of a payload is short and its lengths are 64-bit on the wire: a hostile file
+        // can claim a 4 GiB manifest. Everything is range-checked before it is used as a size.
+        var position = 0L
+
+        fun readExact(size: Int): ByteArray {
+            if (size < 0) throw IOException("Invalid payload: negative field size")
+            val buffer = ByteBuffer.allocate(size)
+            var total = 0
+            while (total < size) {
+                val read = channel.read(buffer, position + total)
+                if (read < 0) throw IOException("Invalid payload: truncated header")
+                if (read == 0) throw IOException("Invalid payload: stalled header read")
+                total += read
+            }
+            position += size
+            return buffer.array()
+        }
+
+        val magic = String(readExact(4), StandardCharsets.UTF_8)
         if (magic != "CrAU") {
             throw IOException("Invalid payload: invalid magic")
         }
 
-        val versionBuffer = ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN)
-        channel.read(versionBuffer)
-        versionBuffer.flip()
-        val version = versionBuffer.long
+        val version = ByteBuffer.wrap(readExact(8)).order(ByteOrder.BIG_ENDIAN).long
         if (version != 2L) {
             throw IOException("Invalid payload: unsupported version: $version")
         }
 
-        val manifestLenBuffer = ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN)
-        channel.read(manifestLenBuffer)
-        manifestLenBuffer.flip()
-        val manifestLen = manifestLenBuffer.long.toInt()
-        if (manifestLen == 0) {
-            throw IOException("Invalid payload: manifest length is zero")
+        val manifestLen = ByteBuffer.wrap(readExact(8)).order(ByteOrder.BIG_ENDIAN).long
+        if (manifestLen <= 0 || manifestLen > MAX_MANIFEST_SIZE) {
+            throw IOException("Invalid payload: manifest length $manifestLen out of range")
         }
 
-        val manifestSigLenBuffer = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN)
-        channel.read(manifestSigLenBuffer)
-        manifestSigLenBuffer.flip()
-        val manifestSigLen = manifestSigLenBuffer.int
-        if (manifestSigLen == 0) {
-            throw IOException("Invalid payload: manifest signature length is zero")
+        val manifestSigLen = ByteBuffer.wrap(readExact(4)).order(ByteOrder.BIG_ENDIAN).int.toLong()
+        if (manifestSigLen < 0 || manifestSigLen > MAX_SIGNATURE_SIZE) {
+            throw IOException("Invalid payload: signature length $manifestSigLen out of range")
         }
 
-        val manifestBuffer = ByteBuffer.allocate(manifestLen)
-        channel.read(manifestBuffer)
-        manifestBuffer.flip()
-        val manifest = DeltaArchiveManifest.parseFrom(manifestBuffer.array())
+        val manifest = DeltaArchiveManifest.parseFrom(readExact(manifestLen.toInt()))
 
-        channel.position(channel.position() + manifestSigLen)
-
-        dataBase = channel.position()
+        position += manifestSigLen
+        if (position > channel.size()) {
+            throw IOException("Invalid payload: truncated after the manifest")
+        }
+        dataBase = position
 
         return manifest
     }
@@ -261,6 +267,11 @@ class Payload(private val channel: DataSourceChannel) {
             StandardOpenOption.TRUNCATE_EXISTING
         ).use { outChannel ->
             val size = partition.newPartitionInfo.size
+            // A boot image is far smaller than this; the bound keeps a bogus manifest from
+            // asking for an output file (and a mmap) that cannot exist.
+            if (size <= 0 || size > MAX_PARTITION_SIZE) {
+                throw IOException("Invalid payload: partition size $size out of range")
+            }
             outChannel.write(ByteBuffer.allocate(1), size - 1)
 
             val count = partition.operationsCount
@@ -268,7 +279,7 @@ class Payload(private val channel: DataSourceChannel) {
                 if (index % 5 == 0 || index == count - 1) {
                     console("- Downloading ${index + 1}/$count")
                 }
-                processOperation(outChannel, operation)
+                processOperation(outChannel, operation, size)
             }
 
             val digest = MessageDigest.getInstance("SHA-256")
@@ -279,21 +290,44 @@ class Payload(private val channel: DataSourceChannel) {
     }
 
     @Throws(IOException::class)
-    private fun processOperation(outChannel: FileChannel, operation: InstallOperation) {
+    private fun processOperation(
+        outChannel: FileChannel,
+        operation: InstallOperation,
+        partitionSize: Long,
+    ) {
         val dataType = operation.getType()
         if (dataType == InstallOperation.Type.ZERO) {
             return
+        }
+
+        if (operation.dataLength <= 0 || operation.dataLength > MAX_OPERATION_DATA) {
+            throw IOException("Invalid payload: operation data length ${operation.dataLength}")
+        }
+        if (operation.dataOffset < 0) {
+            throw IOException("Invalid payload: negative data offset")
         }
 
         val dataBuffer = ByteBuffer.allocate(operation.dataLength.toInt())
         channel.read(dataBuffer, dataBase + operation.dataOffset)
         dataBuffer.flip()
 
+        val blockSize = manifest.blockSize
+        if (blockSize <= 0) throw IOException("Invalid payload: block size $blockSize")
         val dstExtent = operation.getDstExtents(0)
-        val outOffset = dstExtent.startBlock * manifest.blockSize
+        val outOffset = try {
+            Math.multiplyExact(dstExtent.startBlock, blockSize)
+        } catch (_: ArithmeticException) {
+            throw IOException("Invalid payload: extent out of range")
+        }
+        if (outOffset < 0 || outOffset > partitionSize) {
+            throw IOException("Invalid payload: extent at $outOffset is outside the partition")
+        }
 
         when (dataType) {
             InstallOperation.Type.REPLACE -> {
+                if (outOffset + dataBuffer.remaining() > partitionSize) {
+                    throw IOException("Invalid payload: operation writes past the partition")
+                }
                 outChannel.write(dataBuffer, outOffset)
             }
 
@@ -308,6 +342,9 @@ class Payload(private val channel: DataSourceChannel) {
                     var bytesRead: Int
                     var bytesWritten = 0
                     while (decompressor.read(bytes).also { bytesRead = it } != -1) {
+                        if (outOffset + bytesWritten + bytesRead > partitionSize) {
+                            throw IOException("Invalid payload: operation writes past the partition")
+                        }
                         val buffer = ByteBuffer.wrap(bytes, 0, bytesRead)
                         bytesWritten += outChannel.write(buffer, outOffset + bytesWritten)
                     }
@@ -328,5 +365,12 @@ class Payload(private val channel: DataSourceChannel) {
         )
         private const val KMI_PROBE_LIMIT = 24L * 1024 * 1024
         private const val HEADER_PROBE_LIMIT = 64L * 1024
+
+        // Payload header and operation sizes are attacker-controlled 64-bit fields; these bounds
+        // are generous for a real OTA payload and small enough to allocate.
+        private const val MAX_MANIFEST_SIZE = 64L * 1024 * 1024
+        private const val MAX_SIGNATURE_SIZE = 1024L * 1024
+        private const val MAX_OPERATION_DATA = 512L * 1024 * 1024
+        private const val MAX_PARTITION_SIZE = 1024L * 1024 * 1024
     }
 }

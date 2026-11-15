@@ -118,14 +118,14 @@ fun execKsud(args: String, newShell: Boolean = false, globalMnt: Boolean = false
 suspend fun getFeatureStatus(feature: String): String = withContext(Dispatchers.IO) {
     val shell = getRootShell()
     val out = shell.newJob()
-        .add("${getKsuDaemonPath()} feature check $feature").to(ArrayList<String>(), null).exec().out
+        .add("${getKsuDaemonPath()} feature check ${feature.shellArg()}").to(ArrayList<String>(), null).exec().out
     out.firstOrNull()?.trim().orEmpty()
 }
 
 suspend fun getFeaturePersistValue(feature: String): Long? = withContext(Dispatchers.IO) {
     val shell = getRootShell()
     val out = shell.newJob()
-        .add("${getKsuDaemonPath()} feature get --config $feature").to(ArrayList<String>(), null).exec().out
+        .add("${getKsuDaemonPath()} feature get --config ${feature.shellArg()}").to(ArrayList<String>(), null).exec().out
     val valueLine = out.firstOrNull { it.trim().startsWith("Value:") } ?: return@withContext null
     valueLine.substringAfter("Value:").trim().toLongOrNull()
 }
@@ -133,7 +133,10 @@ suspend fun getFeaturePersistValue(feature: String): Long? = withContext(Dispatc
 fun install() {
     val start = SystemClock.elapsedRealtime()
     val libadbroot = File(ksuApp.applicationInfo.nativeLibraryDir, "libadbroot.so").absolutePath
-    val result = execKsud("install --libadbroot $libadbroot --data-path ${ksuApp.applicationInfo.deviceProtectedDataDir}", true)
+    val result = execKsud(
+        "install --libadbroot ${libadbroot.shellArg()} --data-path ${ksuApp.applicationInfo.deviceProtectedDataDir.shellArg()}",
+        true,
+    )
     Log.w(TAG, "install result: $result, cost: ${SystemClock.elapsedRealtime() - start}ms")
 }
 
@@ -216,7 +219,7 @@ fun flashModule(
         file.outputStream().use { output ->
             this?.copyTo(output)
         }
-        val cmd = "module install ${file.absolutePath}"
+        val cmd = "module install ${file.absolutePath.shellArg()}"
         val result = flashWithIO("${getKsuDaemonPath()} $cmd", onStdout, onStderr)
         Log.i("KernelSU", "install module $uri result: $result")
 
@@ -242,7 +245,7 @@ fun runModuleAction(
     }
 
     val result = withNewRootShell(true) {
-        newJob().add("${getKsuDaemonPath()} module action $moduleId")
+        newJob().add("${getKsuDaemonPath()} module action ${moduleId.shellArg()}")
             .to(stdoutCallback, stderrCallback).exec()
     }
 
@@ -261,7 +264,7 @@ fun restoreBoot(
 fun uninstallPermanently(
     onStdout: (String) -> Unit, onStderr: (String) -> Unit
 ): FlashResult {
-    val result = flashWithIO("${getKsuDaemonPath()} uninstall --package-name ${BuildConfig.APPLICATION_ID}", onStdout, onStderr)
+    val result = flashWithIO("${getKsuDaemonPath()} uninstall --package-name ${BuildConfig.APPLICATION_ID.shellArg()}", onStdout, onStderr)
     return FlashResult(result)
 }
 
@@ -328,7 +331,7 @@ fun installBoot(
         // no boot.img, use -f to flash
         " -f"
     } else {
-        " -b ${bootFile.absolutePath}"
+        " -b ${bootFile.absolutePath.shellArg()}"
     }
     cmd += bootPatchFlags(allowShell, enableAdb, forceBackup)
 
@@ -346,19 +349,19 @@ fun installBoot(
 
     val lkmFile = writeLkmFile(lkm)
     if (lkmFile != null) {
-        cmd += " -m ${lkmFile.absolutePath}"
+        cmd += " -m ${lkmFile.absolutePath.shellArg()}"
     } else if (lkm is LkmSelection.KmiString) {
-        cmd += " --kmi ${lkm.value}"
+        cmd += " --kmi ${lkm.value.shellArg()}"
     }
 
     if (bootFile != null) {
         val downloadsDir =
             Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-        cmd += " -o $downloadsDir"
+        cmd += " -o ${downloadsDir.absolutePath.shellArg()}"
     }
 
     partition?.let { part ->
-        cmd += " --partition $part"
+        cmd += " --partition ${part.shellArg()}"
     }
 
     val result = flashWithIO("${getKsuDaemonPath()} $cmd", onStdout, onStderr)
@@ -439,7 +442,7 @@ fun downloadBoot(
         return FlashResult(-1, "Failed to determine KMI from the package", false)
     }
 
-    var cmd = "${getKsuDaemonPath()} boot-patch -b ${bootFile.absolutePath}"
+    var cmd = "${getKsuDaemonPath()} boot-patch -b ${bootFile.absolutePath.shellArg()}"
     cmd += bootPatchFlags(allowShell, enableAdb, forceBackup)
 
     if (spoofRelease.isNotBlank()) {
@@ -452,16 +455,16 @@ fun downloadBoot(
 
     val lkmFile = writeLkmFile(lkm)
     if (lkmFile != null) {
-        cmd += " -m ${lkmFile.absolutePath}"
+        cmd += " -m ${lkmFile.absolutePath.shellArg()}"
     } else if (lkm is LkmSelection.KmiString) {
-        cmd += " --kmi ${lkm.value}"
+        cmd += " --kmi ${lkm.value.shellArg()}"
     }
-    if (autoKmi != null) cmd += " --kmi $autoKmi"
-    cmd += " --partition $partition"
+    if (autoKmi != null) cmd += " --kmi ${autoKmi.shellArg()}"
+    cmd += " --partition ${partition.shellArg()}"
     // ksud defaults to cwd, which is read-only in the su session; use Downloads.
     val downloadsDir =
         Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-    cmd += " -o $downloadsDir"
+    cmd += " -o ${downloadsDir.absolutePath.shellArg()}"
 
     val stdoutCallback: CallbackList<String?> = object : CallbackList<String?>() {
         override fun onAddElement(s: String?) {
@@ -591,7 +594,7 @@ fun isSepolicyValid(rules: String?): Boolean {
     }
     val shell = getRootShell()
     val result =
-        shell.newJob().add("${getKsuDaemonPath()} sepolicy check '$rules'").to(ArrayList(), null)
+        shell.newJob().add("${getKsuDaemonPath()} sepolicy check ${rules.shellArg()}").to(ArrayList(), null)
             .exec()
     return result.isSuccess
 }

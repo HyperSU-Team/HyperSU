@@ -31,8 +31,14 @@ object DownloadManager {
     private val _downloads = MutableStateFlow<Map<Int, DownloadState>>(emptyMap())
     val downloads: StateFlow<Map<Int, DownloadState>> = _downloads.asStateFlow()
 
-    private val completionCallbacks = ConcurrentHashMap<Int, (Uri) -> Unit>()
+    private val completionCallbacks = ConcurrentHashMap<Int, MutableList<(Uri) -> Unit>>()
     private val mainHandler = Handler(Looper.getMainLooper())
+
+    private fun registerCallback(id: Int, callback: (Uri) -> Unit) {
+        completionCallbacks.compute(id) { _, list ->
+            (list ?: mutableListOf()).apply { add(callback) }
+        }
+    }
 
     fun enqueue(
         context: Context,
@@ -43,14 +49,20 @@ object DownloadManager {
         val existing = _downloads.value.values.find {
             it.url == url && (it.status == Status.PENDING || it.status == Status.DOWNLOADING)
         }
-        if (existing != null) return existing.id
+        if (existing != null) {
+            // The same file is already on its way. The caller still needs its own completion
+            // callback, otherwise a second request for one url (two screens, or a retry while the
+            // first attempt is running) waits for a uri that is handed to the first caller only.
+            if (onCompleted != null) registerCallback(existing.id, onCompleted)
+            return existing.id
+        }
 
         val id = idCounter.incrementAndGet()
         val state = DownloadState(id = id, fileName = fileName, url = url)
         _downloads.update { it + (id to state) }
 
         if (onCompleted != null) {
-            completionCallbacks[id] = onCompleted
+            registerCallback(id, onCompleted)
         }
 
         val intent = Intent(context, DownloadService::class.java).apply {
@@ -77,9 +89,9 @@ object DownloadManager {
             map + (id to state.copy(status = Status.COMPLETED, progress = 100, resultUri = uri))
         }
 
-        val callback = completionCallbacks.remove(id)
-        if (callback != null) {
-            mainHandler.post { callback(uri) }
+        val callbacks = completionCallbacks.remove(id)
+        if (!callbacks.isNullOrEmpty()) {
+            mainHandler.post { callbacks.forEach { callback -> callback(uri) } }
         }
     }
 
