@@ -8,8 +8,14 @@ import kotlinx.coroutines.withContext
 object SuSFSManager {
     fun getCurrentModuleConfig(): ModuleConfig = SuSFSRepository.getCurrentModuleConfig()
 
+    /** Non-blocking read for coroutine callers; see [SuSFSRepository.loadCurrentModuleConfig]. */
+    suspend fun loadCurrentModuleConfig(): ModuleConfig = SuSFSRepository.loadCurrentModuleConfig()
+
     fun getKernelSpoofRelease(): String = SuSFSRepository.getKernelSpoofRelease()
     fun getKernelSpoofVersion(): String = SuSFSRepository.getKernelSpoofVersion()
+
+    suspend fun loadKernelSpoofRelease(): String = SuSFSRepository.loadKernelSpoofRelease()
+    suspend fun loadKernelSpoofVersion(): String = SuSFSRepository.loadKernelSpoofVersion()
 
     suspend fun isAutoStartEnabled(): Boolean = SuSFSRepository.isAutoStartEnabled()
     suspend fun setAutoStartEnabled(enabled: Boolean) = SuSFSRepository.setAutoStartEnabled(enabled)
@@ -80,7 +86,7 @@ object SuSFSManager {
     fun getDefaultBackupFileName(): String = SuSFSBackupManager.getDefaultBackupFileName()
 
     suspend fun hasConfigurationForAutoStart(context: Context): Boolean {
-        val config = getCurrentModuleConfig()
+        val config = loadCurrentModuleConfig()
         return config.hasAutoStartConfig() || SuSFSCommands.getEnabledFeatures(context).any { it.isEnabled }
     }
 

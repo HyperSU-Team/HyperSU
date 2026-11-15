@@ -300,7 +300,7 @@ class SuSFSViewModel(
 
     fun reloadConfig() {
         viewModelScope.launch {
-            val config = SuSFSManager.getCurrentModuleConfig()
+            val config = SuSFSManager.loadCurrentModuleConfig()
             _uiState.update {
                 it.copy(
                     unameValue = config.unameValue,

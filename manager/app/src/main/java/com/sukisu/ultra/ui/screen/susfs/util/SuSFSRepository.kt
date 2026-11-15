@@ -14,7 +14,14 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 object SuSFSRepository {
-    fun getCurrentModuleConfig(): ModuleConfig = runBlocking(Dispatchers.IO) {
+    /**
+     * Reads the whole module configuration: fifteen settings, each through its own ksud call.
+     *
+     * The suspend variant exists because `runBlocking` blocks whatever thread calls it, and the
+     * callers here were coroutines already - on the main dispatcher that froze the window for the
+     * duration of every ksud start.
+     */
+    suspend fun loadCurrentModuleConfig(): ModuleConfig = withContext(Dispatchers.IO) {
         ModuleConfig(
             unameValue = getUnameValue(),
             buildTimeValue = getBuildTimeValue(),
@@ -33,6 +40,10 @@ object SuSFSRepository {
         )
     }
 
+    fun getCurrentModuleConfig(): ModuleConfig = runBlocking(Dispatchers.IO) {
+        loadCurrentModuleConfig()
+    }
+
     private suspend fun getUnameValue(): String {
         val v = SuSFSConfig.get(SuSFSConfig.KEY_UNAME_VALUE)
         return v.ifBlank { SuSFSConfig.DEFAULT_UNAME }
@@ -43,11 +54,17 @@ object SuSFSRepository {
         return v.ifBlank { SuSFSConfig.DEFAULT_BUILD_TIME }
     }
 
-    fun getKernelSpoofRelease(): String =
-        runBlocking(Dispatchers.IO) { getUnameValue() }.takeUnless { SuSFSConfig.isDefaultSpoofValue(it) }.orEmpty()
+    suspend fun loadKernelSpoofRelease(): String = withContext(Dispatchers.IO) {
+        getUnameValue()
+    }.takeUnless { SuSFSConfig.isDefaultSpoofValue(it) }.orEmpty()
 
-    fun getKernelSpoofVersion(): String =
-        runBlocking(Dispatchers.IO) { getBuildTimeValue() }.takeUnless { SuSFSConfig.isDefaultSpoofValue(it) }.orEmpty()
+    suspend fun loadKernelSpoofVersion(): String = withContext(Dispatchers.IO) {
+        getBuildTimeValue()
+    }.takeUnless { SuSFSConfig.isDefaultSpoofValue(it) }.orEmpty()
+
+    fun getKernelSpoofRelease(): String = runBlocking(Dispatchers.IO) { loadKernelSpoofRelease() }
+
+    fun getKernelSpoofVersion(): String = runBlocking(Dispatchers.IO) { loadKernelSpoofVersion() }
 
     suspend fun setAutoStartEnabled(enabled: Boolean) =
         SuSFSConfig.set(SuSFSConfig.KEY_AUTO_START_ENABLED, if (enabled) "true" else "false")

@@ -13,7 +13,7 @@ class SuSFSRepositoryImpl : SuSFSRepositoryInterface {
 
     override suspend fun loadInitialConfig(context: Context): Result<ModuleConfig> =
         withContext(Dispatchers.IO) {
-            runCatching { SuSFSManager.getCurrentModuleConfig() }
+            runCatching { SuSFSManager.loadCurrentModuleConfig() }
         }
 
     override suspend fun getEnabledFeatures(context: Context): Result<List<EnabledFeature>> =

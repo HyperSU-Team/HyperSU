@@ -98,15 +98,15 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.42 - the WebUI SDK, the install page and the profile editor get the fixes the review found.
+            HyperSU v4.2.43 - the SuSFS screens stop freezing the window.
 
-            - WebUI SDK: `spawn(command, options)` without an argument array shifted the options into the arguments and ran the program with a stray option; the argument list is empty now. A program that fails to start emitted its error before the caller had a chance to attach a listener (the event was lost); the error is queued after the handlers are in place. Listener tables are prototype-less, so a module that listens for `constructor`, `toString` or another inherited name no longer collides with `Object.prototype`. `js/` is an ES module package now and its tests run with `node --test` (the old `npm run test` was a self-recursive script).
-            - Install page: cancelling the file picker left the image row selectable and the next step flashed an empty URI as a direct install. The next button and the install action now require a real input (a picked file, a url plus partition, or a method that needs neither), and unit tests cover the cases.
-            - App profiles: an app with no template bound had the template mode disabled, so a template could not be chosen the first time. Deleting every sepolicy rule now reaches ksud and clears the stored rules instead of leaving the old ones behind. Version codes go through `PackageInfoCompat` so older devices read them correctly.
-            - Template editor: the delete action is hidden while creating a template, and the id conflict check no longer fires when editing an existing one.
-            - Module metadata: `module.prop` is read through a byte buffer with a hard 64 KiB cap; a split multi-byte character is no longer mangled and an oversized file reports an error instead of silently truncating the metadata.
+            Loading the SuSFS configuration means fifteen sequential ksud calls, and the read was wrapped in runBlocking at the call site: on the main dispatcher that froze the UI for the whole read. The install screen also read the stored spoof values inline in rememberSaveable, so the first frame waited for two more process starts.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.41...v4.2.42
+            - SuSFSRepository/SuSFSManager gained suspend read variants; the SuSFS view model, the repository implementation and the auto-start check use them.
+            - The install screen loads the stored spoof values in produceState, off the main thread, and merges them with the boot image values as they arrive (the boot image still wins when it carries a value).
+            - The blocking wrappers remain for the few synchronous call sites, so nothing else changes.
+
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.42...v4.2.43
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

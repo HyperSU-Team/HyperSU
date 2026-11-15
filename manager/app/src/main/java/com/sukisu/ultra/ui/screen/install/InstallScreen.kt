@@ -70,12 +70,21 @@ fun InstallScreen(
 
     // Read the configuration from the boot image ksu_config
     val bootConfig by produceState(initialValue = BootConfig()) { value = getBootConfig() }
-    var spoofRelease by rememberSaveable { mutableStateOf(SuSFSManager.getKernelSpoofRelease()) }
-    var spoofVersion by rememberSaveable { mutableStateOf(SuSFSManager.getKernelSpoofVersion()) }
+    // The stored spoof values come from ksud, which is a process start each: reading them inline in
+    // rememberSaveable blocked the first frame of this screen.
+    val storedSpoof by produceState(initialValue = "" to "") {
+        value = SuSFSManager.loadKernelSpoofRelease() to SuSFSManager.loadKernelSpoofVersion()
+    }
+    var spoofRelease by rememberSaveable { mutableStateOf("") }
+    var spoofVersion by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(bootConfig) {
         spoofRelease = bootConfig.spoofRelease.ifEmpty { spoofRelease }
         spoofVersion = bootConfig.spoofVersion.ifEmpty { spoofVersion }
+    }
+    LaunchedEffect(storedSpoof) {
+        spoofRelease = spoofRelease.ifEmpty { storedSpoof.first }
+        spoofVersion = spoofVersion.ifEmpty { storedSpoof.second }
     }
 
     val currentKmi by produceState(initialValue = "") { value = getCurrentKmi() }
