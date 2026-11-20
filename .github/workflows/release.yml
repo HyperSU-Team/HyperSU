@@ -98,7 +98,7 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.49 - the second review pass: theme round trips, SuSFS persistence, and a set of blocking calls removed from composition.
+            HyperSU v4.2.50 - the second review pass: theme round trips, SuSFS persistence, and a set of blocking calls removed from composition.
 
             Theme import/export:
             - Re-importing a theme exported by this build deleted the page wallpapers and dashboard tiles whenever the multi-background switch was off. "Clear" now means two things: a missing slot for a set the theme describes, versus a switch that exists to show the picture. Page wallpapers and dashboard tiles survive an off switch.
@@ -118,7 +118,7 @@ jobs:
             - Font, music, sound-effect, title-image, SELinux and template work moved off the main thread or behind a debounce: the title-image sliders wrote the whole preference file on every frame, the SELinux dialog ran a root shell command per keystroke, and the template picker listed templates during composition.
             - `execl` gets a `(char*)nullptr` terminator, which the C++ rules require for a variadic call.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.48...v4.2.49
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.48...v4.2.50
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

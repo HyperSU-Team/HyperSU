@@ -97,19 +97,17 @@ object SuSFSManager {
                     Log.e("SuSFSManager", "No configuration available for auto start")
                     return@withContext false
                 }
-                val success = SuSFSCommands.updateMagiskModule()
-                if (success) {
-                    setAutoStartEnabled(true)
-                } else {
-                    Log.e("SuSFSManager", "Failed to create Magisk module for auto start")
+                // The persisted configuration is what ksud re-applies at boot; there is no module
+                // to regenerate in this build, so the flag itself is the success condition.
+                val success = SuSFSCommands.updateMagiskModule() && setAutoStartEnabled(true)
+                if (!success) {
+                    Log.e("SuSFSManager", "Failed to enable auto start")
                 }
                 success
             } else {
-                val success = SuSFSCommands.removeMagiskModule()
-                if (success) {
-                    setAutoStartEnabled(false)
-                } else {
-                    Log.e("SuSFSManager", "Failed to remove Magisk module")
+                val success = setAutoStartEnabled(false)
+                if (!success) {
+                    Log.e("SuSFSManager", "Failed to disable auto start")
                 }
                 success
             }
