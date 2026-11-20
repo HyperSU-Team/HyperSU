@@ -952,4 +952,5 @@
     <string name="theme_store_library_unreadable">На устройстве есть файлы тем (%1$d), но прочитать их не удалось</string>
     <string name="music_play">Играть музыку</string>
     <string name="music_pause">Пауза</string>
+    <string name="susfs_reset_confirm_message">Это восстановит все настройки SuSFS по умолчанию. Вы уверены, что хотите продолжить?</string>
 </resources>

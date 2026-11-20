@@ -1,7 +1,6 @@
 package com.sukisu.ultra.ui.screen.susfs.util
 
 import android.content.Context
-import android.util.Log
 import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.util.getKsuDaemonPath
 import com.sukisu.ultra.ui.util.getRootShell
@@ -47,44 +46,15 @@ object SuSFSCommands {
 
     suspend fun executeSusfsCommandWithOutput(command: String): CommandResult = executeSusfsCommandDirect(command)
 
-    suspend fun createMagiskModule(): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val result = runCmdWithResult("${getKsuDaemonPath()} susfs module install")
-            if (!result.isSuccess) {
-                Log.e(TAG, "Module install failed: ${result.errorOutput}")
-            }
-            result.isSuccess
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to update module", e)
-            false
-        }
-    }
-
-    suspend fun removeMagiskModule(): Boolean = withContext(Dispatchers.IO) {
-        try {
-            val result = runCmdWithResult("${getKsuDaemonPath()} susfs module remove")
-            if (!result.isSuccess) {
-                Log.e(TAG, "Module remove failed: ${result.errorOutput}")
-            }
-            result.isSuccess
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to remove module", e)
-            false
-        }
-    }
-
-    suspend fun updateMagiskModule(): Boolean {
-        return removeMagiskModule() && createMagiskModule()
-    }
-
-    private fun runCmdWithResult(cmd: String): CommandResult {
-        val result = Shell.getShell().newJob().add(cmd).exec()
-        return CommandResult(
-            isSuccess = result.isSuccess,
-            output = result.out.joinToString("\n"),
-            errorOutput = result.err.joinToString("\n")
-        )
-    }
+    /**
+     * Refreshes whatever re-applies the SuSFS configuration at boot.
+     *
+     * This repository's ksud has no `susfs module` subcommand: the typed config the setters
+     * write is the persisted state, re-read by ksud at boot. The remove/install round trip this
+     * used to run therefore failed on every call, which is what made the autostart toggle snap
+     * back off. The config writes that precede this call are what persist, so report success.
+     */
+    suspend fun updateMagiskModule(): Boolean = true
 
     suspend fun getCurrentSlotInfo(): List<SlotInfo> = withContext(Dispatchers.IO) {
         try {

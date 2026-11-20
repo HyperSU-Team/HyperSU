@@ -948,4 +948,5 @@
     <string name="music_play">音楽を再生</string>
     <string name="music_pause">音楽を一時停止</string>
     <string name="module_download_failed">ダウンロードに失敗しました</string>
+    <string name="susfs_reset_confirm_message">これにより、すべての SuSFS 設定が既定値に戻ります。続行してもよろしいですか？</string>
 </resources>

@@ -190,12 +190,14 @@ private fun FolkSettingsGroupScope.NavIconRow(
 /**
  * The tabs a custom icon can be set for, paired with their labels.
  *
- * The names are FolkPatch's, and match the preference keys and archive entry names, so a theme
- * exported there restores its icons here.
+ * These are this app's own destination names - the same ones the bar resolves and the exporter
+ * packs. The FolkPatch aliases (`KModule`/`AModule`) are accepted on read through
+ * [BottomBarIconConfig.acceptingNames], but writing under an alias would produce a file the
+ * exporter never packs and a row the bar ignores after a theme import.
  */
 private val NavIconRows: List<Pair<String, Int>> = listOf(
     "Home" to R.string.nav_icon_home,
     "SuperUser" to R.string.nav_icon_superuser,
-    "AModule" to R.string.nav_icon_module,
+    "Module" to R.string.nav_icon_module,
     "Settings" to R.string.nav_icon_settings,
 )

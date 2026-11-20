@@ -14,8 +14,10 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -30,6 +32,9 @@ import com.sukisu.ultra.profile.Capabilities
 import com.sukisu.ultra.profile.Groups
 import com.sukisu.ultra.toRawFlags
 import com.sukisu.ultra.toRootProfileFlags
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import com.sukisu.ultra.ui.component.folk.FolkAlertDialog
 import com.sukisu.ultra.ui.component.folk.FolkButtonDefaults
 import com.sukisu.ultra.ui.component.folk.FolkNavigationPreference
@@ -198,7 +203,11 @@ fun TemplateConfig(
 ) {
     val showDialog = remember { mutableStateOf(false) }
     val template = profile.rootTemplate ?: ""
-    val profileTemplates = listAppProfileTemplates()
+    // `listAppProfileTemplates` is a root shell round trip; it must not run during composition,
+    // where every recomposition of the picker blocked the main thread on ksud.
+    val profileTemplates by produceState(emptyList<String>()) {
+        value = withContext(Dispatchers.IO) { listAppProfileTemplates() }
+    }
     val noTemplates = profileTemplates.isEmpty()
 
     val templateOptions = remember(profileTemplates) {
@@ -563,7 +572,13 @@ private fun SELinuxDialog(
     val isDomainValid = remember(currentDomain) {
         currentDomain.matches(Regex("^[a-z_]+:[a-z0-9_]+:[a-z0-9_]+(:[a-z0-9_]+)?$"))
     }
-    val isRulesValid = remember(currentRules) { isSepolicyValid(currentRules) }
+    // `ksud sepolicy check` is a root shell job: running it inside composition fired one exec
+    // per keystroke. Debounce instead, and validate off the main thread.
+    var isRulesValid by remember { mutableStateOf(true) }
+    LaunchedEffect(currentRules) {
+        delay(400)
+        isRulesValid = withContext(Dispatchers.IO) { isSepolicyValid(currentRules) }
+    }
 
     FolkAlertDialog(onDismissRequest = onDismiss, width = 340.dp) {
         Column(modifier = Modifier.padding(24.dp)) {

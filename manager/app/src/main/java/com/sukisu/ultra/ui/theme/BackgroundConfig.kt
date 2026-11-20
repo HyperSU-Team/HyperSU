@@ -1248,6 +1248,10 @@ object BackgroundManager {
                 BackgroundConfig.superuserBackgroundUri?.let { uris.add(it) }
                 BackgroundConfig.moduleBackgroundUri?.let { uris.add(it) }
                 BackgroundConfig.settingsBackgroundUri?.let { uris.add(it) }
+                // This app has no kernel tab, so the slot never drives a page; it still feeds
+                // the palette like any other imported wallpaper, which is what the luminance
+                // pass exists for.
+                BackgroundConfig.kernelBackgroundUri?.let { uris.add(it) }
             }
             var changed = false
             uris.forEach { uri ->

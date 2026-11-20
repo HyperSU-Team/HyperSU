@@ -946,4 +946,5 @@
     <string name="music_play">Putar musik</string>
     <string name="music_pause">Jeda musik</string>
     <string name="module_download_failed">Unduhan gagal</string>
+    <string name="susfs_reset_confirm_message">Ini akan mengembalikan semua pengaturan SuSFS ke bawaan. Apakah Anda yakin ingin melanjutkan?</string>
 </resources>

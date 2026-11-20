@@ -20,7 +20,9 @@ import com.sukisu.ultra.ui.component.folk.FolkSettingsSectionGroup
 import com.sukisu.ultra.ui.component.folk.FolkValuePreference
 import com.sukisu.ultra.ui.theme.FontConfig
 import com.sukisu.ultra.ui.theme.FontMode
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * The font rows of the appearance screen, ported from FolkPatch
@@ -51,7 +53,8 @@ fun AppearanceFontSection(
         if (uri != null) {
             scope.launch {
                 loadingDialog.show()
-                val ok = FontConfig.saveFontFile(context, uri)
+                // A TTF can be several megabytes; the copy is file IO, not main-thread work.
+                val ok = withContext(Dispatchers.IO) { FontConfig.saveFontFile(context, uri) }
                 loadingDialog.hide()
                 showMessage(if (ok) R.string.font_saved else R.string.font_save_failed)
             }
@@ -60,8 +63,10 @@ fun AppearanceFontSection(
 
     val clearDialog = rememberConfirmDialog(
         onConfirm = {
-            FontConfig.clearFont(context)
-            showMessage(R.string.font_cleared)
+            scope.launch {
+                withContext(Dispatchers.IO) { FontConfig.clearFont(context) }
+                showMessage(R.string.font_cleared)
+            }
         },
     )
 

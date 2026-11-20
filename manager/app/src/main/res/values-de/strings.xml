@@ -950,4 +950,5 @@
     <string name="music_play">Musik abspielen</string>
     <string name="music_pause">Musik pausieren</string>
     <string name="module_download_failed">Download fehlgeschlagen</string>
+    <string name="susfs_reset_confirm_message">Dadurch werden alle SuSFS-Einstellungen auf die Standardwerte zurückgesetzt. Bist du sicher, dass du fortfahren möchtest?</string>
 </resources>

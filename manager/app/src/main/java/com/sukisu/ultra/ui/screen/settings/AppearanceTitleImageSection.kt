@@ -124,10 +124,10 @@ fun AppearanceTitleImageSection(
                 FolkSliderPreference(
                     title = stringResource(R.string.title_image_day_opacity),
                     value = BackgroundConfig.titleImageDayOpacity,
-                    onValueChange = {
-                        BackgroundConfig.setTitleImageDayOpacityValue(it)
-                        save()
-                    },
+                    // Only the in-memory value updates during the drag; persisting on every
+                    // frame queued a whole-file preference write per pixel on slow flash.
+                    onValueChange = { BackgroundConfig.setTitleImageDayOpacityValue(it) },
+                    onValueChangeFinished = save,
                 )
             }
 
@@ -135,10 +135,8 @@ fun AppearanceTitleImageSection(
                 FolkSliderPreference(
                     title = stringResource(R.string.title_image_night_opacity),
                     value = BackgroundConfig.titleImageNightOpacity,
-                    onValueChange = {
-                        BackgroundConfig.setTitleImageNightOpacityValue(it)
-                        save()
-                    },
+                    onValueChange = { BackgroundConfig.setTitleImageNightOpacityValue(it) },
+                    onValueChangeFinished = save,
                 )
             }
 
@@ -146,10 +144,8 @@ fun AppearanceTitleImageSection(
                 FolkSliderPreference(
                     title = stringResource(R.string.title_image_dim),
                     value = BackgroundConfig.titleImageDim,
-                    onValueChange = {
-                        BackgroundConfig.setTitleImageDimValue(it)
-                        save()
-                    },
+                    onValueChange = { BackgroundConfig.setTitleImageDimValue(it) },
+                    onValueChangeFinished = save,
                 )
             }
 
@@ -157,10 +153,8 @@ fun AppearanceTitleImageSection(
                 FolkSliderPreference(
                     title = stringResource(R.string.title_image_offset_x),
                     value = BackgroundConfig.titleImageOffsetX,
-                    onValueChange = {
-                        BackgroundConfig.setTitleImageOffsetXValue(it)
-                        save()
-                    },
+                    onValueChange = { BackgroundConfig.setTitleImageOffsetXValue(it) },
+                    onValueChangeFinished = save,
                 )
             }
 

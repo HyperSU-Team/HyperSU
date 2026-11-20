@@ -446,7 +446,9 @@ int fork_dont_care_and_exec_ksud(const char *path, const char *pkg) {
         _exit(0);
     }
 
-    execl(path, "ksud", "late-load", "--magica", "5555", "--package-name", pkg, nullptr);
+    // execl is variadic: the terminating null has to be a char* to match the other arguments,
+    // passing nullptr is undefined behaviour under the C++ rules.
+    execl(path, "ksud", "late-load", "--magica", "5555", "--package-name", pkg, (char *)nullptr);
     PLOGE("exec magica");
     _exit(1);
 }

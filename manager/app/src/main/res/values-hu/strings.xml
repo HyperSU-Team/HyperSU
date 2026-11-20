@@ -948,4 +948,5 @@
     <string name="music_play">Zene lejátszása</string>
     <string name="music_pause">Zene szüneteltetése</string>
     <string name="module_download_failed">A letöltés nem sikerült</string>
+    <string name="susfs_reset_confirm_message">Ez visszaállítja az összes SuSFS-beállítást az alapértelmezett értékre. Biztosan folytatja?</string>
 </resources>

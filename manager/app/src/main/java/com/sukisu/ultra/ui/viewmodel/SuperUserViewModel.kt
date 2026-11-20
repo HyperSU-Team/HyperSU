@@ -90,8 +90,18 @@ class SuperUserViewModel(
         private val groupedAppsLock = Any()
         private var cachedGroupedApps: List<GroupedApps> = emptyList()
 
+        // The cached list as a flow: screens that are not the superuser tab (the SuSFS uid→
+        // package mapping) otherwise have no way to observe a reload, since the field is a
+        // plain synchronized getter rather than snapshot state.
+        private val _appsFlow = MutableStateFlow<List<com.sukisu.ultra.data.model.AppInfo>>(emptyList())
+        val appsFlow: StateFlow<List<com.sukisu.ultra.data.model.AppInfo>> = _appsFlow.asStateFlow()
+
         val apps: List<AppInfo>
             get() = synchronized(appsLock) { cachedApps }
+
+        private fun publishApps(list: List<AppInfo>) {
+            _appsFlow.value = list
+        }
 
         @JvmStatic
         fun getGroupedApp(uid: Int): GroupedApps? {
@@ -352,6 +362,7 @@ class SuperUserViewModel(
 
                 // Update cache for static method
                 synchronized(appsLock) { cachedApps = newApps }
+                publishApps(newApps)
                 updateCachedGroupedApps(cachedGroups)
                 updateVisibleApps(grouped)
                 _uiState.update { it.copy(userIds = ids, isRefreshing = false, hasLoaded = true) }
@@ -378,6 +389,7 @@ class SuperUserViewModel(
             repo.refreshProfiles(currentApps).onSuccess { updatedApps ->
                 // Update cache for static method
                 synchronized(appsLock) { cachedApps = updatedApps }
+                publishApps(updatedApps)
 
                 val (cachedGroups, grouped) = withContext(Dispatchers.IO) {
                     val cached = buildCachedGroups(updatedApps)

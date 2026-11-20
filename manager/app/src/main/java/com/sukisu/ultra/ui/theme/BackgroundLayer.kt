@@ -74,6 +74,7 @@ fun themeWallpaperUri(): String? {
         ?: BackgroundConfig.superuserBackgroundUri
         ?: BackgroundConfig.moduleBackgroundUri
         ?: BackgroundConfig.settingsBackgroundUri
+        ?: BackgroundConfig.kernelBackgroundUri
 }
 
 /**

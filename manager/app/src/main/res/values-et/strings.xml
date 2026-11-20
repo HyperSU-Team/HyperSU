@@ -948,4 +948,5 @@
     <string name="music_play">Esita muusikat</string>
     <string name="music_pause">Peata muusika</string>
     <string name="module_download_failed">Allalaadimine ebaõnnestus</string>
+    <string name="susfs_reset_confirm_message">See taastab kõik SuSFS-i seaded vaikeväärtustele. Kas oled kindel, et soovid jätkata?</string>
 </resources>

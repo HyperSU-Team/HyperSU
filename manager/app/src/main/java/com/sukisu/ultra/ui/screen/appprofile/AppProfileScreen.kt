@@ -3,7 +3,6 @@ package com.sukisu.ultra.ui.screen.appprofile
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -14,7 +13,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import com.sukisu.ultra.Natives
 import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
@@ -34,12 +35,9 @@ fun AppProfileScreen(uid: Int) {
     val snackbarHost = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val viewModel: SuperUserViewModel = viewModel()
-    val appGroupState = remember(uid) {
-        derivedStateOf {
-            viewModel.uiState.value.groupedApps.find { it.uid == uid } ?: SuperUserViewModel.getGroupedApp(uid)
-        }
+    val appGroup = remember(uid) {
+        viewModel.uiState.value.groupedApps.find { it.uid == uid } ?: SuperUserViewModel.getGroupedApp(uid)
     }
-    val appGroup = appGroupState.value
     val primaryAppInfo = appGroup?.primary
     if (primaryAppInfo == null) {
         LaunchedEffect(Unit) {
@@ -58,14 +56,22 @@ fun AppProfileScreen(uid: Int) {
     val initialProfile = remember(uid, packageName, primaryAppInfo.special) {
         Natives.getAppProfile(packageName, uid).let {
             if (primaryAppInfo.special) it.copy(allowSu = false) else it
-        }.also {
-            if (it.allowSu && !primaryAppInfo.special) {
-                it.rules = getSepolicy(packageName)
-            }
         }
     }
     var profile by rememberSaveable(uid, packageName) {
         mutableStateOf(initialProfile)
+    }
+
+    // The SELinux rules come from a root shell; loading them synchronously inside the remember
+    // blocked the first frame of every profile screen on ksud. Load off the main thread after
+    // entry, and only into a profile the user has not already started editing.
+    LaunchedEffect(packageName, primaryAppInfo.special) {
+        if (profile.allowSu && !primaryAppInfo.special && profile.rules.isBlank()) {
+            val rules = withContext(Dispatchers.IO) { getSepolicy(packageName) }
+            if (rules.isNotBlank() && profile.rules.isBlank()) {
+                profile = profile.copy(rules = rules)
+            }
+        }
     }
 
     val failToUpdateAppProfile = stringResource(R.string.failed_to_update_app_profile).format(primaryAppInfo.label)
@@ -113,7 +119,9 @@ fun AppProfileScreen(uid: Int) {
                     }
                     if (!profileToSave.rootUseDefault
                         && !primaryAppInfo.special
-                        && !setSepolicy(profileToSave.name, profileToSave.rules)
+                        && !withContext(Dispatchers.IO) {
+                            setSepolicy(profileToSave.name, profileToSave.rules)
+                        }
                     ) {
                         showMessage(failToUpdateSepolicy)
                         return@launch

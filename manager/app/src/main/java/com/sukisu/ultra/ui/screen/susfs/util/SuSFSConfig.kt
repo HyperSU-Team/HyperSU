@@ -35,7 +35,32 @@ object SuSFSConfig {
     const val MEDIA_DATA_PATH = "/data/media/0/Android/data"
     const val CGROUP_BASE_PATH = "/sys/fs/cgroup"
 
+    /**
+     * Keys this repository's ksud has no storage for: its legacy `config get` answers a
+     * hard-coded default and its `config set` accepts the write but stores nothing, so a value
+     * written here vanished on the next read and every toggle snapped back. The manager keeps
+     * these in its own preference file and overlays the ksud answer with it.
+     */
+    private val MIRRORED_KEYS = setOf(
+        KEY_AUTO_START_ENABLED,
+        KEY_EXECUTE_IN_POST_FS_DATA,
+        KEY_ENABLE_CLEANUP_RESIDUE,
+        KEY_ENABLE_HIDE_BL,
+        KEY_KSTAT_CONFIGS,
+        KEY_ADD_KSTAT_PATHS,
+    )
+
+    private val mirrorPrefs by lazy {
+        com.sukisu.ultra.ksuApp.getSharedPreferences(
+            "susfs_config_mirror",
+            android.content.Context.MODE_PRIVATE,
+        )
+    }
+
     private suspend fun configGet(key: String): String = withContext(Dispatchers.IO) {
+        if (key in MIRRORED_KEYS) {
+            mirrorPrefs.getString(key, null)?.let { return@withContext it }
+        }
         val shell = Shell.getShell()
         runCmd(shell, "${getKsuDaemonPath()} susfs config get ${shellQuote(key)}").trim()
     }
@@ -43,6 +68,9 @@ object SuSFSConfig {
     suspend fun get(key: String): String = configGet(key)
 
     suspend fun configSet(key: String, value: String): Boolean = withContext(Dispatchers.IO) {
+        if (key in MIRRORED_KEYS) {
+            mirrorPrefs.edit().putString(key, value).apply()
+        }
         val shell = Shell.getShell()
         shell.newJob().add("${getKsuDaemonPath()} susfs config set ${shellQuote(key)} ${shellQuote(value)}").exec().isSuccess
     }
@@ -50,8 +78,11 @@ object SuSFSConfig {
     suspend fun set(key: String, value: String): Boolean = configSet(key, value)
 
     suspend fun configSetMulti(key: String, values: Set<String>, separator: String): Boolean = withContext(Dispatchers.IO) {
-        val shell = Shell.getShell()
         val raw = values.joinToString(separator)
+        if (key in MIRRORED_KEYS) {
+            mirrorPrefs.edit().putString(key, raw).apply()
+        }
+        val shell = Shell.getShell()
         shell.newJob().add("${getKsuDaemonPath()} susfs config set ${shellQuote(key)} ${shellQuote(raw)}").exec().isSuccess
     }
 
@@ -59,8 +90,12 @@ object SuSFSConfig {
         configSetMulti(key, values, separator)
 
     private suspend fun configGetMulti(key: String, separator: String = ";"): Set<String> = withContext(Dispatchers.IO) {
-        val shell = Shell.getShell()
-        val raw = runCmd(shell, "${getKsuDaemonPath()} susfs config get ${shellQuote(key)}")
+        val raw = if (key in MIRRORED_KEYS) {
+            mirrorPrefs.getString(key, null)
+                ?: runCmd(shell = Shell.getShell(), "${getKsuDaemonPath()} susfs config get ${shellQuote(key)}")
+        } else {
+            runCmd(shell = Shell.getShell(), "${getKsuDaemonPath()} susfs config get ${shellQuote(key)}")
+        }
         if (raw.isBlank()) emptySet() else raw.split(separator).filter { it.isNotBlank() }.toSet()
     }
 

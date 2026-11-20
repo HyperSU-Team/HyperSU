@@ -946,4 +946,5 @@
     <string name="music_play">נגן מוזיקה</string>
     <string name="music_pause">השהה מוזיקה</string>
     <string name="module_download_failed">ההורדה נכשלה</string>
+    <string name="susfs_reset_confirm_message">פעולה זו תשחזר את כל הגדרות SuSFS לברירת המחדל. האם אתה בטוח שברצונך להמשיך?</string>
 </resources>

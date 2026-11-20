@@ -243,9 +243,9 @@ internal fun ModulePagerFolk(
     var pendingInfo by remember { mutableStateOf<ModuleZipInfo?>(null) }
     var pendingInfoLoading by remember { mutableStateOf(false) }
 
-    // Read once: the setting only changes on the settings page, and the module screen is rebuilt
-    // when it comes back.
-    val installConfirmRequired = remember { SettingsRepositoryImpl().moduleInstallConfirm }
+    // Read per composition: the module tab stays in the pager, so a remembered value would keep
+    // the old setting until the app restarted.
+    val installConfirmRequired = SettingsRepositoryImpl().moduleInstallConfirm
 
     val threshold = with(LocalDensity.current) { 100.dp.toPx() }
     val fabExpanded by remember {

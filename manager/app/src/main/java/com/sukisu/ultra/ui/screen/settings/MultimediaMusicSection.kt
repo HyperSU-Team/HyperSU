@@ -24,7 +24,9 @@ import com.sukisu.ultra.ui.component.folk.FolkSwitchPreference
 import com.sukisu.ultra.ui.component.folk.FolkValuePreference
 import com.sukisu.ultra.ui.theme.MusicConfig
 import com.sukisu.ultra.ui.util.MusicManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * The background-music rows, ported from FolkPatch `ui/screen/settings/MultimediaMusicSection.kt`.
@@ -51,7 +53,9 @@ fun MultimediaMusicSection(
         if (uri != null) {
             scope.launch {
                 loadingDialog.show()
-                val ok = MusicConfig.saveMusicFile(context, uri)
+                // Copying a multi-megabyte track is file IO; the main dispatcher only owns the
+                // dialog and the toast around it.
+                val ok = withContext(Dispatchers.IO) { MusicConfig.saveMusicFile(context, uri) }
                 loadingDialog.hide()
                 if (ok) {
                     // saveMusicFile turns the feature on, so the file just picked is meant to
@@ -67,9 +71,11 @@ fun MultimediaMusicSection(
 
     val clearDialog = rememberConfirmDialog(
         onConfirm = {
-            MusicConfig.clearMusic(context)
-            MusicManager.reload()
-            showMessage(R.string.music_cleared)
+            scope.launch {
+                withContext(Dispatchers.IO) { MusicConfig.clearMusic(context) }
+                MusicManager.reload()
+                showMessage(R.string.music_cleared)
+            }
         },
     )
 

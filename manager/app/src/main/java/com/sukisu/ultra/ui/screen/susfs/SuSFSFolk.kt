@@ -234,9 +234,9 @@ fun SuSFSFolk() {
     ConfirmDialog(
         showDialog = uiState.showConfirmReset,
         onDismiss = { viewModel.toggleConfirmReset(false) },
-        onConfirm = { viewModel.resetAll() },
+        onConfirm = { viewModel.resetAll(context) },
         titleRes = R.string.susfs_reset_confirm_title,
-        messageRes = R.string.susfs_reset_confirm_title,
+        messageRes = R.string.susfs_reset_confirm_message,
         isLoading = uiState.isLoading
     )
 

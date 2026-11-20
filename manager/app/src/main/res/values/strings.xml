@@ -564,6 +564,7 @@
     <string name="susfs_section_features">Features</string>
     <!-- SuSFS Reset Confirmation -->
     <string name="susfs_reset_confirm_title">Confirm Reset</string>
+    <string name="susfs_reset_confirm_message">This will restore every SuSFS setting to its default. Are you sure you want to continue?</string>
     <!-- SuSFS Toast Messages -->
     <string name="susfs_binary_not_found">Cannot find ksu_susfs file</string>
     <string name="susfs_command_failed">SuSFS command execution failed</string>

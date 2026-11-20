@@ -948,4 +948,5 @@
     <string name="music_play">음악 재생</string>
     <string name="music_pause">음악 일시정지</string>
     <string name="module_download_failed">다운로드 실패</string>
+    <string name="susfs_reset_confirm_message">이렇게 하면 모든 SuSFS 설정이 기본값으로 복원됩니다. 계속하시겠습니까?</string>
 </resources>

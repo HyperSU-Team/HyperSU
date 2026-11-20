@@ -25,8 +25,10 @@ import com.sukisu.ultra.ui.component.folk.FolkSliderPreference
 import com.sukisu.ultra.ui.component.folk.FolkSwitchPreference
 import com.sukisu.ultra.ui.component.folk.FolkValuePreference
 import com.sukisu.ultra.ui.theme.SoundEffectConfig
-import com.sukisu.ultra.ui.theme.VibrationConfig
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.sukisu.ultra.ui.theme.VibrationConfig
 
 /**
  * The click / startup sound rows, ported from FolkPatch
@@ -54,7 +56,8 @@ fun MultimediaSoundSection(
         if (uri != null) {
             scope.launch {
                 loadingDialog.show()
-                val ok = SoundEffectConfig.saveSoundEffectFile(context, uri)
+                // The copy is file IO; only the dialog and the toast belong on the main thread.
+                val ok = withContext(Dispatchers.IO) { SoundEffectConfig.saveSoundEffectFile(context, uri) }
                 loadingDialog.hide()
                 showMessage(if (ok) R.string.sound_saved else R.string.sound_save_failed)
             }
@@ -67,7 +70,7 @@ fun MultimediaSoundSection(
         if (uri != null) {
             scope.launch {
                 loadingDialog.show()
-                val ok = SoundEffectConfig.saveStartupSoundFile(context, uri)
+                val ok = withContext(Dispatchers.IO) { SoundEffectConfig.saveStartupSoundFile(context, uri) }
                 loadingDialog.hide()
                 showMessage(if (ok) R.string.sound_saved else R.string.sound_save_failed)
             }
@@ -76,15 +79,19 @@ fun MultimediaSoundSection(
 
     val clearDialog = rememberConfirmDialog(
         onConfirm = {
-            SoundEffectConfig.clearSoundEffect(context)
-            showMessage(R.string.sound_cleared)
+            scope.launch {
+                withContext(Dispatchers.IO) { SoundEffectConfig.clearSoundEffect(context) }
+                showMessage(R.string.sound_cleared)
+            }
         },
     )
 
     val clearStartupDialog = rememberConfirmDialog(
         onConfirm = {
-            SoundEffectConfig.clearStartupSound(context)
-            showMessage(R.string.sound_cleared)
+            scope.launch {
+                withContext(Dispatchers.IO) { SoundEffectConfig.clearStartupSound(context) }
+                showMessage(R.string.sound_cleared)
+            }
         },
     )
 

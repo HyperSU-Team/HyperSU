@@ -950,4 +950,5 @@
     <string name="music_play">Грати музику</string>
     <string name="music_pause">Пауза музики</string>
     <string name="module_download_failed">Не вдалося завантажити</string>
+    <string name="susfs_reset_confirm_message">Це відновить усі налаштування SuSFS до типових. Ви впевнені, що хочете продовжити?</string>
 </resources>

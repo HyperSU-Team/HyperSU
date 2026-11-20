@@ -950,4 +950,5 @@
     <string name="music_play">Atskaņot mūziku</string>
     <string name="music_pause">Pauzēt mūziku</string>
     <string name="module_download_failed">Lejupielāde neizdevās</string>
+    <string name="susfs_reset_confirm_message">Tas atjaunos visus SuSFS iestatījumus uz noklusējuma vērtībām. Vai tiešām vēlaties turpināt?</string>
 </resources>

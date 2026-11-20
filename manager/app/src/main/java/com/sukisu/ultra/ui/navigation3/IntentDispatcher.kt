@@ -155,7 +155,9 @@ fun HandleZipFileIntent(intentChannel: ReceiveChannel<Intent>) {
             val (moduleUris, kernelUris, unknownUris) = categorizeUris(zipUris, zipTypes)
             val finalModuleUris = moduleUris + unknownUris
 
-            val fileNames = buildFileNames(zipUris, zipTypes, context, strings)
+            val fileNames = withContext(Dispatchers.IO) {
+        buildFileNames(zipUris, zipTypes, context, strings)
+    }
             val (confirmTitle, confirmContent) = buildConfirmInfo(
                 moduleUris, kernelUris, fileNames, strings
             )

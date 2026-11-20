@@ -948,4 +948,5 @@
     <string name="music_play">संगीत वाजवा</string>
     <string name="music_pause">संगीत थांबवा</string>
     <string name="module_download_failed">डाउनलोड अयशस्वी</string>
+    <string name="susfs_reset_confirm_message">यामुळे SuSFS ची सर्व सेटिंग्ज डीफॉल्टवर पुनर्संचयित होतील. तुम्हाला खात्री आहे की तुम्ही सुरू ठेवू इच्छिता?</string>
 </resources>

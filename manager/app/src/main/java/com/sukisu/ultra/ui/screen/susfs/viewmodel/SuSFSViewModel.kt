@@ -225,9 +225,12 @@ class SuSFSViewModel(
         }
     }
 
-    fun resetAll() {
+    fun resetAll(context: Context) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
+            // The confirm dialog used to clear itself and reload without resetting anything:
+            // SuSFSManager.resetToDefault had no callers, so the button was decorative.
+            runCatching { SuSFSManager.resetToDefault(context) }
             _uiState.update { it.copy(isLoading = false, showConfirmReset = false) }
             reloadConfig()
         }

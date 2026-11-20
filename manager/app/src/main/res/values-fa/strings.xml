@@ -948,4 +948,5 @@
     <string name="music_play">پخش موسیقی</string>
     <string name="music_pause">توقف موسیقی</string>
     <string name="module_download_failed">دانلود ناموفق بود</string>
+    <string name="susfs_reset_confirm_message">این کار همه تنظیمات SuSFS را به حالت پیش‌فرض برمی‌گرداند. آیا مطمئن هستید که می‌خواهید ادامه دهید؟</string>
 </resources>

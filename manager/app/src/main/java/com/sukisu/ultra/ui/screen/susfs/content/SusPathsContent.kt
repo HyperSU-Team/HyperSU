@@ -18,10 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -41,7 +38,7 @@ import com.sukisu.ultra.ui.screen.susfs.component.rememberSusfsApp
 import com.sukisu.ultra.ui.screen.susfs.util.AppInfoCache
 import com.sukisu.ultra.ui.theme.tokens.FolkType
 import com.sukisu.ultra.ui.viewmodel.SuperUserViewModel
-import kotlinx.coroutines.flow.distinctUntilChanged
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 /**
  * The SUS Paths tab, in the FolkPatch design: the app-scoped `Android/data`
@@ -62,17 +59,14 @@ fun SusPathsContent(
     forceRefreshApps: Boolean = false,
     onReset: (() -> Unit)? = null
 ) {
-    var superUserApps by remember { mutableStateOf(SuperUserViewModel.getAppsSafely()) }
+    // The uid→package mapping follows the app list as it reloads; the old source observed a
+    // plain synchronized getter through snapshotFlow, which can only ever emit once.
+    val superUserApps by SuperUserViewModel.appsFlow.collectAsStateWithLifecycle()
 
-    LaunchedEffect(Unit) {
-        snapshotFlow { SuperUserViewModel.apps }
-            .distinctUntilChanged()
-            .collect { _ ->
-                superUserApps = SuperUserViewModel.getAppsSafely()
-                if (superUserApps.isNotEmpty()) {
-                    runCatching { AppInfoCache.clearCache() }
-                }
-            }
+    LaunchedEffect(superUserApps) {
+        if (superUserApps.isNotEmpty()) {
+            runCatching { AppInfoCache.clearCache() }
+        }
     }
 
     LaunchedEffect(forceRefreshApps) {

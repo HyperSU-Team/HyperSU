@@ -948,4 +948,5 @@
     <string name="music_play">Reproduzir música</string>
     <string name="music_pause">Pausar música</string>
     <string name="module_download_failed">Falha no download</string>
+    <string name="susfs_reset_confirm_message">Isto vai restaurar todas as definições do SuSFS para os valores predefinidos. Tem a certeza de que quer continuar?</string>
 </resources>

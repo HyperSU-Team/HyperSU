@@ -948,4 +948,5 @@
     <string name="music_play">Phát nhạc</string>
     <string name="music_pause">Tạm dừng nhạc</string>
     <string name="module_download_failed">Tải xuống thất bại</string>
+    <string name="susfs_reset_confirm_message">Thao tác này sẽ khôi phục mọi cài đặt SuSFS về mặc định. Bạn có chắc muốn tiếp tục không?</string>
 </resources>

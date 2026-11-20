@@ -977,11 +977,13 @@ object ThemeManager {
                     }
                     writeKeys(context.getSharedPreferences(SETTINGS_PREFS, Context.MODE_PRIVATE), appearance)
                 }
-                val language = if (!hasNativeSections) {
-                    applyFolkPatchAppearance(context, json)
-                } else {
-                    null
-                }
+                if (!hasNativeSections) applyFolkPatchAppearance(context, json)
+
+                // The language is written for both directions, so it is read back whichever
+                // vocabulary the theme uses. Only the FolkPatch path used to return it, which
+                // meant a theme exported by this build never restored its language on import.
+                val language = json.optString("appLanguage", "")
+                    .takeIf { it.isNotBlank() && it in LocaleHelper.SUPPORTED_TAGS }
 
                 val backgroundPrefs = context.getSharedPreferences(
                     BackgroundConfig.PREFS_NAME,
@@ -1483,13 +1485,26 @@ object ThemeManager {
     ) {
         // The URI a slot should end up with: the extracted file, or null when the theme asked for
         // the slot to be cleared. `unchanged` means leave whatever is stored.
+        //
+        // "Clear" is two different decisions: a switch that is ON but whose file the archive does
+        // not carry means the theme describes the whole set, so a missing slot is emptied; a
+        // switch that is OFF only means "clear this slot" where the switch exists to show the
+        // picture itself (title image, focus card). For the page set and the dashboard tiles an
+        // off switch left every stored wallpaper in place - the old code cleared them, so simply
+        // re-importing an exported theme with multi-background off deleted the user's page
+        // wallpapers.
         val unchanged = "\u0000"
 
-        fun decide(base: String, enabled: Boolean, clearWhenOff: Boolean): String {
+        fun decide(
+            base: String,
+            enabled: Boolean,
+            clearWhenAbsent: Boolean,
+            clearWhenOff: Boolean,
+        ): String {
             val uri = localUris[base]
             return when {
                 enabled && uri != null -> uri
-                enabled -> if (clearWhenOff) "" else unchanged
+                enabled -> if (clearWhenAbsent) "" else unchanged
                 clearWhenOff -> ""
                 else -> unchanged
             }
@@ -1503,42 +1518,53 @@ object ThemeManager {
             "background_module",
             "background_settings",
         )
+        // FolkPatch derives "is the focus card switched on" from the presence of any focus
+        // picture when the switch key is absent; the slot decision has to agree with that, or
+        // the switch above gets turned on and this pass deletes the picture it just applied.
+        val focusEnabled = json.optBoolean(
+            "isFocusCardBackgroundEnabled",
+            FOCUS_SUBCARD_ENTRIES.any { json.optBoolean(hasMarkerKey(it), false) },
+        )
 
         val decisions = buildMap {
-            put("background", decide("background", json.optBoolean("isBackgroundEnabled", false), false))
-            pageSlots.forEach { put(it, decide(it, multiEnabled, true)) }
-            put("background_video", decide("background_video", json.optBoolean("isVideoBackgroundEnabled", false), false))
+            put(
+                "background",
+                decide("background", json.optBoolean("isBackgroundEnabled", false), false, false),
+            )
+            pageSlots.forEach { put(it, decide(it, multiEnabled, true, false)) }
+            put(
+                "background_video",
+                decide("background_video", json.optBoolean("isVideoBackgroundEnabled", false), false, false),
+            )
             put(
                 "grid_working_card_background",
                 decide(
                     "grid_working_card_background",
                     json.optBoolean("isGridWorkingCardBackgroundEnabled", false),
                     false,
+                    false,
                 ),
             )
             put(
                 "title_image",
-                decide("title_image", json.optBoolean("isAdvancedTitleStyleEnabled", false), true),
+                decide("title_image", json.optBoolean("isAdvancedTitleStyleEnabled", false), true, true),
             )
-            put(
-                "focus_card_bg",
-                decide("focus_card_bg", json.optBoolean("isFocusCardBackgroundEnabled", false), true),
-            )
+            put("focus_card_bg", decide("focus_card_bg", focusEnabled, true, true))
             put(
                 "dashboard_tile_bg_working",
-                decide("dashboard_tile_bg_working", json.optBoolean("hasDashboardCardBg", false), true),
+                decide("dashboard_tile_bg_working", json.optBoolean("hasDashboardCardBg", false), true, false),
             )
             put(
                 "dashboard_tile_bg_selinux",
-                decide("dashboard_tile_bg_selinux", json.optBoolean("hasDashboardCardBg", false), true),
+                decide("dashboard_tile_bg_selinux", json.optBoolean("hasDashboardCardBg", false), true, false),
             )
             put(
                 "dashboard_tile_bg_zygisk",
-                decide("dashboard_tile_bg_zygisk", json.optBoolean("hasDashboardCardBg", false), true),
+                decide("dashboard_tile_bg_zygisk", json.optBoolean("hasDashboardCardBg", false), true, false),
             )
             put(
                 "dashboard_tile_bg_seccomp",
-                decide("dashboard_tile_bg_seccomp", json.optBoolean("hasDashboardCardBg", false), true),
+                decide("dashboard_tile_bg_seccomp", json.optBoolean("hasDashboardCardBg", false), true, false),
             )
         }
 
