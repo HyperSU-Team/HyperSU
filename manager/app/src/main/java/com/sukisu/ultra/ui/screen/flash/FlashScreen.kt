@@ -11,6 +11,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.dropUnlessResumed
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -28,14 +29,15 @@ fun FlashScreen(flashIt: FlashIt) {
     val navigator = LocalNavigator.current
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var text by rememberSaveable { mutableStateOf("") }
-    val logContent = remember { StringBuilder() }
-    var showRebootAction by rememberSaveable { mutableStateOf(false) }
-    var flashingStatus by rememberSaveable { mutableStateOf(FlashingStatus.FLASHING) }
+    val logContent = FlashRunner.logContent
     val needJailbreakWarning = flashIt is FlashIt.FlashBoot && Natives.isLateLoadMode
     // Soft reboot keeps the jailbreak and still applies modules
     val softReboot = flashIt is FlashIt.FlashModules && isSoftRebootPreferred()
     var flashingEnabled by rememberSaveable { mutableStateOf(!needJailbreakWarning) }
+    // Restored on recreation: the recreated screen must observe the application-scoped job
+    // instead of asking for a second write, and a job that finished while the activity was
+    // being recreated must not be started over.
+    var startRequested by rememberSaveable { mutableStateOf(false) }
     val snackbarHost = remember { SnackbarHostState() }
 
     fun showMessage(message: String) {
@@ -44,15 +46,18 @@ fun FlashScreen(flashIt: FlashIt) {
         }
     }
 
-    FlashEffect(
-        flashIt = flashIt,
-        text = text,
-        logContent = logContent,
-        onTextUpdate = { text = it },
-        onShowRebootChange = { showRebootAction = it },
-        onFlashingStatusChange = { flashingStatus = it },
-        enabled = flashingEnabled,
-    )
+    // The write runs in FlashRunner, not here: the old composition-owned coroutine died with
+    // the activity on rotation and its result was never delivered to the recreated screen.
+    LaunchedEffect(flashIt, flashingEnabled) {
+        if (flashingEnabled && !startRequested) {
+            startRequested = true
+            FlashRunner.start(flashIt)
+        }
+    }
+
+    val text by FlashRunner.text.collectAsStateWithLifecycle()
+    val showRebootAction by FlashRunner.showReboot.collectAsStateWithLifecycle()
+    val flashingStatus by FlashRunner.status.collectAsStateWithLifecycle()
 
     LaunchedEffect(flashingStatus) {
         // A finished flash changes what the module list should show, so ask it to reload on its

@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
@@ -16,6 +17,11 @@ import com.sukisu.ultra.toRootProfileFlags
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
 import com.sukisu.ultra.ui.util.deleteAppProfileTemplate
 import com.sukisu.ultra.ui.viewmodel.TemplateViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun TemplateEditorScreen(template: TemplateViewModel.TemplateInfo, readOnly: Boolean) {
@@ -26,6 +32,8 @@ fun TemplateEditorScreen(template: TemplateViewModel.TemplateInfo, readOnly: Boo
 
     var currentTemplate by rememberSaveable { mutableStateOf(template) }
     var idErrorHint by remember { mutableStateOf("") }
+    val autoSaveScope = rememberCoroutineScope()
+    var autoSaveJob by remember { mutableStateOf<Job?>(null) }
 
     val saveTemplateFailed = stringResource(id = R.string.app_profile_template_save_failed)
     val idConflictError = stringResource(id = R.string.app_profile_template_id_exist)
@@ -36,6 +44,15 @@ fun TemplateEditorScreen(template: TemplateViewModel.TemplateInfo, readOnly: Boo
     }
 
     fun finishEditing() {
+        // Flush a pending debounced autosave before the composition (and its scope) goes away.
+        // Read-only entry never edits, so it never has a pending save to flush.
+        if (autoSave && !readOnly) {
+            autoSaveJob?.cancel()
+            if (!saveTemplate(currentTemplate)) {
+                showToast(saveTemplateFailed)
+                return
+            }
+        }
         if (!readOnly) {
             navigator.setResult("template_edit", true)
         } else {
@@ -44,12 +61,17 @@ fun TemplateEditorScreen(template: TemplateViewModel.TemplateInfo, readOnly: Boo
     }
 
     fun updateTemplate(updatedTemplate: TemplateViewModel.TemplateInfo) {
-        if (autoSave) {
-            if (!saveTemplate(updatedTemplate)) {
-                return
+        currentTemplate = updatedTemplate
+        if (!autoSave || readOnly) return
+        // Debounced: this used to run one root shell exec per keystroke, synchronously on the
+        // main thread, and a failed save snapped the field back with no feedback.
+        autoSaveJob?.cancel()
+        autoSaveJob = autoSaveScope.launch {
+            delay(600)
+            if (!withContext(Dispatchers.IO) { saveTemplate(currentTemplate) }) {
+                showToast(saveTemplateFailed)
             }
         }
-        currentTemplate = updatedTemplate
     }
 
     val uiState = TemplateEditorUiState(
@@ -73,10 +95,15 @@ fun TemplateEditorScreen(template: TemplateViewModel.TemplateInfo, readOnly: Boo
             }
         }
 
-        if (saveTemplate(currentTemplate, isCreation)) {
-            navigator.setResult("template_edit", true)
-        } else {
-            showToast(saveTemplateFailed)
+        val templateToSave = currentTemplate
+        autoSaveJob?.cancel()
+        autoSaveScope.launch {
+            val saved = withContext(Dispatchers.IO) { saveTemplate(templateToSave, isCreation) }
+            if (saved) {
+                navigator.setResult("template_edit", true)
+            } else {
+                showToast(saveTemplateFailed)
+            }
         }
     }
 

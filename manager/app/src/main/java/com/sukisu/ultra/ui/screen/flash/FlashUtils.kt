@@ -1,8 +1,6 @@
 package com.sukisu.ultra.ui.screen.flash
 
 import android.net.Uri
-import android.os.Handler
-import android.os.Looper
 import android.os.Parcelable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Adb
@@ -23,7 +21,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.parcelize.Parcelize
@@ -176,61 +179,75 @@ fun flashIt(
     }
 }
 
-@Composable
-fun FlashEffect(
-    flashIt: FlashIt,
-    text: String,
-    logContent: StringBuilder,
-    onTextUpdate: (String) -> Unit,
-    onShowRebootChange: (Boolean) -> Unit,
-    onFlashingStatusChange: (FlashingStatus) -> Unit,
-    enabled: Boolean = true
-) {
-    LaunchedEffect(enabled) {
-        if (!enabled || text.isNotEmpty()) {
-            return@LaunchedEffect
-        }
-        var currentText = text
-        val mainHandler = Handler(Looper.getMainLooper())
-        withContext(Dispatchers.IO) {
-            flashIt(flashIt, onStdout = {
-                val tempText = "$it\n"
-                if (tempText.startsWith("[H[J")) { // clear command
-                    currentText = tempText.substring(6)
-                } else {
-                    currentText += tempText
-                }
-                mainHandler.post {
-                    onTextUpdate(currentText)
-                }
-                logContent.append(it).append("\n")
-            }, onStderr = {
-                logContent.append(it).append("\n")
-            }).apply {
-                if (code != 0) {
-                    currentText += "Error code: $code.\n $err Please save and check the log.\n"
-                    mainHandler.post {
-                        onTextUpdate(currentText)
+/**
+ * Application-scoped state for one boot/module flash.
+ *
+ * The root shell write cannot be cancelled, so the job must not belong to a composition: a
+ * rotation or a dark-mode change recreated the activity, the old composition's completion
+ * callbacks died with it, and the recreated screen sat on "Flashing" with NavLock held - even
+ * though the write had finished. The screen observes these flows instead of owning the job.
+ */
+object FlashRunner {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+
+    private val _text = MutableStateFlow("")
+    val text: StateFlow<String> = _text.asStateFlow()
+
+    private val _showReboot = MutableStateFlow(false)
+    val showReboot: StateFlow<Boolean> = _showReboot.asStateFlow()
+
+    private val _status = MutableStateFlow(FlashingStatus.FLASHING)
+    val status: StateFlow<FlashingStatus> = _status.asStateFlow()
+
+    /** The running (or last finished) flash's log; survives activity recreation. */
+    val logContent = StringBuffer()
+
+    private var job: Job? = null
+
+    val isRunning: Boolean
+        get() = job?.isActive == true
+
+    /** Starts [flashIt] unless another write is already running. */
+    fun start(flashIt: FlashIt) {
+        if (isRunning) return
+        _text.value = ""
+        _showReboot.value = false
+        _status.value = FlashingStatus.FLASHING
+        synchronized(logContent) { logContent.setLength(0) }
+        job = scope.launch {
+            var currentText = ""
+            val result = withContext(Dispatchers.IO) {
+                flashIt(flashIt, onStdout = { line ->
+                    val incoming = "$line\n"
+                    // The packer's clear-screen sequence arrives as raw ESC bytes.
+                    if (incoming.startsWith("[H[J")) {
+                        currentText = incoming.substring(6)
+                    } else {
+                        currentText += incoming
                     }
-                }
-                if (showReboot) {
-                    currentText += "\n\n\n"
-                    mainHandler.post {
-                        onTextUpdate(currentText)
-                        onShowRebootChange(true)
-                    }
-                }
-                mainHandler.post {
-                    onFlashingStatusChange(if (code == 0) FlashingStatus.SUCCESS else FlashingStatus.FAILED)
-                }
+                    _text.value = currentText
+                    synchronized(logContent) { logContent.append(line).append("\n") }
+                }, onStderr = { line ->
+                    synchronized(logContent) { logContent.append(line).append("\n") }
+                })
             }
+            if (result.code != 0) {
+                currentText += "Error code: ${result.code}.\n ${result.err} Please save and check the log.\n"
+                _text.value = currentText
+            }
+            if (result.showReboot) {
+                currentText += "\n\n\n"
+                _text.value = currentText
+                _showReboot.value = true
+            }
+            _status.value = if (result.code == 0) FlashingStatus.SUCCESS else FlashingStatus.FAILED
         }
     }
 }
 
 fun saveLog(
     context: android.content.Context,
-    logContent: StringBuilder,
+    logContent: CharSequence,
     scope: CoroutineScope,
     showMessage: (String) -> Unit
 ): () -> Unit {

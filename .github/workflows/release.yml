@@ -98,27 +98,24 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.50 - the second review pass: theme round trips, SuSFS persistence, and a set of blocking calls removed from composition.
+            HyperSU v4.2.51 - a flash survives rotation, and the screens around it stop losing their state.
 
-            Theme import/export:
-            - Re-importing a theme exported by this build deleted the page wallpapers and dashboard tiles whenever the multi-background switch was off. "Clear" now means two things: a missing slot for a set the theme describes, versus a switch that exists to show the picture. Page wallpapers and dashboard tiles survive an off switch.
-            - A focus card with a picture but no switch key was turned on by the import and then had its picture deleted by the same pass; the slot decision now uses the same fallback the picker does.
-            - The language stored in a theme was only restored on the FolkPatch path, so a theme exported here came back without it.
-            - The module tab's icon was written under FolkPatch's alias (AModule), producing an entry the exporter never packs and a row the bar ignores; it uses this app's own destination name now, with the aliases still accepted on read.
-            - The kernel wallpaper slot is part of the palette fallback again, so an imported picture is not orphaned.
+            Flashing:
+            - Boot/module flashing moved out of the composition into an application-scoped runner. A rotation or dark-mode change used to recreate the activity mid-write, kill the callbacks carrying the result, and leave the recreated screen on "Flashing" with back and swipe disabled even after the write finished. The screen observes the runner's text, reboot flag and status, and the log survives recreation.
+            - The kernel-flash page rebuilds its log from the flash state on every change instead of only polling for a workspace it started itself; a screen recreated during the flash keeps streaming and the final lines are no longer dropped.
+            - The flash status holder's fields are volatile, so a re-created screen cannot start a second worker from a stale "not flashing" read.
 
-            SuSFS:
-            - The autostart toggle snapped back because it was gated on a `susfs module` subcommand this ksud does not ship; the persisted config is what applies at boot, so the toggle now sticks.
-            - Settings with no ksud storage behind them are mirrored in the manager, so writing them no longer vanishes on the next read.
-            - Reset actually resets: the confirm dialog was decorative, `resetToDefault` had no caller.
-            - The SUS paths tab follows the app list through a flow; it used to observe a value that could never change.
-            - The umount list parses the JSON ksud prints; the whitespace table it expected never matched, so the page was always empty.
+            Navigation and modules:
+            - The navigation rail applies the same kernel-support filter as the floating bottom bar, so Superuser/Module are not offered on large screens without a driver; tabs are selected by page index rather than list position.
+            - A module update download that finishes while the app is backgrounded is pushed to the flash screen instead of being silently discarded.
+            - The install-confirm toggle is read when it is needed instead of being remembered for the process, so changing it in Settings takes effect immediately.
 
-            Responsiveness:
-            - Font, music, sound-effect, title-image, SELinux and template work moved off the main thread or behind a debounce: the title-image sliders wrote the whole preference file on every frame, the SELinux dialog ran a root shell command per keystroke, and the template picker listed templates during composition.
-            - `execl` gets a `(char*)nullptr` terminator, which the C++ rules require for a variadic call.
+            Settings and data:
+            - Template editor autosave is debounced, runs off the main thread, flushes on exit, and reports failures instead of snapping the field back; SELinux rule validation is debounced too.
+            - Storage stats read `df` rows by their numeric columns, so a long device name wrapping onto its own line no longer misreports partition sizes.
+            - The SuSFS restore temp file is deleted after use, and the log filter preference is no longer written from inside a state transform.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.48...v4.2.50
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.50...v4.2.51
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

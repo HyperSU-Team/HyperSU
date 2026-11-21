@@ -17,9 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.Dp
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.launch
@@ -42,7 +40,6 @@ fun ModulePager(
     val navigator = LocalNavigator.current
     val context = LocalContext.current
     val resource = LocalResources.current
-    val lifecycleOwner = LocalLifecycleOwner.current
     val viewModel = viewModel<ModuleViewModel>()
     val scope = rememberCoroutineScope()
     val rawUiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -151,7 +148,10 @@ fun ModulePager(
                 )
                 if (uri == null) {
                     viewModel.emitEffect(ModuleEffect.Toast(resource.getString(R.string.module_download_failed)))
-                } else if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                } else {
+                    // Pushed even when the activity is not resumed: a finished download used to be
+                    // dropped silently if the user backgrounded the app mid-transfer, and pushing a
+                    // route while backgrounded is harmless - it is shown when the user returns.
                     navigator.pushFlash(Route.Flash(FlashIt.FlashModules(listOf(uri))))
                     viewModel.markNeedRefresh()
                 }

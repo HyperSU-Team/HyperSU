@@ -18,7 +18,6 @@ import com.sukisu.ultra.ui.navigation3.LocalNavigator
 import com.sukisu.ultra.ui.navigation3.NavLock
 import com.sukisu.ultra.ui.util.reboot
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
@@ -109,31 +108,24 @@ fun KernelFlashScreen(
                 worker.uri = kernelUri
                 worker.setOnFlashCompleteListener(onFlashComplete)
                 worker.start()
-
-                while (flashState.error.isEmpty() && !flashState.isCompleted) {
-                    if (flashState.logs.isNotEmpty()) {
-                        logText = flashState.logs.joinToString("\n")
-                        logContent.clear()
-                        logContent.append(logText)
-                    }
-                    delay(100)
-                }
-
-                if (flashState.error.isNotEmpty()) {
-                    logText += "\n${flashState.error}\n"
-                    logContent.append("\n${flashState.error}\n")
-                    KernelFlashStateHolder.isFlashing = false
-                }
-            }
-        } else {
-            logText = flashState.logs.joinToString("\n")
-            if (flashState.error.isNotEmpty()) {
-                logText += "\n${flashState.error}\n"
-            } else if (flashState.isCompleted) {
-                logText += "\n$flashComplete\n\n\n"
-                showFloatAction = true
             }
         }
+    }
+
+    // Rebuilt from the state on every change, for a flash this screen started and for one it
+    // picked up after a recreation. The old polling loop only existed in the first case, so a
+    // recreated screen showed a frozen log - and the final lines could be missing even normally.
+    LaunchedEffect(flashState.logs.size, flashState.isCompleted, flashState.error) {
+        val suffix = when {
+            flashState.error.isNotEmpty() -> "\n${flashState.error}\n"
+            flashState.isCompleted -> "\n$flashComplete\n\n\n"
+            else -> ""
+        }
+        logText = flashState.logs.joinToString("\n") + suffix
+        logContent.clear()
+        logContent.append(logText)
+        if (flashState.error.isNotEmpty()) KernelFlashStateHolder.isFlashing = false
+        if (flashState.isCompleted) showFloatAction = true
     }
 
     val actions = KernelFlashActions(

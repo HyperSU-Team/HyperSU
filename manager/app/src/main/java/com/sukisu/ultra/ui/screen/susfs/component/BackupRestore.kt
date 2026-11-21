@@ -298,6 +298,9 @@ fun BackupRestoreComponent(
                                         internalLoading = false
                                         onLoadingChange(false)
                                         showRestoreConfirmDialog = false
+                                        // The restore has consumed the copy; leaving it in the
+                                        // cache was a permanent leftover for every restore.
+                                        selectedBackupFile?.let { runCatching { File(it).delete() } }
                                         delay(100.milliseconds)
                                         selectedBackupFile = null
                                         backupInfo = null

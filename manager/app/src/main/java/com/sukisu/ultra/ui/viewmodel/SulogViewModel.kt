@@ -154,15 +154,13 @@ class SulogViewModel(
     }
 
     fun toggleFilter(filter: SulogEventFilter) {
-        _uiState.update { currentState ->
-            val selectedFilters = currentState.selectedFilters.toMutableSet().apply {
-                if (!add(filter)) remove(filter)
-            }
-            selectedFiltersFlow.value = selectedFilters
-            repo.suLogFilters = selectedFilters.map { it.name }.toSet()
-            currentState.copy(
-                selectedFilters = selectedFilters,
-            )
+        // Computed before update{}: that transform can be re-run on CAS contention, and the
+        // preference write beside the flow assignment would then run twice.
+        val selectedFilters = _uiState.value.selectedFilters.toMutableSet().apply {
+            if (!add(filter)) remove(filter)
         }
+        selectedFiltersFlow.value = selectedFilters
+        repo.suLogFilters = selectedFilters.map { it.name }.toSet()
+        _uiState.update { it.copy(selectedFilters = selectedFilters) }
     }
 }

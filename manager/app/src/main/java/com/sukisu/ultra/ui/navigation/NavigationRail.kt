@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.sukisu.ultra.Natives
 import com.sukisu.ultra.ui.theme.SoundEffectConfig
 import com.sukisu.ultra.ui.theme.VibrationConfig
 import com.sukisu.ultra.ui.theme.tokens.FolkShape
@@ -66,6 +67,14 @@ fun FolkNavigationRail(
 ) {
     val context = LocalContext.current
 
+    // Same filter as the bottom bar: without a working driver the Superuser and Module pages
+    // are empty, so the rail must not offer them either. Entries are selected by page index,
+    // not by their position in the filtered list.
+    val hasKernelSupport = remember { runCatching { Natives.isManager }.getOrDefault(false) }
+    val destinations = remember(hasKernelSupport) {
+        BottomBarDestination.available(hasKernelSupport)
+    }
+
     Surface(
         modifier = modifier
             .fillMaxHeight()
@@ -84,8 +93,8 @@ fun FolkNavigationRail(
         ) {
             Spacer(Modifier.weight(1f))
 
-            BottomBarDestination.entries.forEachIndexed { index, destination ->
-                val selected = index == selectedIndex
+            destinations.forEachIndexed { index, destination ->
+                val selected = destination.pageIndex == selectedIndex
 
                 val selection by animateFloatAsState(
                     targetValue = if (selected) 1f else 0f,
@@ -115,7 +124,7 @@ fun FolkNavigationRail(
                 )
 
                 val pillColor = MaterialTheme.colorScheme.secondaryContainer
-                val navBadge = badgeFor(index, badge)
+                val navBadge = badgeFor(destination.pageIndex, badge)
                 val interactionSource = remember { MutableInteractionSource() }
 
                 Column(
@@ -128,7 +137,7 @@ fun FolkNavigationRail(
                             indication = null,
                             role = Role.Tab,
                             onClick = {
-                                onSelectedIndexChange(index)
+                                onSelectedIndexChange(destination.pageIndex)
                                 // The rail is this layout's tab bar, so it uses the same scope
                                 // as the bottom bar.
                                 SoundEffectManager.playScoped(

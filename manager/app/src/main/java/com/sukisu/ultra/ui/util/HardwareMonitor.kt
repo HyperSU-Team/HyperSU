@@ -387,9 +387,12 @@ object HardwareMonitor {
         val infos = mutableListOf<StoragePartitionInfo>()
         for ((path, label) in partitions) {
             val out = runShell("df -k $path 2>/dev/null")
-            if (out.size < 2) continue
-            val parts = out.last().trim().split(Regex("\\s+"))
-            if (parts.size < 3) continue
+            // toybox wraps a long /dev/block/... name onto its own line; take the first row whose
+            // second token is numeric instead of assuming the last line starts with the numbers.
+            val parts = out.asSequence()
+                .map { it.trim().split(Regex("\\s+")) }
+                .firstOrNull { it.size >= 3 && it[1].toLongOrNull() != null }
+                ?: continue
             val total = (parts[1].toLongOrNull() ?: continue) * 1024
             val used = (parts[2].toLongOrNull() ?: continue) * 1024
             if (total > 0L) infos += StoragePartitionInfo(label, total, used)
