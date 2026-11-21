@@ -74,6 +74,10 @@ class KernelSUApplication : Application(), ViewModelStoreOwner {
             }
         }
 
+        // Repairs a device whose launcher entry was left on the retired alternate-icon alias by an
+        // older build. No-op everywhere else.
+        runCatching { com.sukisu.ultra.ui.util.restoreLauncherComponent(this) }
+
         if (!isUserUnlocked()) {
             // Started before the user unlocked the device. The app is directBootAware, so a boot
             // broadcast can start this process, and it can still be alive when the user opens the

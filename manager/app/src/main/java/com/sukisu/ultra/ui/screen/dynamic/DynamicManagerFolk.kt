@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.component.KsuIsValid
 import com.sukisu.ultra.ui.component.folk.FolkNavigationPreference
+import com.sukisu.ultra.ui.component.folk.FolkPreference
 import com.sukisu.ultra.ui.component.folk.FolkScaffold
 import com.sukisu.ultra.ui.component.folk.FolkSettingsSectionGroup
 import com.sukisu.ultra.ui.component.folk.FolkTitleStyle
@@ -57,7 +58,10 @@ fun DynamicManagerFolk(
                 KsuIsValid {
                     FolkSettingsSectionGroup(title = stringResource(R.string.dynamic_manager_current)) {
                         item {
-                            FolkNavigationPreference(
+                            // Display-only: this row reports the registered signature. It used to be a
+                            // navigation preference with an empty onClick, so it looked tappable,
+                            // rippled, and did nothing.
+                            FolkPreference(
                                 title = stringResource(R.string.dynamic_manager_current),
                                 summary = if (state.isSet) {
                                     "0x${state.size.toString(16)}  ${state.hashSummary}"
@@ -65,8 +69,6 @@ fun DynamicManagerFolk(
                                     stringResource(R.string.dynamic_manager_not_set)
                                 },
                                 icon = Icons.Rounded.Security,
-                                onClick = {},
-                                trailing = {},
                             )
                         }
                         item {

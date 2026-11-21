@@ -82,8 +82,8 @@ class SettingsViewModel(
             val isShellSuAdbOnlyEnabled = repo.getShellSuAdbOnlyPersistValue() == 1L
             val isDefaultUmountModules = repo.isDefaultUmountModules()
             val appLanguage = repo.appLanguage
-            val autoJailbreak = repo.autoJailbreak
-            val useSoftReboot = repo.useSoftReboot
+                    val useSoftReboot = repo.useSoftReboot
+        val autoJailbreak = repo.autoJailbreak
             val isLateLoadMode = Natives.isLateLoadMode
 
             _uiState.update {
@@ -128,8 +128,8 @@ class SettingsViewModel(
                     isSulogEnabled = isSulogEnabled,
                     isDefaultUmountModules = isDefaultUmountModules,
                     isLkmMode = isLkmMode,
-                    autoJailbreak = autoJailbreak,
-                    useSoftReboot = useSoftReboot,
+                            useSoftReboot = useSoftReboot,
+            autoJailbreak = autoJailbreak,
                     isLateLoadMode = isLateLoadMode,
                 )
             }

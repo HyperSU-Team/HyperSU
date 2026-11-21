@@ -462,6 +462,18 @@ fun SettingPagerFolk(
                         }
 
                         item {
+                            // Not a preference: its setter enables the magica boot receiver, which
+                            // is what re-applies root after a reboot in jailbreak mode.
+                            FolkSwitchPreference(
+                                title = stringResource(R.string.settings_auto_jailbreak),
+                                summary = stringResource(R.string.settings_auto_jailbreak_summary),
+                                icon = Icons.Filled.FlashOn,
+                                enabled = uiState.isLateLoadMode,
+                                checked = uiState.autoJailbreak,
+                                onCheckedChange = actions.onSetAutoJailbreak,
+                            )
+                        }
+                        item {
                             FolkSwitchPreference(
                                 title = stringResource(R.string.settings_soft_reboot),
                                 summary = stringResource(R.string.settings_soft_reboot_summary),
@@ -513,16 +525,6 @@ fun SettingPagerFolk(
                                 icon = Icons.Filled.Description,
                                 checked = uiState.moduleInstallConfirm,
                                 onCheckedChange = actions.onSetModuleInstallConfirm,
-                            )
-                        }
-                        item {
-                            FolkSwitchPreference(
-                                title = stringResource(R.string.settings_auto_jailbreak),
-                                summary = stringResource(R.string.settings_auto_jailbreak_summary),
-                                icon = Icons.Filled.FlashOn,
-                                enabled = uiState.isLateLoadMode,
-                                checked = uiState.autoJailbreak,
-                                onCheckedChange = actions.onSetAutoJailbreak,
                             )
                         }
                     }

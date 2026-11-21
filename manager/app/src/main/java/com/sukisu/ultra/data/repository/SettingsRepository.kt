@@ -63,8 +63,8 @@ interface SettingsRepository {
     var showHomeSelinux: Boolean
     /** Whether the home facts list shows the seccomp row. */
     var showHomeSeccomp: Boolean
-    var autoJailbreak: Boolean
     var useSoftReboot: Boolean
+    var autoJailbreak: Boolean
     val intentToken: String
 
     suspend fun getSuCompatStatus(): String

@@ -41,6 +41,15 @@ class WebUIActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
 
+        // The appearance switch promised WebView debugging but only wrote a preference nothing
+        // read. Apply it here: remote debugging is what lets a module author inspect their own
+        // WebUI with chrome://inspect.
+        runCatching {
+            val enabled = getSharedPreferences("settings", MODE_PRIVATE)
+                .getBoolean("enable_web_debugging", false)
+            android.webkit.WebView.setWebContentsDebuggingEnabled(enabled)
+        }
+
         setContent {
             val context = LocalContext.current
             val prefs = context.getSharedPreferences("settings", MODE_PRIVATE)

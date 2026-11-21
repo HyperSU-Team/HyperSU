@@ -33,6 +33,7 @@ data class SettingsUiState(
     val showHomeFingerprint: Boolean = true,
     val showHomeSelinux: Boolean = true,
     val showHomeSeccomp: Boolean = true,
+    val autoJailbreak: Boolean = false,
 
     // Su Compat
     val suCompatStatus: String = "",
@@ -66,7 +67,6 @@ data class SettingsUiState(
     val isLateLoadMode: Boolean = false,
 
     // Auto Jailbreak
-    val autoJailbreak: Boolean = false,
 
     // Soft Reboot
     val useSoftReboot: Boolean = false

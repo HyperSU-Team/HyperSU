@@ -81,9 +81,9 @@ fun FolkFactRow(
     valueTone: FolkSeverity = FolkSeverity.Neutral,
 ) {
     val context = LocalContext.current
-    // Read per row rather than hoisted: the group is built from a scope lambda that cannot read
-    // composition, and the setting only changes on the settings page.
-    val copyEnabled = remember { SettingsRepositoryImpl().enableInfoCopy }
+    // Read per composition: the home page stays in the pager, so a remembered value would keep the
+    // old switch state until the app restarted.
+    val copyEnabled = SettingsRepositoryImpl().enableInfoCopy
     val copiedText = stringResource(R.string.copied_to_clipboard)
     // A blank value renders as nothing at all, which is indistinguishable from a row whose text
     // failed to draw. Showing a dash says which one it is - both to the user and to anyone reading

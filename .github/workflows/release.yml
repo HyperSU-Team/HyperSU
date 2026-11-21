@@ -98,14 +98,18 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.52 - the shipped JNI libraries are hardened.
+            HyperSU v4.2.53 - the manager stops shipping debuggable backups, and three buttons that lied about what they do are fixed or gone.
 
-            REA inspected the released v4.2.51 APK and reported both native libraries with RELRO disabled and no stack-protector symbol: the NDK does not enable those by default, and both objects are loaded into the manager process, which holds a root shell.
+            Security:
+            - `android:allowBackup` was `true` with the generated sample rules, so `adb backup` and cloud backup could carry the manager's data off the device (settings, intent token, appearance, cached lists). A root manager should not be a backup source; backups are off and the two unused rule files are deleted.
 
-            - `libkernelsu.so` and `libadbroot.so` are now linked with `-Wl,-z,relro -Wl,-z,now` (full RELRO) and `-Wl,-z,noexecstack`, and compiled with `-fstack-protector-strong -D_FORTIFY_SOURCE=2`.
-            - Nothing else in the manager changes in this build.
+            Interface:
+            - The alternate-launcher-icon feature is fully retired: its artwork is gone and the alias is kept only as a disabled launch bridge for devices that still have it selected, with the real activity re-enabled at start.
+            - The dynamic-manager page showed the current signature as a tappable row with an empty handler: it rippled and did nothing. It is a plain information row now.
+            - The WebUI debugging switch only wrote a preference that nothing read. It now calls `WebView.setWebContentsDebuggingEnabled`, so `chrome://inspect` works when it is on.
+            - The home copy switch is read per composition instead of being remembered for the life of the pager.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.51...v4.2.52
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.52...v4.2.53
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
