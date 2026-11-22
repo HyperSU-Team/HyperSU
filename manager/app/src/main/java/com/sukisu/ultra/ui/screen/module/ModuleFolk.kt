@@ -88,6 +88,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
@@ -416,7 +417,17 @@ internal fun ModulePagerFolk(
                 }
 
                 SmallExtendedFloatingActionButton(
-                    modifier = Modifier.padding(bottom = bottomInnerPadding),
+                    // Drawn at the same height as before, but *placed* at the bottom of the page.
+                    //
+                    // Material3 lifts the snackbar above the floating action button whenever the
+                    // button reaches higher than the bottom bar, and the padding on this button
+                    // made its placement (not just its drawing) sit a bar-height up - so the
+                    // "restart to apply" message was pushed far above the bar while the same
+                    // scaffold on the settings page put it right on top of it. A translation
+                    // shifts the drawing without moving the placement.
+                    modifier = Modifier.graphicsLayer {
+                        translationY = -bottomInnerPadding.toPx()
+                    },
                     expanded = fabExpanded,
                     onClick = {
                         val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
