@@ -54,6 +54,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -897,7 +898,6 @@ private data class HomeBasicFacts(
     val kernelRelease: String,
     val deviceModel: String,
     val fingerprint: String,
-    val selinuxStatus: String,
     val seccompStatus: Int,
 )
 
@@ -932,23 +932,6 @@ private fun rememberHomeBasicFacts(): HomeBasicFacts {
             .orEmpty()
             .ifBlank { runCatching { android.os.Build.DISPLAY }.getOrNull().orEmpty() }
     }
-    val selinux by produceState(initialValue = "") {
-        // Keep asking until a real answer arrives. On a cold start the root shell is not usable
-        // yet, so the first reads fail and the row stayed "unknown" - and only a language switch
-        // (a recreated activity) started a fresh read that happened to land after the shell was
-        // ready. There is no reason to stop asking: the row simply stays as it is until it answers.
-        while (true) {
-            val reading = withContext(Dispatchers.IO) {
-                runCatching { getSELinuxStatusRaw() }.getOrDefault("")
-            }
-            if (reading.isNotBlank() && reading != "Unknown") {
-                value = reading
-                break
-            }
-            value = reading
-            kotlinx.coroutines.delay(2_000)
-        }
-    }
     val seccomp = remember {
         runCatching { android.system.Os.prctl(21 /* PR_GET_SECCOMP */, 0, 0, 0, 0) }.getOrDefault(-1)
     }
@@ -957,15 +940,38 @@ private fun rememberHomeBasicFacts(): HomeBasicFacts {
         kernelRelease = kernelRelease,
         deviceModel = deviceModel,
         fingerprint = fingerprint,
-        selinuxStatus = selinux,
         seccompStatus = seccomp,
     )
+}
+
+/**
+ * The SELinux mode, as a [State] the caller reads.
+ *
+ * Read it in the composable that draws the row (`val mode by rememberSelinuxStatus()`). When the
+ * reading lived inside a helper, the update restarted only that helper, the caller was skipped, and
+ * the row kept showing its first label until something recomposed the page - a language switch
+ * recreated the activity, which is what made it look fixed by switching languages.
+ */
+@Composable
+private fun rememberSelinuxStatus(): State<String> = produceState(initialValue = "") {
+    while (true) {
+        val reading = withContext(Dispatchers.IO) {
+            runCatching { getSELinuxStatusRaw() }.getOrDefault("")
+        }
+        if (reading.isNotBlank() && reading != "Unknown") {
+            value = reading
+            break
+        }
+        value = reading
+        kotlinx.coroutines.delay(2_000)
+    }
 }
 
 @Composable
 private fun HomeFacts(state: HomeUiState) {
     val systemInfo = state.systemInfo
     val basics = rememberHomeBasicFacts()
+    val selinuxLocal by rememberSelinuxStatus()
 
     // A state that came back without these must not turn them into dashes: each one is readable
     // here, and the fallback is the same value the view model would have produced.
@@ -974,12 +980,12 @@ private fun HomeFacts(state: HomeUiState) {
     val deviceText = systemInfo.deviceModel.ifBlank { basics.deviceModel }
     val fingerprintText = systemInfo.fingerprint.ifBlank { basics.fingerprint }
     val selinuxRaw = systemInfo.selinuxStatus.takeIf { it.isNotBlank() && it != "Unknown" }
-        ?: basics.selinuxStatus
+        ?: selinuxLocal
     val seccompRaw = if (systemInfo.seccompStatus == -1) basics.seccompStatus else systemInfo.seccompStatus
 
     // One line per change: what the state carried and what the local read produced.
     androidx.compose.runtime.LaunchedEffect(selinuxRaw) {
-        android.util.Log.i("HomeFacts", "selinux raw='$selinuxRaw' state='${systemInfo.selinuxStatus}' local='${basics.selinuxStatus}'")
+        android.util.Log.i("HomeFacts", "selinux raw='$selinuxRaw' state='${systemInfo.selinuxStatus}' local='$selinuxLocal'")
     }
     val selinuxDisplay = selinuxStatusLabel(selinuxRaw)
     val seccompDisplay = seccompStatusLabel(seccompRaw)
@@ -1151,8 +1157,9 @@ private fun HomeGridStatusCards(
     // The tiles read the same two values as the fact rows; a state that lost them must not turn a
     // readable SELinux mode into "unknown".
     val basics = rememberHomeBasicFacts()
+    val selinuxLocal by rememberSelinuxStatus()
     val selinuxRaw = state.systemInfo.selinuxStatus.takeIf { it.isNotBlank() && it != "Unknown" }
-        ?: basics.selinuxStatus
+        ?: selinuxLocal
     val seccompRaw = if (state.systemInfo.seccompStatus == -1) {
         basics.seccompStatus
     } else {
