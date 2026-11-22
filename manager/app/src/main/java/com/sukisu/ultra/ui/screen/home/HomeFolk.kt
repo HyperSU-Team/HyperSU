@@ -977,6 +977,10 @@ private fun HomeFacts(state: HomeUiState) {
         ?: basics.selinuxStatus
     val seccompRaw = if (systemInfo.seccompStatus == -1) basics.seccompStatus else systemInfo.seccompStatus
 
+    // One line per change: what the state carried and what the local read produced.
+    androidx.compose.runtime.LaunchedEffect(selinuxRaw) {
+        android.util.Log.i("HomeFacts", "selinux raw='$selinuxRaw' state='${systemInfo.selinuxStatus}' local='${basics.selinuxStatus}'")
+    }
     val selinuxDisplay = selinuxStatusLabel(selinuxRaw)
     val seccompDisplay = seccompStatusLabel(seccompRaw)
 

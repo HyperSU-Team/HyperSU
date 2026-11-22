@@ -19,13 +19,24 @@ private const val ENFORCE_NODE = "/sys/fs/selinux/enforce"
  * manager's own root shell can still `cat` it, and that is the only reader left.
  */
 fun getSELinuxStatusRaw(): String {
-    readSelinuxEnforceNode()?.let { return it }
-    readSelinuxEnforceNodeAsRoot()?.let { return it }
+    readSelinuxEnforceNode()?.let {
+        Log.i(TAG, "SELinux from the node: $it")
+        return it
+    }
+    readSelinuxEnforceNodeAsRoot()?.let {
+        Log.i(TAG, "SELinux from the root shell: $it")
+        return it
+    }
     // `ro.boot.selinux` is what the kernel was booted with. It needs no shell and no root, so it
     // is the answer that is available on the very first frame - which is the case that used to
     // stay "unknown" until the activity was recreated.
-    readBootSelinuxProperty()?.let { return it }
-    return readSelinuxViaShell()
+    readBootSelinuxProperty()?.let {
+        Log.i(TAG, "SELinux from ro.boot.selinux: $it")
+        return it
+    }
+    val viaShell = readSelinuxViaShell()
+    Log.w(TAG, "SELinux unknown; node, root cat and ro.boot.selinux all failed, sh said $viaShell")
+    return viaShell
 }
 
 /**
@@ -37,7 +48,9 @@ fun getSELinuxStatusRaw(): String {
 private fun readBootSelinuxProperty(): String? = runCatching {
     val clazz = Class.forName("android.os.SystemProperties")
     val get = clazz.getMethod("get", String::class.java, String::class.java)
-    when ((get.invoke(null, "ro.boot.selinux", "") as? String)?.trim()?.lowercase()) {
+    val raw = (get.invoke(null, "ro.boot.selinux", "") as? String)?.trim().orEmpty()
+    Log.i(TAG, "ro.boot.selinux = '$raw'")
+    when (raw.lowercase()) {
         "enforcing" -> "Enforcing"
         "permissive" -> "Permissive"
         "disabled" -> "Disabled"
