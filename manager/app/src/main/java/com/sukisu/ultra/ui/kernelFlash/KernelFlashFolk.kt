@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -70,10 +71,14 @@ fun KernelFlashFolk(
         it.key == Key.VolumeDown || it.key == Key.VolumeUp
     }
 
-    // The finished state is deliberately kept when this screen goes away: a rotation disposes it
-    // too, and clearing here handed the recreated screen an empty state - it showed a blank
-    // "flashing" page with no result, and, before the start guard in KernelFlashScreen, it flashed
-    // the same archive again. A later entry of this route discards a finished state by itself.
+    DisposableEffect(Unit) {
+        onDispose {
+            if (state.isCompleted || state.error.isNotEmpty()) {
+                KernelFlashStateHolder.clear()
+            }
+        }
+    }
+
     FolkScaffold(
         title = stringResource(
             when {

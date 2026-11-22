@@ -37,9 +37,6 @@ class ModuleBannerStorage(context: Context, private val dirName: String) {
         return data
     }
 
-    /** Whether a banner is stored for this key, without reading it. */
-    fun exists(key: String): Boolean = getBannerFile(key).let { it.isFile && it.length() > 0 }
-
     fun clear(key: String): Boolean {
         val file = getBannerFile(key)
         return !file.exists() || file.delete()

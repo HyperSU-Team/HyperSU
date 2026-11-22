@@ -45,10 +45,7 @@ fun parseKernelVersion(version: String): KernelVersion {
 }
 
 fun getKernelVersion(): KernelVersion {
-    // uname can fail or be spoofed to an empty string; `os.version` is the same release the VM
-    // reports, so parsing it keeps the kernel rows from turning into "-1.-1.-1" on such devices.
-    val release = runCatching { Os.uname().release }.getOrNull()
-        .orEmpty()
-        .ifBlank { System.getProperty("os.version").orEmpty() }
-    return parseKernelVersion(release)
+    Os.uname().release.let {
+        return parseKernelVersion(it)
+    }
 }

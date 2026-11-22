@@ -1,7 +1,6 @@
 package com.sukisu.ultra.ui.screen.about
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.dropUnlessResumed
@@ -20,12 +19,11 @@ fun AboutScreen() {
         "<b><a href=\"https://github.com/HyperSU-Team/HyperSU\">GitHub</a></b>",
         "https://qun.qq.com/universal-share/share?ac=1&authKey=8hQdPwdedWVxmI7Oj12BDYlwHUIgehcpvzVycp3bd%2FNRg2zlRbtnJiaTPr%2FX0lNG&busi_data=eyJncm91cENvZGUiOiIxMTIxOTA4NjQxIiwidG9rZW4iOiJlbmVBSnBhWjNnWFRvUm5IbHNsK08vaDVndTBuTGc5Qy9Uazl5aW5nUi9ydXhDQUFzcmd6bVpkb0dUd1NDSVVrIiwidWluIjoiMjQxNTgzMTk0NiJ9&data=an4ho15SknABma67muFTwUOjtktp1ndORbPazI0j-BJaTsapc52ZYjEZpO3sAtz48dJeuiZjioJx7NlAaIqsiw&svctype=4&tempid=h5_group_info",
     )
-    val links = remember(htmlString) { extractLinks(htmlString) }
     val state = AboutUiState(
         title = stringResource(R.string.about),
         appName = stringResource(R.string.app_name),
         versionName = BuildConfig.VERSION_NAME,
-        links = links,
+        links = extractLinks(htmlString),
     )
     val actions = AboutScreenActions(
         onBack = dropUnlessResumed { navigator.pop() },

@@ -88,7 +88,7 @@ fun <T> MultiSelectDialog(
                     }
                 }
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Filled.Close, contentDescription = stringResource(android.R.string.cancel))
+                    Icon(Icons.Filled.Close, contentDescription = null)
                 }
             }
 

@@ -105,8 +105,7 @@ internal fun InstallScreenFolk(
                 if (partitionItems.isNotEmpty()) {
                     item {
                         FolkChoicePreference(
-                            // No "()" suffix on devices without a slot suffix (non-A/B).
-                            title = if (isDownload || uiState.slotSuffix.isBlank()) {
+                            title = if (isDownload) {
                                 stringResource(R.string.install_select_partition)
                             } else {
                                 "${stringResource(R.string.install_select_partition)} (${uiState.slotSuffix})"

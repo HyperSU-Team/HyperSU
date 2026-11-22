@@ -28,6 +28,11 @@ data class SettingsUiState(
     val discreteSlider: Boolean = true,
     val enableWebDebugging: Boolean = false,
     val enableInfoCopy: Boolean = true,
+    val showFullStatus: Boolean = true,
+    val showHomeDeviceModel: Boolean = true,
+    val showHomeFingerprint: Boolean = true,
+    val showHomeSelinux: Boolean = true,
+    val showHomeSeccomp: Boolean = true,
     val autoJailbreak: Boolean = false,
 
     // Su Compat
@@ -85,6 +90,11 @@ data class SettingsScreenActions(
     val onSetEnableWebDebugging: (Boolean) -> Unit,
     val onSetEnableInfoCopy: (Boolean) -> Unit,
     val onSetModuleInstallConfirm: (Boolean) -> Unit,
+    val onSetShowFullStatus: (Boolean) -> Unit,
+    val onSetShowHomeDeviceModel: (Boolean) -> Unit,
+    val onSetShowHomeFingerprint: (Boolean) -> Unit,
+    val onSetShowHomeSelinux: (Boolean) -> Unit,
+    val onSetShowHomeSeccomp: (Boolean) -> Unit,
     val onSetAutoJailbreak: (Boolean) -> Unit,
     val onSetUseSoftReboot: (Boolean) -> Unit,
     val onOpenAbout: () -> Unit,

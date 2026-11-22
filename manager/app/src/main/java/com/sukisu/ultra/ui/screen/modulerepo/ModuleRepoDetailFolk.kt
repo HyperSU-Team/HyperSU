@@ -148,7 +148,6 @@ fun ModuleRepoDetailScreenFolk(
 
                     1 -> RepoReleasesPage(
                         detailReleases = state.detailReleases,
-                        detailLoaded = state.readmeLoaded,
                         innerPadding = pagePadding,
                         confirmTitle = confirmTitle,
                         confirmDialog = confirmDialog,
@@ -264,7 +263,6 @@ private fun RepoReadmePage(
 @Composable
 private fun RepoReleasesPage(
     detailReleases: List<ReleaseArg>,
-    detailLoaded: Boolean,
     innerPadding: PaddingValues,
     confirmTitle: String,
     confirmDialog: ConfirmDialogHandle,
@@ -273,13 +271,6 @@ private fun RepoReleasesPage(
     context: Context,
     setPendingDownload: ((() -> Unit)) -> Unit,
 ) {
-    // readmeLoaded is set once the whole detail request has finished, releases included.
-    if (!detailLoaded) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            FolkLoadingIndicator()
-        }
-        return
-    }
     if (detailReleases.isEmpty()) {
         FolkStateView(
             title = stringResource(R.string.release_no_releases),
@@ -577,7 +568,7 @@ private fun RepoInfoPage(
                                         Icon(
                                             modifier = Modifier.size(20.dp),
                                             imageVector = Icons.Outlined.Link,
-                                            contentDescription = author.name,
+                                            contentDescription = null,
                                         )
                                     }
                                 }
@@ -617,7 +608,7 @@ private fun RepoInfoPage(
                                 Icon(
                                     modifier = Modifier.size(20.dp),
                                     imageVector = Icons.Outlined.Link,
-                                    contentDescription = stringResource(R.string.module_repos_source_code),
+                                    contentDescription = null,
                                 )
                             }
                         }

@@ -53,13 +53,9 @@ fun FeatureStatusCard(
 
     var showLogConfigDialog by remember { mutableStateOf(false) }
     var logEnabled by remember { mutableStateOf(false) }
-    var isApplying by remember { mutableStateOf(false) }
 
-    // Only the configurable (log) row needs the state; every other row used to spawn a ksud call too.
-    LaunchedEffect(feature.canConfigure) {
-        if (feature.canConfigure) {
-            logEnabled = SuSFSManager.getEnableLogState()
-        }
+    LaunchedEffect(Unit) {
+        logEnabled = SuSFSManager.getEnableLogState()
     }
 
     if (showLogConfigDialog) {
@@ -106,21 +102,13 @@ fun FeatureStatusCard(
                     Spacer(Modifier.width(8.dp))
                     TextButton(
                         onClick = {
-                            if (!isApplying) {
-                                isApplying = true
-                                coroutineScope.launch {
-                                    try {
-                                        if (SuSFSManager.setEnableLog(context, logEnabled)) {
-                                            onRefresh?.invoke()
-                                        }
-                                    } finally {
-                                        isApplying = false
-                                        showLogConfigDialog = false
-                                    }
+                            coroutineScope.launch {
+                                if (SuSFSManager.setEnableLog(context, logEnabled)) {
+                                    onRefresh?.invoke()
                                 }
+                                showLogConfigDialog = false
                             }
                         },
-                        enabled = !isApplying,
                         modifier = Modifier.heightIn(min = 40.dp),
                         colors = FolkButtonDefaults.textColors(),
                     ) {

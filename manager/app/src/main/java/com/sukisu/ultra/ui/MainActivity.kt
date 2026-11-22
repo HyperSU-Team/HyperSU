@@ -107,7 +107,6 @@ import com.sukisu.ultra.ui.screen.templateeditor.TemplateEditorScreen
 import com.sukisu.ultra.ui.screen.umountmanager.UmountManagerScreen
 import com.sukisu.ultra.ui.theme.LocalColorMode
 import com.sukisu.ultra.ui.theme.BackgroundLayer
-import com.sukisu.ultra.ui.theme.LocalBottomBarHeight
 import com.sukisu.ultra.ui.theme.LocalEnableFloatingBottomBar
 import com.sukisu.ultra.ui.theme.LocalEnableNavigationBadge
 import com.sukisu.ultra.ui.theme.LocalModuleDescriptionMaxLines
@@ -438,9 +437,7 @@ fun MainScreen(
         pagerState = pagerState,
         animatePageChanges = true,
     )
-    // isFullFeatured() does JNI reads plus a root-shell lookup; evaluate it once instead of on
-    // every recomposition of the main screen.
-    val isFullFeatured = remember { Natives.isFullFeatured() }
+    val isFullFeatured = Natives.isFullFeatured()
     val pagerMode = PagerInterceptionMode.entries.getOrElse(pagerInterceptionMode) {
         PagerInterceptionMode.Native
     }
@@ -587,11 +584,7 @@ fun MainScreen(
                             .weight(1f)
                             .consumeWindowInsets(startInsets)
                     ) {
-                        CompositionLocalProvider(
-                            LocalBottomBarHeight provides navBarBottomPadding,
-                        ) {
-                            pagerContent(navBarBottomPadding)
-                        }
+                        pagerContent(navBarBottomPadding)
                     }
                 }
             }
@@ -618,11 +611,7 @@ fun MainScreen(
                 },
                 containerColor = MaterialTheme.colorScheme.background,
             ) { innerPadding ->
-                CompositionLocalProvider(
-                    LocalBottomBarHeight provides innerPadding.calculateBottomPadding(),
-                ) {
-                    pagerContent(innerPadding.calculateBottomPadding())
-                }
+                pagerContent(innerPadding.calculateBottomPadding())
             }
         }
     }

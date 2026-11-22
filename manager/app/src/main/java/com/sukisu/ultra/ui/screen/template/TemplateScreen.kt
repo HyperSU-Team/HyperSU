@@ -67,21 +67,20 @@ fun AppProfileTemplateScreen() {
         },
         onImport = {
             scope.launch {
-                // An empty or missing clip used to be ignored silently; report it as empty.
-                val templateText = clipboard.getClipEntry()?.clipData
-                    ?.takeIf { it.itemCount > 0 }?.getItemAt(0)?.text?.toString()
-                if (templateText.isNullOrEmpty()) {
-                    showMessage(importEmptyText)
-                    return@launch
+                clipboard.getClipEntry()?.clipData?.getItemAt(0)?.text?.toString()?.let { templateText ->
+                    if (templateText.isEmpty()) {
+                        showMessage(importEmptyText)
+                        return@let
+                    }
+                    viewModel.importTemplates(
+                        templateText,
+                        onSuccess = {
+                            showMessage(importSuccessText)
+                            viewModel.fetchTemplates(false)
+                        },
+                        onFailure = { showMessage(it) },
+                    )
                 }
-                viewModel.importTemplates(
-                    templateText,
-                    onSuccess = {
-                        showMessage(importSuccessText)
-                        viewModel.fetchTemplates(false)
-                    },
-                    onFailure = { showMessage(it) },
-                )
             }
         },
         onExport = {

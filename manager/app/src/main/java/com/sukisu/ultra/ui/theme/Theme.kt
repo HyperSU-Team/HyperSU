@@ -281,9 +281,7 @@ fun HyperSUTheme(
                 // preference itself is never rewritten.
                 LocalWallpaperDim provides wallpaperTheme.renderDim,
             ) {
-                // Keyed on the target scheme so the CSS LaunchedEffect does not restart on
-                // every frame of the colour animation; the final values are identical.
-                MonetColorsProvider.UpdateCss(wallpaperTheme.colorScheme)
+                MonetColorsProvider.UpdateCss(colorScheme)
                 content()
             }
         },
@@ -303,15 +301,6 @@ fun isInDarkTheme(): Boolean {
 val LocalColorMode = staticCompositionLocalOf { 0 }
 
 val LocalEnableFloatingBottomBar = staticCompositionLocalOf { false }
-
-/**
- * The height the shell reserves for its bottom bar (bar plus navigation inset).
- *
- * Pages draw inside the bar's area, so a snackbar needs this exact value to sit above the bar. A
- * constant could not work: the same page is 80.dp from the bottom in one shell (the floating pill)
- * and different again with the docked rail.
- */
-val LocalBottomBarHeight = staticCompositionLocalOf { androidx.compose.ui.unit.Dp.Unspecified }
 
 val LocalEnableNavigationBadge = staticCompositionLocalOf { true }
 

@@ -51,9 +51,11 @@ fun SlotInfoDialog(
     onUseBuildTime: (String) -> Unit
 ) {
     val isAbDevice = produceState(initialValue = false) { value = isAbDevice() }.value
-    // Derived directly: the old state + LaunchedEffect copy lagged a frame, so the dialog
-    // flashed once more after being dismissed.
-    val visible = showDialog && isAbDevice
+    var visible by remember { mutableStateOf(showDialog && isAbDevice) }
+
+    LaunchedEffect(showDialog, isAbDevice) {
+        visible = showDialog && isAbDevice
+    }
 
     if (!visible) return
 

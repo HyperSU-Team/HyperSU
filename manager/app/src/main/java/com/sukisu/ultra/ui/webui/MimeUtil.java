@@ -17,7 +17,6 @@
 package com.sukisu.ultra.ui.webui;
 
 import java.net.URLConnection;
-import java.util.Locale;
 
 class MimeUtil {
 
@@ -50,7 +49,7 @@ class MimeUtil {
             return null;
         }
 
-        final String extension = fileName.substring(finalFullStop + 1).toLowerCase(Locale.ROOT);
+        final String extension = fileName.substring(finalFullStop + 1).toLowerCase();
 
         return switch (extension) {
             case "webm" -> "video/webm";

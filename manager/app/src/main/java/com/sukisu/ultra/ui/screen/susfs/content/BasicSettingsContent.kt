@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.component.folk.FolkButtonDefaults
+import com.sukisu.ultra.ui.component.folk.FolkFactsGroup
 import com.sukisu.ultra.ui.component.folk.FolkSelectableRow
 import com.sukisu.ultra.ui.component.folk.FolkSettingsGroup
 import com.sukisu.ultra.ui.component.folk.FolkSettingsSectionGroup
@@ -127,12 +128,6 @@ fun BasicSettingsContent(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    val unameError = when {
-                        unameValue.isBlank() -> null
-                        unameValue.any { it.isWhitespace() } ->
-                            stringResource(R.string.susfs_uname_invalid)
-                        else -> null
-                    }
                     OutlinedTextField(
                         value = unameValue,
                         onValueChange = onUnameValueChange,
@@ -140,14 +135,6 @@ fun BasicSettingsContent(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isLoading,
                         singleLine = true,
-                        isError = unameError != null,
-                        supportingText = if (unameError != null) {
-                            {
-                                Text(unameError)
-                            }
-                        } else {
-                            null
-                        },
                     )
                     OutlinedTextField(
                         value = buildTimeValue,
@@ -161,7 +148,6 @@ fun BasicSettingsContent(
                         Button(
                             onClick = { onApply() },
                             enabled = !isLoading &&
-                                unameError == null &&
                                 (unameValue.isNotBlank() || buildTimeValue.isNotBlank()),
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -171,6 +157,28 @@ fun BasicSettingsContent(
                             Text(stringResource(R.string.susfs_apply))
                         }
                     }
+                }
+            }
+        }
+
+        // 当前值
+        FolkSettingsSectionGroup(title = stringResource(R.string.susfs_section_current_values)) {
+            item {
+                FolkFactsGroup(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                ) {
+                    fact(
+                        label = stringResource(R.string.susfs_uname_label),
+                        value = unameValue,
+                    )
+                    fact(
+                        label = stringResource(R.string.susfs_build_time_label),
+                        value = buildTimeValue,
+                    )
+                    fact(
+                        label = stringResource(R.string.susfs_execution_location_label),
+                        value = if (executeInPostFsData) "Post-FS-Data" else "Service",
+                    )
                 }
             }
         }

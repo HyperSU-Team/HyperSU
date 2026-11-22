@@ -54,6 +54,11 @@ class SettingsViewModel(
             val discreteSlider = repo.discreteSlider
             val enableWebDebugging = repo.enableWebDebugging
             val enableInfoCopy = repo.enableInfoCopy
+            val showFullStatus = repo.showFullStatus
+            val showHomeDeviceModel = repo.showHomeDeviceModel
+            val showHomeFingerprint = repo.showHomeFingerprint
+            val showHomeSelinux = repo.showHomeSelinux
+            val showHomeSeccomp = repo.showHomeSeccomp
             val colorStyle = repo.colorStyle
             val colorSpec = repo.colorSpec
             val isLkmMode = repo.isLkmMode()
@@ -101,6 +106,11 @@ class SettingsViewModel(
                     discreteSlider = discreteSlider,
                     enableWebDebugging = enableWebDebugging,
                     enableInfoCopy = enableInfoCopy,
+                    showFullStatus = showFullStatus,
+                    showHomeDeviceModel = showHomeDeviceModel,
+                    showHomeFingerprint = showHomeFingerprint,
+                    showHomeSelinux = showHomeSelinux,
+                    showHomeSeccomp = showHomeSeccomp,
                     colorStyle = colorStyle,
                     colorSpec = colorSpec,
                     suCompatStatus = suCompatStatus,
@@ -252,10 +262,30 @@ class SettingsViewModel(
         _uiState.update { it.copy(enableInfoCopy = enabled) }
     }
 
+    fun setShowFullStatus(enabled: Boolean) {
+        repo.showFullStatus = enabled
+        _uiState.update { it.copy(showFullStatus = enabled) }
+    }
 
+    fun setShowHomeDeviceModel(enabled: Boolean) {
+        repo.showHomeDeviceModel = enabled
+        _uiState.update { it.copy(showHomeDeviceModel = enabled) }
+    }
 
+    fun setShowHomeFingerprint(enabled: Boolean) {
+        repo.showHomeFingerprint = enabled
+        _uiState.update { it.copy(showHomeFingerprint = enabled) }
+    }
 
+    fun setShowHomeSelinux(enabled: Boolean) {
+        repo.showHomeSelinux = enabled
+        _uiState.update { it.copy(showHomeSelinux = enabled) }
+    }
 
+    fun setShowHomeSeccomp(enabled: Boolean) {
+        repo.showHomeSeccomp = enabled
+        _uiState.update { it.copy(showHomeSeccomp = enabled) }
+    }
 
     fun setSuCompatMode(mode: Int) {
         viewModelScope.launch(Dispatchers.IO) {
@@ -298,10 +328,7 @@ class SettingsViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val status = repo.setSelinuxHideEnabled(enabled)
             repo.execKsudFeatureSave()
-            // A failed call leaves the kernel state unchanged, so the switch must not flip.
-            if (status == 0 || status == -OsConstants.EAGAIN) {
-                _uiState.update { it.copy(isSelinuxHideEnabled = enabled) }
-            }
+            _uiState.update { it.copy(isSelinuxHideEnabled = enabled) }
             when (status) {
                 0 -> {}
                 -OsConstants.EAGAIN -> {

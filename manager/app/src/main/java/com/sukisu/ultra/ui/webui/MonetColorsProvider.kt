@@ -8,7 +8,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.math.roundToInt
 
 /**
  * @author rifsxd
@@ -99,7 +98,7 @@ object MonetColorsProvider {
 
     private fun Color.toCssValue(): String {
         fun Float.toHex(): String {
-            return (this * 255).roundToInt().coerceIn(0, 255).toString(16).padStart(2, '0')
+            return (this * 255).toInt().coerceIn(0, 255).toString(16).padStart(2, '0')
         }
         return if (alpha == 1f) {
             "#${red.toHex()}${green.toHex()}${blue.toHex()}"

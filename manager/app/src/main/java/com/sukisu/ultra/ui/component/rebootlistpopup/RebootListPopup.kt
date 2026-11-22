@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -25,8 +24,6 @@ import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.component.KsuIsValid
 import com.sukisu.ultra.ui.component.dialog.rememberConfirmDialog
 import com.sukisu.ultra.ui.util.reboot
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 data class RebootListOption(
     @param:StringRes val labelRes: Int,
@@ -58,16 +55,14 @@ fun getRebootListOption(): List<RebootListOption> {
 fun rememberRebootAction(): (String) -> Unit {
     val title = stringResource(R.string.reboot)
     val message = stringResource(R.string.jailbreak_reboot_warning)
-    val scope = rememberCoroutineScope()
-    // reboot() runs root shell commands (and may first open the root shell): keep it off the main thread.
-    val confirmDialog = rememberConfirmDialog(onConfirm = { scope.launch(Dispatchers.IO) { reboot() } })
+    val confirmDialog = rememberConfirmDialog(onConfirm = { reboot() })
 
-    return remember(title, message, confirmDialog, scope) {
+    return remember(title, message, confirmDialog) {
         { reason ->
             if (Natives.isLateLoadMode && reason.isEmpty()) {
                 confirmDialog.showConfirm(title = title, content = message)
             } else {
-                scope.launch(Dispatchers.IO) { reboot(reason) }
+                reboot(reason)
             }
         }
     }

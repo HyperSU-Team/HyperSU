@@ -21,9 +21,7 @@ import com.sukisu.ultra.ui.component.folk.FolkValuePreference
 import com.sukisu.ultra.ui.screen.themeSettings.crop.CropBackgroundContract
 import com.sukisu.ultra.ui.theme.BackgroundConfig
 import com.sukisu.ultra.ui.theme.BackgroundManager
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * The Focus layout's main-card wallpaper, ported from FolkPatch
@@ -80,7 +78,7 @@ fun AppearanceFocusCardSection(
         onConfirm = {
             scope.launch {
                 loadingDialog.show()
-                withContext(Dispatchers.IO) { BackgroundManager.clearFocusCardBackground(context) }
+                BackgroundManager.clearFocusCardBackground(context)
                 loadingDialog.hide()
                 showMessage(R.string.settings_background_image_cleared)
             }

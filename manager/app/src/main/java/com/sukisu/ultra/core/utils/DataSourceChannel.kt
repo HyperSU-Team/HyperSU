@@ -128,16 +128,13 @@ class DataSourceChannel private constructor(
                 .get()
         }
 
-        val sourceUrl = url ?: throw IOException("Data source has no URL")
-        val httpClient = client ?: throw IOException("Data source has no HTTP client")
-
         val request = Request.Builder()
-            .url(sourceUrl)
+            .url(url!!)
             .header("Accept-Encoding", "identity")
             .header("Range", "bytes=$startPosition-${endPosition - 1}")
             .build()
 
-        val response = httpClient.newCall(request).execute()
+        val response = client!!.newCall(request).execute()
         try {
             if (response.code != 206) {
                 throw IOException("Unexpected response code ${response.code}")

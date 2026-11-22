@@ -196,11 +196,7 @@ fun AppearanceThemeSection(
                 showExportDialog = false
                 pendingExport = metadata
                 val safeName = metadata.name.replace("[\\/:*?\"<>|]".toRegex(), "_")
-                runCatching { exportLauncher.launch("$safeName.${ThemeManager.themeFileExtension}") }
-                    .onFailure {
-                        pendingExport = null
-                        showMessage(R.string.file_picker_unavailable)
-                    }
+                exportLauncher.launch("$safeName.${ThemeManager.themeFileExtension}")
             },
         )
     }

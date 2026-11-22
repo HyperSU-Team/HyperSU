@@ -94,21 +94,12 @@ fun AppProfileScreen(uid: Int) {
 
     val actions = AppProfileActions(
         onBack = dropUnlessResumed { navigator.pop() },
-        // These run root shell jobs; keep them off the main thread.
-        onLaunchApp = { pkg, userId ->
-            scope.launch(Dispatchers.IO) { launchApp(pkg, userId) }
-        },
-        onForceStopApp = { pkg, userId ->
-            scope.launch(Dispatchers.IO) { forceStopApp(pkg, userId) }
-        },
-        onRestartApp = { pkg, userId ->
-            scope.launch(Dispatchers.IO) { restartApp(pkg, userId) }
-        },
+        onLaunchApp = ::launchApp,
+        onForceStopApp = ::forceStopApp,
+        onRestartApp = ::restartApp,
         onViewTemplate = { templateId ->
-            scope.launch {
-                withContext(Dispatchers.IO) { getTemplateInfoById(templateId) }?.let { info ->
-                    navigator.push(Route.TemplateEditor(info, true))
-                }
+            getTemplateInfoById(templateId)?.let { info ->
+                navigator.push(Route.TemplateEditor(info, true))
             }
         },
         onManageTemplate = {

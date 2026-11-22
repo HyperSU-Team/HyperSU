@@ -111,7 +111,7 @@ fun rememberPieSliceDataFromCounts(
 ): List<PieSliceData> {
     val emptyColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.15f)
 
-    return remember(kernelModules, apmModules, superusers, kernelLabel, apmLabel, suLabel, emptyColor) {
+    return remember(kernelModules, apmModules, superusers, kernelLabel, apmLabel, suLabel) {
         buildList {
             if (kernelModules != null) {
                 add(

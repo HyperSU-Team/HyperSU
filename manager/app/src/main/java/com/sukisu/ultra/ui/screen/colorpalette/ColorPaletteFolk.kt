@@ -105,7 +105,6 @@ import com.sukisu.ultra.ui.theme.ColorMode
 import com.sukisu.ultra.ui.theme.keyColorOptions
 import com.sukisu.ultra.ui.theme.rememberKernelSUColorScheme
 import com.sukisu.ultra.ui.util.DpiUtils
-import kotlin.math.roundToInt
 
 /**
  * The theme picker in the FolkPatch design.
@@ -305,6 +304,15 @@ fun ColorPaletteScreenFolk(
                 }
                 item {
                     FolkSwitchPreference(
+                        title = stringResource(R.string.settings_show_fullstatus),
+                        summary = stringResource(R.string.settings_show_fullstatus_summary),
+                        icon = Icons.Outlined.Info,
+                        checked = state.showFullStatus,
+                        onCheckedChange = actions.onSetShowFullStatus,
+                    )
+                }
+                item {
+                    FolkSwitchPreference(
                         title = stringResource(R.string.settings_enable_swipe_dismiss),
                         summary = stringResource(R.string.settings_enable_swipe_dismiss_summary),
                         icon = Icons.Rounded.Swipe,
@@ -363,9 +371,9 @@ fun ColorPaletteScreenFolk(
                         value = uiState.moduleDescriptionMaxLines.toFloat(),
                         valueRange = 1f..5f,
                         steps = 3,
-                        valueFormat = { "${it.roundToInt()} $unitLinesLabel" },
+                        valueFormat = { "${it.toInt()} $unitLinesLabel" },
                         onValueChange = {
-                            actions.onSetModuleDescriptionMaxLines(it.roundToInt())
+                            actions.onSetModuleDescriptionMaxLines(it.toInt())
                         },
                     )
                 }
@@ -563,8 +571,7 @@ private fun DpiDialog(
                     valueRange = DpiUtils.MIN_DPI.toFloat()..DpiUtils.MAX_DPI.toFloat(),
                     // 40dpi steps, which is what the presets below use too.
                     steps = ((DpiUtils.MAX_DPI - DpiUtils.MIN_DPI) / 40) - 1,
-                    // Snapped step values are not exact floats (e.g. 199.99998), so round, not truncate.
-                    valueFormat = { "${it.roundToInt()} DPI" },
+                    valueFormat = { "${it.toInt()} DPI" },
                     onValueChange = { dpi = it },
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -591,7 +598,7 @@ private fun DpiDialog(
                 }
                 TextButton(
                     onClick = {
-                        onConfirm(if (useSystem) DpiUtils.DEFAULT_DPI else dpi.roundToInt())
+                        onConfirm(if (useSystem) DpiUtils.DEFAULT_DPI else dpi.toInt())
                     },
                     colors = FolkButtonDefaults.textColors(),
                 ) {
@@ -619,7 +626,7 @@ private fun ThemePreviewCard(
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.toFloat()
     val screenHeight = configuration.screenHeightDp.toFloat()
-    val screenRatio = if (screenHeight > 0f && screenWidth > 0f) screenWidth / screenHeight else 0.5f
+    val screenRatio = if (screenHeight > 0f) screenWidth / screenHeight else 0.5f
     val useRail = useNavigationRail(enableFloatingBottomBar = false)
 
     val colorScheme = rememberKernelSUColorScheme(

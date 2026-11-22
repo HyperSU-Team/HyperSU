@@ -17,8 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import com.sukisu.ultra.ui.theme.SliderStyleConfig
 
 /**
@@ -104,10 +102,7 @@ fun FolkSliderPreference(
                 thumbColor = MaterialTheme.colorScheme.primary,
                 activeTrackColor = MaterialTheme.colorScheme.primary,
             ),
-            // The title sits in a separate Row, so without this TalkBack announces an unlabeled slider.
-            modifier = Modifier
-                .fillMaxWidth()
-                .semantics { contentDescription = title },
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }

@@ -10,7 +10,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.core.graphics.drawable.toBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.sukisu.ultra.Natives
@@ -42,8 +41,7 @@ fun DynamicManagerScreen() {
 
     suspend fun reload() {
         val (config, apps) = withContext(Dispatchers.IO) {
-            // A failing root shell must not crash the screen or leave it stuck in `submitting`.
-            runCatching { getDynamicManagerConfig() }.getOrNull() to loadManagerApps(context, context.packageManager)
+            getDynamicManagerConfig() to loadManagerApps(context.packageManager)
         }
         state = DynamicManagerState(
             size = config?.size ?: 0,
@@ -69,9 +67,7 @@ fun DynamicManagerScreen() {
             )
             if (confirmed != ConfirmResult.Confirmed) return@launch
             state = state.copy(submitting = true)
-            val ok = withContext(Dispatchers.IO) {
-                runCatching { setDynamicManagerApk(app.apkPath) }.getOrDefault(false)
-            }
+            val ok = withContext(Dispatchers.IO) { setDynamicManagerApk(app.apkPath) }
             reload()
             toast(
                 if (ok) R.string.dynamic_manager_set_success
@@ -81,7 +77,7 @@ fun DynamicManagerScreen() {
     }
 
     val actions = DynamicManagerActions(
-        onBack = dropUnlessResumed { navigator.pop() },
+        onBack = { navigator.pop() },
         onSelectApp = { app -> if (!app.isAuthorized) grant(app) },
         onClear = {
             if (!state.submitting && state.isSet) {
@@ -93,9 +89,7 @@ fun DynamicManagerScreen() {
                     )
                     if (confirmed != ConfirmResult.Confirmed) return@launch
                     state = state.copy(submitting = true)
-                    val ok = withContext(Dispatchers.IO) {
-                        runCatching { clearDynamicManager() }.getOrDefault(false)
-                    }
+                    val ok = withContext(Dispatchers.IO) { clearDynamicManager() }
                     reload()
                     toast(
                         if (ok) R.string.dynamic_manager_cleared
@@ -110,32 +104,24 @@ fun DynamicManagerScreen() {
 }
 
 /**
- * Manager apps are the ones that ship `libksud.so` - the same test the reference manager uses -
- * and the kernel's manager table says which uid is currently authorized and, if so, through which
- * signature slot.
+ * Manager apps are the ones that ship `libksud.so`; the kernel's manager table says which uid is
+ * currently authorized and, if so, through which signature slot.
  */
-private fun loadManagerApps(context: android.content.Context, pm: PackageManager): List<DynamicManagerApp> {
+private fun loadManagerApps(pm: PackageManager): List<DynamicManagerApp> {
     val indexes = runCatching { readManagerIndexes() }.getOrDefault(emptyMap())
-    val self = context.packageName
     return runCatching {
         pm.getInstalledPackages(0)
             .mapNotNull { info ->
                 val app = info.applicationInfo ?: return@mapNotNull null
-                val pkg = app.packageName
-                // This manager itself is always offered, whatever its libraries look like.
-                if (pkg != self) {
-                    val libDir = app.nativeLibraryDir
-                    if (libDir.isNullOrBlank() || !File(libDir, "libksud.so").isFile) {
-                        return@mapNotNull null
-                    }
-                }
+                val libDir = app.nativeLibraryDir ?: return@mapNotNull null
+                if (!File(libDir, "libksud.so").isFile) return@mapNotNull null
                 val apkPath = app.publicSourceDir ?: return@mapNotNull null
                 val icon = runCatching {
-                    pm.getApplicationIcon(pkg).toBitmap(96, 96).asImageBitmap()
+                    pm.getApplicationIcon(app.packageName).toBitmap(96, 96).asImageBitmap()
                 }.getOrNull()
                 DynamicManagerApp(
-                    label = app.loadLabel(pm).toString().ifBlank { pkg },
-                    packageName = pkg,
+                    label = app.loadLabel(pm).toString().ifBlank { app.packageName },
+                    packageName = app.packageName,
                     uid = app.uid,
                     apkPath = apkPath,
                     icon = icon,

@@ -201,21 +201,15 @@ private fun VideoWallpaper(uri: String, dim: Float) {
                     setOnPreparedListener { mp ->
                         mp.isLooping = true
                         mp.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
-                        // Read the live value: this also fires again after the surface is
-                        // recreated, when the captured `volume` may be stale.
-                        val currentVolume = BackgroundConfig.videoVolume
-                        mp.setVolume(currentVolume, currentVolume)
+                        mp.setVolume(volume, volume)
                         mediaPlayer = mp
                         start()
                     }
                     setOnErrorListener { _, _, _ -> true }
                 }
             },
-            update = { runCatching { mediaPlayer?.setVolume(volume, volume) } },
-            onRelease = { view ->
-                mediaPlayer = null
-                runCatching { view.stopPlayback() }
-            },
+            update = { mediaPlayer?.setVolume(volume, volume) },
+            onRelease = { view -> runCatching { view.stopPlayback() } },
             modifier = Modifier.fillMaxSize(),
         )
     }

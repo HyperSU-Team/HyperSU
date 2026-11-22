@@ -79,8 +79,6 @@ fun AddKstatStaticallyDialog(
     LaunchedEffect(showDialog, initialConfig) {
         if (showDialog && initialConfig.isNotEmpty()) {
             val parts = initialConfig.split("|")
-            // A malformed entry must not show the previous dialog's values.
-            resetFields()
             if (parts.size >= 13) {
                 newKstatPath = parts[0]
                 newKstatIno = if (parts[1] == "default") "" else parts[1]

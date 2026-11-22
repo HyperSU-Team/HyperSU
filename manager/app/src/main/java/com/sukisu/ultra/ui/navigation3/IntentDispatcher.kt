@@ -87,12 +87,11 @@ private fun parseValidatedDeepLink(uri: Uri?): KsuDeepLink? {
 fun IntentDispatcher(intentChannel: ReceiveChannel<Intent>) {
     val context = LocalContext.current
     val navigator = LocalNavigator.current
+    val isManager = Natives.isManager
 
     CollectIntentChannel(intentChannel) { intent ->
-        // Read per intent: the collector lambda is captured once by the LaunchedEffect.
-        if (!Natives.isManager || NavLock.isBusy) return@CollectIntentChannel
-        // The token check reads SharedPreferences (and may write a new token): keep it off main.
-        val action = withContext(Dispatchers.IO) { resolveIntent(intent) } ?: return@CollectIntentChannel
+        if (!isManager || NavLock.isBusy) return@CollectIntentChannel
+        val action = resolveIntent(intent) ?: return@CollectIntentChannel
 
         when (action) {
             is PendingAction.ExecuteAction -> {

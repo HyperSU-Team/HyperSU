@@ -13,8 +13,8 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -28,9 +28,7 @@ import com.sukisu.ultra.ui.component.folk.FolkValuePreference
 import com.sukisu.ultra.ui.screen.themeSettings.crop.CropBackgroundContract
 import com.sukisu.ultra.ui.theme.BackgroundConfig
 import com.sukisu.ultra.ui.theme.BackgroundManager
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * The Dashboard layout's tile wallpapers, ported from FolkPatch
@@ -50,8 +48,7 @@ fun AppearanceDashboardCardSection(
     val scope = rememberCoroutineScope()
 
     // Which tile the pending pick / clear belongs to.
-    // Saveable: the picker/cropper is another activity, and this one may be recreated meanwhile.
-    var pendingTile by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingTile by remember { mutableStateOf<String?>(null) }
 
     val showMessage: (Int) -> Unit = { resId ->
         val message = context.getString(resId)
@@ -104,9 +101,7 @@ fun AppearanceDashboardCardSection(
             if (tile != null) {
                 scope.launch {
                     loadingDialog.show()
-                    withContext(Dispatchers.IO) {
-                        BackgroundManager.clearDashboardTileBackground(context, tile)
-                    }
+                    BackgroundManager.clearDashboardTileBackground(context, tile)
                     loadingDialog.hide()
                     showMessage(R.string.settings_background_image_cleared)
                 }

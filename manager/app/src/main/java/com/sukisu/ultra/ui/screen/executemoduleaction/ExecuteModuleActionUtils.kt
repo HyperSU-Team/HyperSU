@@ -5,10 +5,6 @@ import android.os.Looper
 import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.CoroutineScope
@@ -38,13 +34,7 @@ fun ExecuteModuleActionEffect(
     val moduleUnavailable = stringResource(R.string.module_unavailable)
     val moduleActionSuccess = stringResource(R.string.module_action_success)
 
-    // A saveable flag, not the output text: a rotation before the script printed anything left the
-    // text empty, so the recreated composition ran the action script a second time.
-    var started by rememberSaveable { mutableStateOf(false) }
-
     LaunchedEffect(Unit) {
-        if (started) return@LaunchedEffect
-        started = true
         if (text.isNotEmpty()) {
             return@LaunchedEffect
         }
@@ -117,9 +107,9 @@ fun saveLog(
                     saveTextToDownloads(context, fileName, logContent.toString())
                 }
             }.onSuccess {
-                showMessage("${context.getString(R.string.log_saved)}: $it")
+                showMessage("Log saved to $it")
             }.onFailure {
-                showMessage(context.getString(R.string.log_save_failed, it.message ?: context.getString(R.string.error_unknown)))
+                showMessage("Failed to save log: ${it.message ?: "unknown error"}")
             }
         }
     }

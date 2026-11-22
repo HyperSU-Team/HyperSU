@@ -101,15 +101,7 @@ class SulogViewModel(
                     visibleEntries = currentState.visibleEntries,
                 )
             }.onSuccess { state ->
-                // Keep the fields the user or the visible-entries collector may have changed
-                // while this refresh was running; overwriting them showed stale entries.
-                _uiState.update { current ->
-                    state.copy(
-                        searchText = current.searchText,
-                        selectedFilters = current.selectedFilters,
-                        visibleEntries = current.visibleEntries,
-                    )
-                }
+                _uiState.value = state
             }.onFailure { error ->
                 if (error is kotlinx.coroutines.CancellationException) {
                     throw error

@@ -177,11 +177,11 @@ class HorizonKernelWorker(
         } finally {
             originalSlot?.takeIf { it.isNotEmpty() }?.let { suffix ->
                 runCatching { runCommand(true, "resetprop ro.boot.slot_suffix ${suffix.shellArg()}") }
-                    .onFailure { state.addLog(context.getString(R.string.flash_log_restore_slot_failed, it.message.orEmpty())) }
+                    .onFailure { state.addLog("Failed to restore boot slot: ${it.message}") }
             }
             if (::workDir.isInitialized) {
                 runCatching { runCommand(true, "rm -rf ${workDir.shellArg()}") }
-                    .onFailure { state.addLog(context.getString(R.string.flash_log_cleanup_failed, it.message.orEmpty())) }
+                    .onFailure { state.addLog("Failed to remove flash temporary files: ${it.message}") }
             }
         }
     }

@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import com.sukisu.ultra.ui.navigation.LocalBottomBarVisible
 import com.sukisu.ultra.ui.navigation.LocalIsFloatingNavMode
 import com.sukisu.ultra.ui.navigation.LocalIsRootPage
-import com.sukisu.ultra.ui.theme.LocalBottomBarHeight
 import com.sukisu.ultra.ui.theme.tokens.FolkTheme
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.Alignment
@@ -192,7 +191,7 @@ fun FolkScaffold(
                 // raises from its manager-update row.
                 SnackbarHost(
                     hostState = snackbarHostState,
-                    modifier = Modifier.padding(bottom = folkSnackbarClearance()),
+                    modifier = Modifier.padding(bottom = folkBottomClearance()),
                 )
             }
         },
@@ -265,34 +264,4 @@ private fun folkBottomClearance(): Dp {
 }
 
 private val FloatingBarClearance = 80.dp
-
-/**
- * The snackbar's lift in floating-bar mode: the pill's own height. The host already clears the
- * navigation inset, so the full content clearance put the message too high, and a hair of lift
- * left it behind the pill.
- */
-private val SnackbarFloatingClearance = 48.dp
-
-/** The gap between a snackbar and the bar it sits on. */
-private val SnackbarBarGap = 8.dp
 private val StaticBarClearance = 16.dp
-
-/**
- * How far a snackbar sits above the bottom of this scaffold.
- *
- * The floating bar is drawn by the shell around this scaffold, and the pages are laid out above it
- * and above the navigation insets, so the full bar clearance lifted the snackbar another 80.dp into
- * the middle of the module list - the reboot prompt looked attached to whichever card it covered.
- * The docked rail case still needs the whole clearance; there the bar is part of this scaffold.
- */
-@Composable
-private fun folkSnackbarClearance(): Dp {
-    // The shell publishes exactly what it reserved for its bar; the snackbar then sits on top of
-    // the bar rather than at a guessed distance from it.
-    val barHeight = LocalBottomBarHeight.current
-    if (barHeight != Dp.Unspecified) return barHeight + SnackbarBarGap
-    val floating = LocalIsFloatingNavMode.current
-    if (floating && LocalBottomBarVisible.current.value) return SnackbarFloatingClearance
-    return folkBottomClearance()
-}
-

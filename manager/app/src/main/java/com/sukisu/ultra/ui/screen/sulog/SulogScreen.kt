@@ -92,13 +92,8 @@ fun sulogEntrySummaryTags(entry: SulogEntry): List<String> {
     val pid = entry.fields["pid"]
     val uid = entry.fields["uid"]
     return when (entry.eventType) {
-        SulogEventType.DaemonEvent -> listOfNotNull(
-            entry.fields["restart"]?.let { com.sukisu.ultra.ksuApp.getString(R.string.sulog_restart_tag, it) }
-                ?: com.sukisu.ultra.ksuApp.getString(R.string.sulog_daemon_restarted),
-        )
-        SulogEventType.Dropped -> listOfNotNull(
-            entry.fields["dropped"]?.let { com.sukisu.ultra.ksuApp.getString(R.string.sulog_dropped_tag, it) },
-        )
+        SulogEventType.DaemonEvent -> listOfNotNull(entry.fields["restart"]?.let { "Restart #$it" } ?: "Daemon restarted")
+        SulogEventType.Dropped -> listOfNotNull(entry.fields["dropped"]?.let { "$it lost" })
         else -> listOfNotNull(comm?.takeIf { it.isNotBlank() }, pid?.let { "PID $it" }, uid?.let { "UID $it" })
     }
 }

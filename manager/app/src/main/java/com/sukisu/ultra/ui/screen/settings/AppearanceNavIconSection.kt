@@ -14,7 +14,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -27,9 +26,7 @@ import com.sukisu.ultra.ui.component.folk.FolkSwitchPreference
 import com.sukisu.ultra.ui.component.folk.FolkValuePreference
 import com.sukisu.ultra.ui.screen.themeSettings.crop.CropBackgroundContract
 import com.sukisu.ultra.ui.theme.BottomBarIconConfig
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /**
  * Custom images for the bottom navigation icons, ported from FolkPatch.
@@ -47,8 +44,7 @@ fun AppearanceNavIconSection(
     val scope = rememberCoroutineScope()
 
     // Which tab the pending pick belongs to.
-    // Saveable: the picker/cropper is another activity, and this one may be recreated meanwhile.
-    var pendingDestination by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingDestination by remember { mutableStateOf<String?>(null) }
 
     val showMessage: (Int) -> Unit = { resId ->
         val message = context.getString(resId)
@@ -99,10 +95,8 @@ fun AppearanceNavIconSection(
             val destination = pendingDestination
             pendingDestination = null
             if (destination != null) {
-                scope.launch {
-                    withContext(Dispatchers.IO) { BottomBarIconConfig.clearCustomIcon(context, destination) }
-                    showMessage(R.string.nav_icon_cleared)
-                }
+                BottomBarIconConfig.clearCustomIcon(context, destination)
+                showMessage(R.string.nav_icon_cleared)
             }
         },
     )

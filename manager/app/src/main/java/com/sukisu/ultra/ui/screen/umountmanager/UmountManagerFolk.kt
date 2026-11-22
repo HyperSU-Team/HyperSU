@@ -67,14 +67,14 @@ fun UmountManagerFolk(
         onBack = actions.onBack,
         actions = {
             IconButton(onClick = actions.onRefresh) {
-                Icon(Icons.Filled.Refresh, contentDescription = stringResource(R.string.refresh))
+                Icon(Icons.Filled.Refresh, contentDescription = null)
             }
         },
         floatingActionButton = {
             SmallFloatingActionButton(onClick = actions.onAddClick) {
                 Icon(
                     imageVector = Icons.Rounded.Add,
-                    contentDescription = stringResource(R.string.add_umount_path),
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
@@ -221,7 +221,7 @@ private fun UmountPathRow(
                 IconButton(onClick = onDelete) {
                     Icon(
                         imageVector = Icons.Filled.Delete,
-                        contentDescription = stringResource(R.string.delete),
+                        contentDescription = null,
                         tint = MaterialTheme.colorScheme.error,
                     )
                 }

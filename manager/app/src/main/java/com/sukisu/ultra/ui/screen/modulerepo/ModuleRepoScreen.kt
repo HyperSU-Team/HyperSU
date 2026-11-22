@@ -8,7 +8,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -38,7 +37,7 @@ fun ModuleRepoScreen() {
     }
 
     val actions = ModuleRepoActions(
-        onBack = dropUnlessResumed { navigator.pop() },
+        onBack = { navigator.pop() },
         onRefresh = viewModel::refresh,
         onSearchTextChange = viewModel::updateSearchText,
         onClearSearch = { viewModel.updateSearchText("") },
@@ -126,10 +125,9 @@ fun ModuleRepoDetailScreen(module: RepoModuleArg) {
         sourceUrl = sourceUrl,
     )
     val actions = ModuleRepoDetailActions(
-        onBack = dropUnlessResumed { navigator.pop() },
-        // openUri throws when no app can handle the link (no browser installed / malformed URL).
-        onOpenWebUrl = { if (webUrl.isNotEmpty()) runCatching { uriHandler.openUri(webUrl) } },
-        onOpenUrl = { url -> runCatching { uriHandler.openUri(url) } },
+        onBack = { navigator.pop() },
+        onOpenWebUrl = { if (webUrl.isNotEmpty()) uriHandler.openUri(webUrl) },
+        onOpenUrl = uriHandler::openUri,
         onInstallModule = { uri -> navigator.pushFlash(Route.Flash(FlashIt.FlashModules(listOf(uri)))) },
     )
 

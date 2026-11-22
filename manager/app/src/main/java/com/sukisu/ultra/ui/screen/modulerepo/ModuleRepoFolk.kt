@@ -100,13 +100,10 @@ fun ModuleRepoScreenFolk(
         // A fetch that has not come back yet, rather than "the list is empty". The two are not the
         // same: an index that legitimately serves no modules produced an empty list, and the old
         // test left the spinner turning for ever with no way out.
-        // A retry after a failure (loadedOnce already true) is loading too, not "empty".
-        val isLoading = state.modules.isEmpty() && state.error == null &&
-            (!state.loadedOnce || state.isRefreshing)
+        val isLoading = state.modules.isEmpty() && state.error == null && !state.loadedOnce
 
         when {
-            // A failed refresh keeps the list it already has; the ViewModel toasts the failure.
-            state.error != null && state.modules.isEmpty() -> FolkStateView(
+            state.error != null -> FolkStateView(
                 // The message comes from the failure itself, so it is not a resource. The
                 // localized offline page below is the one used when the network is the cause.
                 title = stringResource(R.string.operation_failed),

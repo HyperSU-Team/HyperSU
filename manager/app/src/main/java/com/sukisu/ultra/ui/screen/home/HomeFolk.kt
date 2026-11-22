@@ -1,11 +1,5 @@
 package com.sukisu.ultra.ui.screen.home
 
-import androidx.compose.runtime.produceState
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
-import com.sukisu.ultra.BuildConfig
-import com.sukisu.ultra.ui.util.resolveDeviceName
-import com.sukisu.ultra.ui.util.getSELinuxStatusRaw
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.compose.foundation.Image
@@ -54,7 +48,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -225,7 +218,6 @@ internal fun HomePagerFolk(
     state: HomeUiState,
     actions: HomeActions,
     bottomInnerPadding: Dp,
-    isCurrentPage: Boolean = true,
 ) {
     val settingsRepo = remember { SettingsRepositoryImpl() }
     // Observed rather than remembered once: a theme import rewrites home_layout_style while
@@ -262,17 +254,11 @@ internal fun HomePagerFolk(
         // so reserving it again here would add both allowances and push the last row under it.
         addBottomClearance = false,
     ) { innerPadding ->
-        // Derived from the already-loaded state rather than Natives.isFullFeatured(), which calls
-        // rootAvailable() and so could open a root shell on the main thread during composition.
-        val fullFeatured = state.systemInfo.kernelFullVersion.let {
-            it != null && Natives.isVersionLessThan(it, Natives.MINIMAL_SUPPORTED_KERNEL_FULL)
-        } || (state.isManager && state.kernelUAPIVersion == state.managerUAPIVersion &&
-            state.isRootAvailable)
         val contentPadding = PaddingValues(
             top = innerPadding.calculateTopPadding() + 8.dp,
             bottom = innerPadding.calculateBottomPadding() +
                 bottomInnerPadding +
-                if (!fullFeatured) {
+                if (!Natives.isFullFeatured()) {
                     WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                 } else {
                     0.dp
@@ -284,7 +270,7 @@ internal fun HomePagerFolk(
             HOME_LAYOUT_FOCUS -> HomeLayoutFocus(state, actions, contentPadding)
             HOME_LAYOUT_DASHBOARD -> HomeLayoutDashboard(state, actions, contentPadding)
             HOME_LAYOUT_GRID -> HomeLayoutGrid(state, actions, contentPadding)
-            HOME_LAYOUT_STATS -> HomeLayoutStats(state, actions, contentPadding, isCurrentPage)
+            HOME_LAYOUT_STATS -> HomeLayoutStats(state, actions, contentPadding)
             else -> HomeLayoutCircle(state, actions, contentPadding)
         }
     }
@@ -884,111 +870,23 @@ private fun HomeUnsupportedCard(
 // Facts
 // ---------------------------------------------------------------------------
 
-
-/**
- * The home facts that need no root, no driver and no shell, read where they are drawn.
- *
- * Every one of these is available to a plain app process, yet the rows used to come from the view
- * model alone: when that state lost them - a load that failed early, a preference that was reset -
- * the rows showed a dash even though the values were readable. Merged with `ifBlank` below, the
- * page can no longer show a dash for something the device can answer.
- */
-private data class HomeBasicFacts(
-    val managerVersion: String,
-    val kernelRelease: String,
-    val deviceModel: String,
-    val fingerprint: String,
-    val seccompStatus: Int,
-)
-
-/** `uname` can fail or be spoofed; the VM property is the same release. */
-private fun readKernelRelease(): String =
-    runCatching { android.system.Os.uname().release }.getOrNull()
-        .orEmpty()
-        .ifBlank { System.getProperty("os.version").orEmpty() }
-
-private fun readDeviceModel(): String =
-    runCatching { resolveDeviceName() }.getOrNull()
-        .orEmpty()
-        .ifBlank { runCatching { android.os.Build.MODEL }.getOrNull().orEmpty() }
-
-@Composable
-private fun rememberHomeBasicFacts(): HomeBasicFacts {
-    val context = LocalContext.current
-    val managerVersion = remember(context) {
-        // BuildConfig rather than the package manager: the reference manager reads it this way, and
-        // a package whose versionName resolves to null or "" produced an empty row here.
-        val installed = runCatching { getManagerVersion(context) }.getOrNull()
-        val name = BuildConfig.VERSION_NAME.ifBlank {
-            installed?.versionName.orEmpty()
-        }
-        val code = BuildConfig.VERSION_CODE.takeIf { it > 0 } ?: installed?.versionCode ?: 0L
-        "${name.ifBlank { "HyperSU" }} ($code)"
-    }
-    val kernelRelease = remember { readKernelRelease() }
-    val deviceModel = remember { readDeviceModel() }
-    val fingerprint = remember {
-        runCatching { android.os.Build.FINGERPRINT }.getOrNull()
-            .orEmpty()
-            .ifBlank { runCatching { android.os.Build.DISPLAY }.getOrNull().orEmpty() }
-    }
-    val seccomp = remember {
-        runCatching { android.system.Os.prctl(21 /* PR_GET_SECCOMP */, 0, 0, 0, 0) }.getOrDefault(-1)
-    }
-    return HomeBasicFacts(
-        managerVersion = managerVersion,
-        kernelRelease = kernelRelease,
-        deviceModel = deviceModel,
-        fingerprint = fingerprint,
-        seccompStatus = seccomp,
-    )
-}
-
-/**
- * The SELinux mode, as a [State] the caller reads.
- *
- * Read it in the composable that draws the row (`val mode by rememberSelinuxStatus()`). When the
- * reading lived inside a helper, the update restarted only that helper, the caller was skipped, and
- * the row kept showing its first label until something recomposed the page - a language switch
- * recreated the activity, which is what made it look fixed by switching languages.
- */
-@Composable
-private fun rememberSelinuxStatus(): State<String> = produceState(initialValue = "") {
-    while (true) {
-        val reading = withContext(Dispatchers.IO) {
-            runCatching { getSELinuxStatusRaw() }.getOrDefault("")
-        }
-        if (reading.isNotBlank() && reading != "Unknown") {
-            value = reading
-            break
-        }
-        value = reading
-        kotlinx.coroutines.delay(2_000)
-    }
-}
-
 @Composable
 private fun HomeFacts(state: HomeUiState) {
     val systemInfo = state.systemInfo
-    val basics = rememberHomeBasicFacts()
-    val selinuxLocal by rememberSelinuxStatus()
 
-    // A state that came back without these must not turn them into dashes: each one is readable
-    // here, and the fallback is the same value the view model would have produced.
-    val managerText = systemInfo.managerVersion.ifBlank { basics.managerVersion }
-    val kernelText = systemInfo.kernelVersion.ifBlank { basics.kernelRelease }
-    val deviceText = systemInfo.deviceModel.ifBlank { basics.deviceModel }
-    val fingerprintText = systemInfo.fingerprint.ifBlank { basics.fingerprint }
-    val selinuxRaw = systemInfo.selinuxStatus.takeIf { it.isNotBlank() && it != "Unknown" }
-        ?: selinuxLocal
-    val seccompRaw = if (systemInfo.seccompStatus == -1) basics.seccompStatus else systemInfo.seccompStatus
-
-    // One line per change: what the state carried and what the local read produced.
-    androidx.compose.runtime.LaunchedEffect(selinuxRaw) {
-        android.util.Log.i("HomeFacts", "selinux raw='$selinuxRaw' state='${systemInfo.selinuxStatus}' local='$selinuxLocal'")
+    val selinuxDisplay = when (systemInfo.selinuxStatus) {
+        "Enforcing" -> stringResource(R.string.selinux_status_enforcing)
+        "Permissive" -> stringResource(R.string.selinux_status_permissive)
+        "Disabled" -> stringResource(R.string.selinux_status_disabled)
+        else -> stringResource(R.string.selinux_status_unknown)
     }
-    val selinuxDisplay = selinuxStatusLabel(selinuxRaw)
-    val seccompDisplay = seccompStatusLabel(seccompRaw)
+    val seccompDisplay = when (systemInfo.seccompStatus) {
+        -1 -> stringResource(R.string.seccomp_status_not_supported)
+        0 -> stringResource(R.string.seccomp_status_disabled)
+        1 -> stringResource(R.string.seccomp_status_strict)
+        2 -> stringResource(R.string.seccomp_status_filter)
+        else -> stringResource(R.string.seccomp_status_unknown)
+    }
 
     val manualHookText = stringResource(R.string.manual_hook)
     val inlineHookText = stringResource(R.string.inline_hook)
@@ -1004,8 +902,8 @@ private fun HomeFacts(state: HomeUiState) {
     )
 
     FolkFactsGroup {
-        fact(stringResource(R.string.home_manager_version), managerText)
-        fact(stringResource(R.string.home_kernel), kernelText)
+        fact(stringResource(R.string.home_manager_version), systemInfo.managerVersion)
+        fact(stringResource(R.string.home_kernel), systemInfo.kernelVersion)
 
         if (state.showFullStatus) {
             if (!systemInfo.kernelFullVersion.isNullOrBlank()) {
@@ -1022,10 +920,10 @@ private fun HomeFacts(state: HomeUiState) {
         }
 
         if (state.showHomeDeviceModel) {
-            fact(stringResource(R.string.home_device_model), deviceText)
+            fact(stringResource(R.string.home_device_model), systemInfo.deviceModel)
         }
         if (state.showHomeFingerprint) {
-            fact(stringResource(R.string.home_fingerprint), fingerprintText)
+            fact(stringResource(R.string.home_fingerprint), systemInfo.fingerprint)
         }
         if (state.showHomeSelinux) {
             fact(stringResource(R.string.home_selinux_status), selinuxDisplay)
@@ -1034,25 +932,6 @@ private fun HomeFacts(state: HomeUiState) {
             fact(stringResource(R.string.home_seccomp_status), seccompDisplay)
         }
     }
-}
-
-/** The localised SELinux mode, shared by the fact list and the status tiles. */
-@Composable
-private fun selinuxStatusLabel(status: String): String = when (status) {
-    "Enforcing" -> stringResource(R.string.selinux_status_enforcing)
-    "Permissive" -> stringResource(R.string.selinux_status_permissive)
-    "Disabled" -> stringResource(R.string.selinux_status_disabled)
-    else -> stringResource(R.string.selinux_status_unknown)
-}
-
-/** The localised seccomp mode (PR_GET_SECCOMP result), shared by the fact list and the tiles. */
-@Composable
-private fun seccompStatusLabel(status: Int): String = when (status) {
-    -1 -> stringResource(R.string.seccomp_status_not_supported)
-    0 -> stringResource(R.string.seccomp_status_disabled)
-    1 -> stringResource(R.string.seccomp_status_strict)
-    2 -> stringResource(R.string.seccomp_status_filter)
-    else -> stringResource(R.string.seccomp_status_unknown)
 }
 
 /** The two quick links, as Folk rows. */
@@ -1154,17 +1033,6 @@ private fun HomeGridStatusCards(
     actions: HomeActions,
 ) {
     val heroWallpaper = gridHeroWallpaperUri()
-    // The tiles read the same two values as the fact rows; a state that lost them must not turn a
-    // readable SELinux mode into "unknown".
-    val basics = rememberHomeBasicFacts()
-    val selinuxLocal by rememberSelinuxStatus()
-    val selinuxRaw = state.systemInfo.selinuxStatus.takeIf { it.isNotBlank() && it != "Unknown" }
-        ?: selinuxLocal
-    val seccompRaw = if (state.systemInfo.seccompStatus == -1) {
-        basics.seccompStatus
-    } else {
-        state.systemInfo.seccompStatus
-    }
 
     Row(
         modifier = Modifier
@@ -1219,7 +1087,7 @@ private fun HomeGridStatusCards(
                 modifier = Modifier.padding(top = 12.dp),
                 icon = Icons.Outlined.Security,
                 label = stringResource(R.string.home_selinux_status),
-                value = selinuxStatusLabel(state.systemInfo.selinuxStatus),
+                value = state.systemInfo.selinuxStatus,
                 severity = if (state.isSELinuxPermissive) FolkSeverity.Caution else FolkSeverity.Positive,
                 plain = true,
             )
@@ -1238,7 +1106,6 @@ private fun HomeLayoutStats(
     state: HomeUiState,
     actions: HomeActions,
     contentPadding: PaddingValues,
-    isCurrentPage: Boolean = true,
 ) {
     val context = LocalContext.current
     val viewModel = viewModel<DashboardViewModel>()
@@ -1249,10 +1116,8 @@ private fun HomeLayoutStats(
     // Every reading costs a root shell command, so sampling runs only while this is on screen and
     // only where there is a kernel to ask.
     val canSample = state.isManager
-    // The pager keeps the home tab composed while another tab is shown, so the page flag gates
-    // polling too; otherwise the shell commands kept running in the background.
-    LifecycleStartEffect(canSample, isCurrentPage) {
-        if (canSample && isCurrentPage) {
+    LifecycleStartEffect(canSample) {
+        if (canSample) {
             viewModel.startPolling(context)
             viewModel.loadModuleStats()
         }
@@ -1327,29 +1192,25 @@ private fun HomeLayoutList(
         FolkSettingsGroup {
             item {
                 FolkPreference(
-                    title = stringResource(
-                        if (state.ksuVersion != null) R.string.home_working else R.string.home_not_installed,
-                    ),
+                    title = stringResource(R.string.home_working),
                     summary = state.ksuVersion?.let {
                         stringResource(
                             R.string.home_working_version,
                             "$it-${state.kernelUAPIVersion}",
                         )
-                    } ?: stringResource(R.string.home_click_to_install),
+                    } ?: stringResource(R.string.home_not_installed),
                     icon = if (state.ksuVersion != null) Icons.Rounded.CheckCircle else Icons.Rounded.ErrorOutline,
                     onClick = if (!state.isLateLoadMode) actions.onInstallClick else null,
                 )
             }
-            // Same condition as the hero card's jailbreak button: only meaningful with no kernel
-            // driver and a permissive SELinux, so it is not shown as a permanently disabled row.
-            if (state.ksuVersion == null && state.isSELinuxPermissive) {
-                item {
-                    FolkPreference(
-                        title = stringResource(R.string.home_jailbreak),
-                        icon = Icons.Outlined.SystemUpdate,
-                        onClick = actions.onJailbreakClick,
-                    )
-                }
+            item {
+                FolkPreference(
+                    title = stringResource(R.string.home_click_to_install),
+                    summary = stringResource(R.string.home_jailbreak),
+                    icon = Icons.Outlined.SystemUpdate,
+                    enabled = state.isSELinuxPermissive,
+                    onClick = actions.onJailbreakClick,
+                )
             }
         }
 
@@ -1425,7 +1286,7 @@ private fun HomeLayoutDashboard(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Outlined.Security,
                 label = stringResource(R.string.home_selinux_status),
-                value = selinuxStatusLabel(state.systemInfo.selinuxStatus),
+                value = state.systemInfo.selinuxStatus,
                 severity = if (state.isSELinuxPermissive) FolkSeverity.Caution else FolkSeverity.Positive,
                 cardId = BackgroundConfig.DASHBOARD_TILE_SELINUX,
             )
@@ -1447,7 +1308,7 @@ private fun HomeLayoutDashboard(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Outlined.Extension,
                 label = stringResource(R.string.home_seccomp_status),
-                value = seccompStatusLabel(state.systemInfo.seccompStatus),
+                value = state.systemInfo.seccompStatus.toString(),
                 severity = FolkSeverity.Neutral,
                 cardId = BackgroundConfig.DASHBOARD_TILE_SECCOMP,
             )

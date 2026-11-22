@@ -51,70 +51,16 @@ data class FlashResult(val code: Int, val err: String, val showReboot: Boolean) 
     constructor(result: Shell.Result) : this(result, result.isSuccess)
 }
 
-/**
- * The process-wide root shell.
- *
- * Both were `val`s built when the object was first touched, which on a cold start is the very
- * first read of the home page - often before the daemon has authorised this manager. When that
- * request lost the race, `createRootShell` fell back to a plain `sh` and the *result was cached
- * for the life of the process*: every later `ksud`, `getenforce` and module read ran unrooted, so
- * the home facts stayed blank until something restarted the process (switching the language did,
- * which is why that appeared to fix it). A shell that is not root is now never cached, and the
- * next call asks again.
- */
 object KsuCli {
-    @Volatile
-    private var shell: Shell? = null
-
-    @Volatile
-    private var globalMntShell: Shell? = null
-
-    /** The un-rooted attempt and when it happened, so a rootless device is not asked every call. */
-    @Volatile
-    private var lastFailed: Shell? = null
-
-    @Volatile
-    private var lastFailedAt = 0L
-
-    fun shell(globalMnt: Boolean): Shell {
-        val cached = if (globalMnt) globalMntShell else shell
-        if (cached != null && worksAsRoot(cached)) return cached
-
-        val now = SystemClock.elapsedRealtime()
-        val failed = lastFailed
-        if (failed != null && now - lastFailedAt < FailureRetryMillis) return failed
-
-        val fresh = createRootShell(globalMnt)
-        if (worksAsRoot(fresh)) {
-            if (globalMnt) globalMntShell = fresh else shell = fresh
-            lastFailed = null
-        } else {
-            // Kept only as a short-lived fallback: the daemon may simply not be up yet, and the
-            // next call a moment later can succeed.
-            lastFailed = fresh
-            lastFailedAt = now
-        }
-        return fresh
-    }
-
-    /**
-     * A shell that *can* execute a command as uid 0.
-     *
-     * `Shell.isRoot` is what the builder was asked for, not what it got: a `su` request that loses
-     * the race with the daemon still reports the flag, and caching such a shell made every later
-     * `cat`, `getenforce` and `ksud` run unprivileged for the rest of the process - the SELinux
-     * row then stayed "unknown" until the activity was recreated and something else happened to
-     * build a working one. Asking the shell itself settles it.
-     */
-    private fun worksAsRoot(candidate: Shell): Boolean = runCatching {
-        candidate.isRoot && ShellUtils.fastCmd(candidate, "id -u").trim() == "0"
-    }.getOrDefault(false)
+    val SHELL: Shell = createRootShell()
+    val GLOBAL_MNT_SHELL: Shell = createRootShell(true)
 }
 
-fun getRootShell(globalMnt: Boolean = false): Shell = KsuCli.shell(globalMnt)
-
-/** How long an un-rooted shell is reused before the daemon is asked again. */
-private const val FailureRetryMillis = 1_000L
+fun getRootShell(globalMnt: Boolean = false): Shell {
+    return if (globalMnt) KsuCli.GLOBAL_MNT_SHELL else {
+        KsuCli.SHELL
+    }
+}
 
 inline fun <T> withNewRootShell(
     globalMnt: Boolean = false,
@@ -759,8 +705,19 @@ suspend fun streamFile(path: String): List<String> = withContext(Dispatchers.IO)
     val shell = getRootShell()
     val outLines = mutableListOf<String>()
 
-    // A default CallbackList posts to the main thread, so the list could still be empty here.
-    shell.newJob().add("cat ${path.shellArg()} || true").to(outLines, null).exec()
+    val stdoutCallback: CallbackList<String?> = object : CallbackList<String?>() {
+        override fun onAddElement(s: String?) {
+            if (s != null) outLines.add(s)
+        }
+    }
+
+    val stderrCallback: CallbackList<String?> = object : CallbackList<String?>() {
+        override fun onAddElement(s: String?) {
+            // ignore stderr for now
+        }
+    }
+
+    shell.newJob().add("cat ${path.shellArg()} || true").to(stdoutCallback, stderrCallback).exec()
     outLines
 }
 

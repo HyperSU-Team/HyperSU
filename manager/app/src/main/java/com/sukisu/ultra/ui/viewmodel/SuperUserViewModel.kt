@@ -283,7 +283,7 @@ class SuperUserViewModel(
                 return@filter true
             }
             val userFilter = !currentState.showOnlyPrimaryUserApps || it.uid / 100000 == 0
-            val isSystemApp = (it.packageInfo.applicationInfo?.flags ?: 0).and(ApplicationInfo.FLAG_SYSTEM) != 0
+            val isSystemApp = it.packageInfo.applicationInfo!!.flags.and(ApplicationInfo.FLAG_SYSTEM) != 0
             val typeFilter = it.uid == 2000
                     || currentState.showSystemApps
                     || !isSystemApp

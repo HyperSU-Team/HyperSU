@@ -23,7 +23,6 @@ import com.sukisu.ultra.data.model.WEBVIEW_ZYGOTE_UID
 import com.sukisu.ultra.ksuApp
 import com.sukisu.ultra.ui.KsuService
 import com.sukisu.ultra.ui.util.KsuCli
-import com.sukisu.ultra.ui.util.getRootShell
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -35,7 +34,7 @@ class SuperUserRepositoryImpl : SuperUserRepository {
 
     override suspend fun getAppList(): Result<Pair<List<AppInfo>, List<Int>>> = withContext(Dispatchers.IO) {
         runCatching {
-            if (!getRootShell().isRoot) {
+            if (!KsuCli.SHELL.isRoot) {
                 return@withContext Result.failure(
                     IllegalStateException("Root access is required")
                 )
@@ -78,22 +77,16 @@ class SuperUserRepositoryImpl : SuperUserRepository {
                 }
 
                 val packages = slice.list
-                // One pass, one non-null binding: reading applicationInfo twice raced with package
-                // updates and turned a list refresh into a NullPointerException.
-                val newApps = packages.mapNotNull { info ->
-                    val appInfo = info.applicationInfo ?: return@mapNotNull null
-                    if (appInfo.uid == WEBVIEW_ZYGOTE_UID ||
-                        (appInfo.flags and ApplicationInfo.FLAG_HAS_CODE) == 0
-                    ) {
-                        return@mapNotNull null
-                    }
-                    val profile = Natives.getAppProfile(info.packageName, appInfo.uid)
+                val newApps = packages.filter {
+                    val ai = it.applicationInfo ?: return@filter false
+                    ai.uid != WEBVIEW_ZYGOTE_UID &&
+                            (ai.flags and ApplicationInfo.FLAG_HAS_CODE) != 0
+                }.map {
+                    val appInfo = it.applicationInfo!!
+                    val profile = Natives.getAppProfile(it.packageName, appInfo.uid)
                     AppInfo(
-                        // A package can disappear while the list is built; the label lookup then
-                        // throws. The package name is a usable label and is always there.
-                        label = runCatching { appInfo.loadLabel(pm).toString() }
-                            .getOrDefault(info.packageName),
-                        packageInfo = info,
+                        label = appInfo.loadLabel(pm).toString(),
+                        packageInfo = it,
                         profile = profile,
                     )
                 }.toMutableList()
@@ -178,7 +171,7 @@ class SuperUserRepositoryImpl : SuperUserRepository {
                     Shell.EXECUTOR,
                     connection,
                 )
-                val shell = getRootShell()
+                val shell = KsuCli.SHELL
                 task?.let { shell.execTask(it) }
             }
         }

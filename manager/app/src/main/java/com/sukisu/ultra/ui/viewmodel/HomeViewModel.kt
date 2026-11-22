@@ -1,7 +1,6 @@
 package com.sukisu.ultra.ui.viewmodel
 
 import android.os.Build
-import android.os.SystemClock
 import android.system.Os
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -61,29 +60,14 @@ class HomeViewModel(
      *  start a second - each one is a root shell and a `ksud module list`. */
     private var loadJob: Job? = null
 
-    /** When [loadJob] started, so a read that never returns can be replaced instead of blocking. */
-    private var loadStartedAt = 0L
-
     init {
         reload()
     }
 
     fun refresh() = reload()
 
-    /** Whether the current state carries the facts the page can always show. */
-    fun hasFacts(): Boolean = _uiState.value.hasAlwaysAvailableFacts()
-
     private fun reload() {
-        val active = loadJob?.isActive == true
-        if (active) {
-            // A read that has been running for a long time is stuck on something (a root shell
-            // that never answers). Replacing it is what finally gets the facts onto the screen;
-            // before this, "refresh" was a no-op for the life of the process and only a language
-            // switch - which recreated the view model - brought the values back.
-            if (SystemClock.elapsedRealtime() - loadStartedAt < LoadStaleMillis) return
-            loadJob?.cancel()
-        }
-        loadStartedAt = SystemClock.elapsedRealtime()
+        if (loadJob?.isActive == true) return
         loadJob = viewModelScope.launch {
             // The facts that need no root are published on their own first, before anything that
             // can fail, and the full reading replaces them when it arrives.
@@ -94,11 +78,7 @@ class HomeViewModel(
             // in, so any way the coroutine could end early left the screen blank with nothing left
             // running to replace it. Publishing here means the rows are already correct before the
             // driver, the root shell or `ksud` are touched at all.
-            // Read off the main thread: getSELinuxStatusRaw() may fall back to a shell.
-            if (!_uiState.value.loaded) {
-                val basicsState = withContext(Dispatchers.IO) { readBasicsState() }
-                _uiState.update { previous -> if (previous.loaded) previous else basicsState }
-            }
+            _uiState.update { previous -> if (previous.loaded) previous else readBasicsState() }
 
             // A cold start's first read can come back without the facts that need no root at all:
             // the driver is still coming up, the package manager has not settled, or the process
@@ -160,30 +140,6 @@ class HomeViewModel(
             Log.w(TAG, "could not read the home state", failure)
             // Even a failed read reports the facts that need nothing, rather than blanking them.
             fallback
-        }.let { state ->
-            // The driver side can answer while a basic read came back empty (a cold start, a
-            // spoofed uname). Filling just those fields keeps the working card and the module
-            // counts, instead of trading a full screen for a blank one.
-            if (state.hasAlwaysAvailableFacts()) {
-                state
-            } else {
-                val basics = fallback.systemInfo
-                state.copy(
-                    systemInfo = state.systemInfo.copy(
-                        kernelVersion = state.systemInfo.kernelVersion.ifBlank { basics.kernelVersion },
-                        managerVersion = state.systemInfo.managerVersion.ifBlank { basics.managerVersion },
-                        fingerprint = state.systemInfo.fingerprint.ifBlank { basics.fingerprint },
-                        deviceModel = state.systemInfo.deviceModel.ifBlank { basics.deviceModel },
-                        selinuxStatus = state.systemInfo.selinuxStatus.ifBlank { basics.selinuxStatus },
-                        seccompStatus = if (state.systemInfo.seccompStatus == -1) {
-                            basics.seccompStatus
-                        } else {
-                            state.systemInfo.seccompStatus
-                        },
-                    ),
-                    loaded = true,
-                )
-            }
         }
     }
 
@@ -201,28 +157,11 @@ class HomeViewModel(
                 systemInfo.fingerprint.isNotBlank()
 
     private fun readBasics(): HomeBasics = HomeBasics(
-        // `Os.uname()` can fail or come back empty - a kernel that spoofs uname, a process that
-        // started before the driver was up. `os.version` is the same string from the VM and is
-        // what the earlier builds ended up showing, so it is the fallback rather than a dash.
-        kernelRelease = runCatching { Os.uname() }.getOrNull()?.release
-            .orEmpty()
-            .ifBlank { System.getProperty("os.version").orEmpty() },
-        fingerprint = runCatching { Build.FINGERPRINT }.getOrNull()
-            .orEmpty()
-            .ifBlank { Build.DISPLAY.orEmpty() },
-        deviceModel = runCatching { resolveDeviceName() }.getOrNull()
-            .orEmpty()
-            .ifBlank { runCatching { Build.MODEL }.getOrNull().orEmpty() },
-        // BuildConfig first, as the reference manager does: the package manager can report a null
-        // or empty versionName, and that is what turned this row into a dash.
-        managerVersion = ManagerVersion(
-            versionName = BuildConfig.VERSION_NAME.ifBlank {
-                runCatching { getManagerVersion(ksuApp) }.getOrNull()?.versionName.orEmpty()
-            }.ifBlank { "HyperSU" },
-            versionCode = BuildConfig.VERSION_CODE.takeIf { it > 0 }?.toLong()
-                ?: runCatching { getManagerVersion(ksuApp) }.getOrNull()?.versionCode
-                ?: 0L,
-        ),
+        kernelRelease = runCatching { Os.uname().release }.getOrNull().orEmpty(),
+        fingerprint = runCatching { Build.FINGERPRINT }.getOrNull().orEmpty(),
+        deviceModel = runCatching { resolveDeviceName() }.getOrNull().orEmpty(),
+        managerVersion = runCatching { getManagerVersion(ksuApp) }
+            .getOrElse { ManagerVersion(versionName = BuildConfig.VERSION_NAME, versionCode = 0L) },
         selinuxStatus = runCatching { getSELinuxStatusRaw() }.getOrNull().orEmpty(),
         // PR_GET_SECCOMP. Reports -1 rather than throwing when seccomp is not compiled in.
         seccompStatus = runCatching { Os.prctl(21 /* PR_GET_SECCOMP */, 0, 0, 0, 0) }.getOrDefault(-1),
@@ -287,6 +226,11 @@ class HomeViewModel(
         // "show_full_status", not FolkPatch's "show_fingerprint": that one means "hide the
         // fingerprint" and defaults to false, so reading it here inverted the setting for anyone
         // who had ever touched it.
+        val showFullStatus = runCatching { settingsRepo.showFullStatus }.getOrDefault(true)
+        val showHomeDeviceModel = runCatching { settingsRepo.showHomeDeviceModel }.getOrDefault(true)
+        val showHomeFingerprint = runCatching { settingsRepo.showHomeFingerprint }.getOrDefault(true)
+        val showHomeSelinux = runCatching { settingsRepo.showHomeSelinux }.getOrDefault(true)
+        val showHomeSeccomp = runCatching { settingsRepo.showHomeSeccomp }.getOrDefault(true)
 
         val systemInfo = basicsAsSystemInfo(basics, managerUAPIVersion)
             .copy(kernelFullVersion = kernelFullVersion, zygiskImplementation = zygiskImplementation)
@@ -307,6 +251,11 @@ class HomeViewModel(
             isSafeMode = runCatching { Natives.isSafeMode }.getOrDefault(false),
             loaded = true,
             isLateLoadMode = runCatching { Natives.isLateLoadMode }.getOrDefault(false),
+            showFullStatus = showFullStatus,
+            showHomeDeviceModel = showHomeDeviceModel,
+            showHomeFingerprint = showHomeFingerprint,
+            showHomeSelinux = showHomeSelinux,
+            showHomeSeccomp = showHomeSeccomp,
             managerSignature = runCatching { managerSignatureSha256(ksuApp) }.getOrNull(),
             currentManagerVersionCode = basics.managerVersion.versionCode,
             systemInfo = systemInfo,
@@ -316,13 +265,10 @@ class HomeViewModel(
     private companion object {
         const val TAG = "HomeViewModel"
 
-        /** After this long an in-flight read is considered stuck and may be replaced. */
-        const val LoadStaleMillis = 20_000L
-
         /** How many times a cold start's incomplete read is retried before it is shown as it is. */
-        const val MaxLoadAttempts = 5
+        const val MaxLoadAttempts = 3
 
         /** Between attempts, multiplied by the attempt number so the wait grows. */
-        const val RetryDelayMillis = 300L
+        const val RetryDelayMillis = 400L
     }
 }

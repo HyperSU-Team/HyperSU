@@ -168,7 +168,6 @@ fun FloatingBottomBar(
 
     var currentIndex by remember { mutableIntStateOf(tabForPage) }
     val onSelectedUpdated by rememberUpdatedState(onSelected)
-    val pageForTabUpdated by rememberUpdatedState(pageForTab)
 
     fun indexAt(positionX: Float): Int {
         if (tabWidthPx == 0f) return currentIndex
@@ -202,7 +201,7 @@ fun FloatingBottomBar(
                 if (currentIndex != targetIndex) {
                     currentIndex = targetIndex
                     // The drag lands on a tab position, so the page it opens goes through the map.
-                    onSelectedUpdated(pageForTabUpdated(targetIndex))
+                    onSelectedUpdated(pageForTab(targetIndex))
                 }
                 updateValue(targetIndex.toFloat())
                 animationScope.launch {
@@ -229,8 +228,7 @@ fun FloatingBottomBar(
         )
     }
 
-    // Also keyed on tabForPage: hiding/showing tabs moves the page to another tab position.
-    LaunchedEffect(selectedIndex, tabForPage) {
+    LaunchedEffect(selectedIndex) {
         if (currentIndex != tabForPage) {
             currentIndex = tabForPage
             dampedDragAnimation.animateToValue(tabForPage.toFloat())

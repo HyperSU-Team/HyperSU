@@ -2,9 +2,6 @@ package com.sukisu.ultra.ui.util
 
 import android.content.Context
 import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import com.sukisu.ultra.ksuApp
 import com.sukisu.ultra.ui.theme.BackgroundConfig
 import com.topjohnwu.superuser.io.SuFile
@@ -86,33 +83,6 @@ object ModuleBanner {
 
     fun invalidateAll() {
         synchronized(memory) { memory.clear() }
-        generation++
-    }
-
-    /**
-     * Changes whenever a per-module banner is written or removed. Cards put it in their
-     * `produceState` key, so a banner picked in the settings shows up without leaving the page.
-     */
-    var generation: Int by mutableStateOf(0)
-        private set
-
-    fun hasCustomBanner(moduleId: String): Boolean =
-        runCatching { folkStorage.exists(moduleId) }.getOrDefault(false)
-
-    /** Stores the picked image as this module's banner. */
-    fun setCustomBanner(context: Context, moduleId: String, uri: android.net.Uri): Boolean {
-        val data = runCatching { folkStorage.write(context, moduleId, uri) }.getOrNull() ?: return false
-        synchronized(memory) { memory[moduleId] = data }
-        generation++
-        return true
-    }
-
-    /** Falls back to the module's own banner next time it is resolved. */
-    fun clearCustomBanner(moduleId: String): Boolean {
-        val removed = runCatching { folkStorage.clear(moduleId) }.getOrDefault(false)
-        synchronized(memory) { memory.remove(moduleId) }
-        generation++
-        return removed
     }
 
     /**
@@ -138,8 +108,6 @@ object ModuleBanner {
         // first request is still out (a recomposition, a scroll back), and firing a second identical
         // request only made both slower. Checked and registered under one lock so two callers
         // cannot both start a fetch.
-        // The fetch outlives the caller in a process-wide scope, so it must not hold an Activity.
-        val appContext = context.applicationContext ?: context
         val job = synchronized(inFlight) {
             inFlight[moduleId] ?: scope.async {
                 loadSemaphore.withPermit {
@@ -151,9 +119,9 @@ object ModuleBanner {
                         // a banner that appears a few hundred milliseconds later, which is what the
                         // card's fade is for. `resolve` is cheap on success, so a healthy module pays
                         // nothing for this.
-                        resolve(appContext, moduleId) ?: run {
+                        resolve(context, moduleId) ?: run {
                             delay(BANNER_RETRY_DELAY_MS)
-                            resolve(appContext, moduleId)
+                            resolve(context, moduleId)
                         }
                     }
                     // A null means the fetch did not succeed; leaving it out of the cache lets the next

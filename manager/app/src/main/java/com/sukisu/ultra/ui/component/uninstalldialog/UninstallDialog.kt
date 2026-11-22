@@ -10,7 +10,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -119,9 +118,6 @@ fun UninstallDialog(
     }
 
     if (showConfirmDialog.value) {
-        // Show once per request instead of on every recomposition (side effect during composition).
-        LaunchedEffect(runType.value) {
-            confirmDialog.showConfirm(title = dialogTitle, content = dialogContent)
-        }
+        confirmDialog.showConfirm(title = dialogTitle, content = dialogContent)
     }
 }

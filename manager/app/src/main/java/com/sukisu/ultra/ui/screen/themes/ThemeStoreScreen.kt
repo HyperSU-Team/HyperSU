@@ -148,18 +148,9 @@ fun ThemeStoreScreen() {
         if (state.busyKey != null) return
         scope.launch {
             state = state.copy(busyKey = theme.tag, progress = state.progress + (theme.tag to 0))
-            // The callback runs on the IO thread for every 64KB chunk. Writing `state` there was a
-            // read-modify-write racing the main thread (a search keystroke or tab switch made during
-            // the download could be lost), so only changed percentages are posted to the main scope.
-            var lastPercent = -1
             val archive = runCatching {
                 ThemeStoreRepository.download(context, theme) { percent ->
-                    if (percent != lastPercent) {
-                        lastPercent = percent
-                        scope.launch {
-                            state = state.copy(progress = state.progress + (theme.tag to percent))
-                        }
-                    }
+                    state = state.copy(progress = state.progress + (theme.tag to percent))
                 }
             }.onFailure { Log.w("ThemeStore", "download failed", it) }.getOrNull()
             if (archive == null) {

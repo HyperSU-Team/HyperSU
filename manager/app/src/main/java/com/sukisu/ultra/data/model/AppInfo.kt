@@ -22,9 +22,7 @@ data class AppInfo(
     val displayIdentifier: String
         get() = if (special) profileKey else packageName
     val uid: Int
-        // Not every PackageInfo carries an ApplicationInfo (a package mid-install, a stub for a
-        // removed app). -1 matches no profile, which is the same thing a missing package means.
-        get() = packageInfo.applicationInfo?.uid ?: -1
+        get() = packageInfo.applicationInfo!!.uid
 
     val isWebViewZygote: Boolean
         get() = special && uid == WEBVIEW_ZYGOTE_UID

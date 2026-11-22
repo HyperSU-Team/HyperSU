@@ -105,8 +105,7 @@ object SuSFSPathManager {
         val path1 = "${SuSFSConfig.DEFAULT_ANDROID_DATA_PATH}/$packageName"
         val path2 = "${SuSFSConfig.MEDIA_DATA_PATH}/$packageName"
         val uid = getAppUid(context, packageName) ?: return false
-        // buildUidPath probes cgroup dirs through the root shell; keep it off the caller's thread.
-        val path3 = withContext(Dispatchers.IO) { buildUidPath(uid) }
+        val path3 = buildUidPath(uid)
 
         var successCount = 0
         if (addSusPathInternal(context, path1, showToast = false)) successCount++

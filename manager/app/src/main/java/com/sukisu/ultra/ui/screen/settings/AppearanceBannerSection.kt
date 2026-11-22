@@ -63,7 +63,6 @@ fun AppearanceBannerSection(
     }
 
     var showSourceDialog by remember { mutableStateOf(false) }
-    var showModuleDialog by remember { mutableStateOf(false) }
     val save = { BackgroundConfig.save(context) }
 
     FolkSettingsSectionGroup(title = stringResource(R.string.banner_section_title)) {
@@ -96,15 +95,6 @@ fun AppearanceBannerSection(
             }
 
             if (BackgroundConfig.isFolkBannerEnabled) {
-                item(key = "banner_per_module") {
-                    FolkValuePreference(
-                        title = stringResource(R.string.banner_per_module_title),
-                        summary = stringResource(R.string.banner_per_module_summary),
-                        icon = Icons.Outlined.Image,
-                        onClick = { showModuleDialog = true },
-                    )
-                }
-
                 item(key = "banner_api_mode") {
                     FolkSwitchPreference(
                         title = stringResource(R.string.banner_api_mode),
@@ -179,13 +169,6 @@ fun AppearanceBannerSection(
                 }
             }
         }
-    }
-
-    if (showModuleDialog) {
-        BannerPerModuleDialog(
-            onDismiss = { showModuleDialog = false },
-            onMessage = showMessage,
-        )
     }
 
     if (showSourceDialog) {

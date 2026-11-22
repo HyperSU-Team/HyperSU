@@ -80,9 +80,7 @@ fun SulogScreenFolk(
     val listState = rememberLazyListState()
     val searchListState = rememberLazyListState()
     val haptic = LocalHapticFeedback.current
-    val fileSelector = remember(state.files, state.selectedFilePath) {
-        buildSulogFileSelector(state.files, state.selectedFilePath)
-    }
+    val fileSelector = buildSulogFileSelector(state.files, state.selectedFilePath)
 
     var selectedEntry by remember { mutableStateOf<SulogEntry?>(null) }
     var showFilterMenu by remember { mutableStateOf(false) }
@@ -92,9 +90,9 @@ fun SulogScreenFolk(
         localSearchText = state.searchText
     }
 
-    selectedEntry?.let { entry ->
+    if (selectedEntry != null) {
         SulogDetailDialog(
-            entry = entry,
+            entry = selectedEntry!!,
             onDismiss = { selectedEntry = null },
         )
     }

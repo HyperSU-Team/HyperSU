@@ -108,14 +108,10 @@ object ThemeLibrary {
             // the file just copied would otherwise be seen as its own duplicate.
             val indexed = readIndex(context)
             val duplicates = indexed.filter {
-                it.fileName == fileName ||
-                    (sourceTag != null && it.sourceTag == sourceTag) ||
+                (sourceTag != null && it.sourceTag == sourceTag) ||
                     (it.name == theme.name && it.version == theme.version)
             }
-            // A concurrent listing may already have indexed the file just moved in as an orphan;
-            // that entry is replaced, but its file is the new archive and must not be deleted.
-            duplicates.filter { it.fileName != fileName }
-                .forEach { file(context, it).takeIf { f -> f.exists() }?.delete() }
+            duplicates.forEach { file(context, it).takeIf { f -> f.exists() }?.delete() }
 
             writeIndex(context, indexed - duplicates.toSet() + theme)
             theme
@@ -149,10 +145,7 @@ object ThemeLibrary {
         // only way those downloads can be offered again without downloading 20MB afresh.
         val adopted = adoptCachedDownloads(context, known + orphans.map { it.fileName })
 
-        // One entry per archive: an adopted download can land on a file name already listed, and
-        // duplicate entries would show twice and could give the LazyColumn a repeated key.
-        val merged = (indexed + orphans + adopted).distinctBy { it.fileName }
-            .sortedByDescending { it.addedAt }
+        val merged = (indexed + orphans + adopted).sortedByDescending { it.addedAt }
         // Recording the discovered files makes the next listing cheaper and keeps the names.
         if (orphans.isNotEmpty() || adopted.isNotEmpty()) writeIndex(context, merged)
         Log.d(TAG, "library: ${merged.size} theme(s), ${orphans.size} recovered, ${adopted.size} adopted")

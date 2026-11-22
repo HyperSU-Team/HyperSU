@@ -47,8 +47,6 @@ import com.sukisu.ultra.ui.screen.susfs.util.SuSFSManager
 import com.sukisu.ultra.ui.screen.susfs.viewmodel.SuSFSViewModel
 import com.sukisu.ultra.ui.theme.tokens.FolkType
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 /**
  * The SuSFS configuration screen in the FolkPatch design.
@@ -68,8 +66,6 @@ fun SuSFSFolk() {
     val viewModel: SuSFSViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
-    // Serialises read-modify-write removals so a group delete does not lose updates.
-    val removeMutex = remember { Mutex() }
 
     var isNavigating by remember { mutableStateOf(false) }
     val allTabs = SuSFSTab.getAllTabs()
@@ -86,10 +82,7 @@ fun SuSFSFolk() {
 
     LaunchedEffect(uiState.canEnableAutoStart, uiState.autoStartEnabled) {
         if (!uiState.canEnableAutoStart && uiState.autoStartEnabled) {
-            // viewModel.configureAutoStart() bails out when canEnableAutoStart is false,
-            // so disable through the manager directly and resync the state.
-            SuSFSManager.configureAutoStart(context, false)
-            viewModel.reloadConfig()
+            viewModel.configureAutoStart(context, false)
         }
     }
 
@@ -128,8 +121,7 @@ fun SuSFSFolk() {
         isLoading = uiState.isLoading,
         titleRes = if (uiState.editingPath != null) R.string.susfs_edit_sus_path else R.string.susfs_add_sus_path,
         labelRes = R.string.susfs_path_label,
-        initialValue = uiState.editingPath ?: "",
-        existingPaths = uiState.susPaths,
+        initialValue = uiState.editingPath ?: ""
     )
 
     AddPathDialog(
@@ -150,8 +142,7 @@ fun SuSFSFolk() {
         isLoading = uiState.isLoading,
         titleRes = if (uiState.editingLoopPath != null) R.string.susfs_edit_sus_loop_path else R.string.susfs_add_sus_loop_path,
         labelRes = R.string.susfs_loop_path_label,
-        initialValue = uiState.editingLoopPath ?: "",
-        existingPaths = uiState.susLoopPaths,
+        initialValue = uiState.editingLoopPath ?: ""
     )
 
     AddPathDialog(
@@ -172,8 +163,7 @@ fun SuSFSFolk() {
         isLoading = uiState.isLoading,
         titleRes = if (uiState.editingSusMap != null) R.string.susfs_edit_sus_map else R.string.susfs_add_sus_map,
         labelRes = R.string.susfs_sus_map_label,
-        initialValue = uiState.editingSusMap ?: "",
-        existingPaths = uiState.susMaps,
+        initialValue = uiState.editingSusMap ?: ""
     )
 
     AddAppPathDialog(
@@ -402,9 +392,7 @@ fun SuSFSFolk() {
                         },
                         onRemovePath = { path ->
                             coroutineScope.launch {
-                                removeMutex.withLock {
-                                    if (SuSFSManager.removeSusPath(path)) viewModel.reloadConfig()
-                                }
+                                if (SuSFSManager.removeSusPath(path)) viewModel.reloadConfig()
                             }
                         },
                         onEditPath = { viewModel.openAddPathDialog(it) },
@@ -418,9 +406,7 @@ fun SuSFSFolk() {
                         onAddLoopPath = { viewModel.openAddLoopPathDialog() },
                         onRemoveLoopPath = { path ->
                             coroutineScope.launch {
-                                removeMutex.withLock {
-                                    if (SuSFSManager.removeSusLoopPath(path)) viewModel.reloadConfig()
-                                }
+                                if (SuSFSManager.removeSusLoopPath(path)) viewModel.reloadConfig()
                             }
                         },
                         onEditLoopPath = { viewModel.openAddLoopPathDialog(it) },
@@ -434,9 +420,7 @@ fun SuSFSFolk() {
                         onAddSusMap = { viewModel.openAddSusMapDialog() },
                         onRemoveSusMap = { map ->
                             coroutineScope.launch {
-                                removeMutex.withLock {
-                                    if (SuSFSManager.removeSusMap(map)) viewModel.reloadConfig()
-                                }
+                                if (SuSFSManager.removeSusMap(map)) viewModel.reloadConfig()
                             }
                         },
                         onEditSusMap = { viewModel.openAddSusMapDialog(it) },
@@ -452,17 +436,13 @@ fun SuSFSFolk() {
                         onAddKstat = { viewModel.openAddKstatDialog() },
                         onRemoveKstatConfig = { config ->
                             coroutineScope.launch {
-                                removeMutex.withLock {
-                                    if (SuSFSManager.removeKstatConfig(config)) viewModel.reloadConfig()
-                                }
+                                if (SuSFSManager.removeKstatConfig(config)) viewModel.reloadConfig()
                             }
                         },
                         onEditKstatConfig = { viewModel.openAddKstatStaticallyDialog(it) },
                         onRemoveAddKstat = { path ->
                             coroutineScope.launch {
-                                removeMutex.withLock {
-                                    if (SuSFSManager.removeAddKstat(path)) viewModel.reloadConfig()
-                                }
+                                if (SuSFSManager.removeAddKstat(path)) viewModel.reloadConfig()
                             }
                         },
                         onEditAddKstat = { viewModel.openAddKstatDialog(it) },

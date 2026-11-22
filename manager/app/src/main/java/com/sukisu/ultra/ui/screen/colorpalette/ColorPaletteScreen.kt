@@ -47,6 +47,7 @@ fun ColorPaletteScreen() {
         currentColorMode = ColorMode.fromValue(uiState.themeMode),
         currentPaletteStyle = currentPaletteStyle,
         currentColorSpec = currentColorSpec,
+        showFullStatus = uiState.showFullStatus,
     )
     val actions = ColorPaletteScreenActions(
         onBack = dropUnlessResumed { navigator.pop() },
@@ -70,6 +71,7 @@ fun ColorPaletteScreen() {
         onSetSimpleListBottomBar = viewModel::setSimpleListBottomBar,
         onSetShowSwitchIcon = viewModel::setShowSwitchIcon,
         onSetDiscreteSlider = viewModel::setDiscreteSlider,
+        onSetShowFullStatus = viewModel::setShowFullStatus,
     )
 
     ColorPaletteScreenFolk(state, actions)

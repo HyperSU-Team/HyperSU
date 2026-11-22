@@ -1,5 +1,6 @@
 package com.sukisu.ultra.ui.theme
 
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -11,8 +12,7 @@ import androidx.compose.ui.graphics.Color
  */
 @Composable
 fun bannerFadeColor(): Color {
-    // Follow the app's own colour mode (forced light/dark), not just the system setting.
-    val isDark = isInDarkTheme()
+    val isDark = isSystemInDarkTheme()
     val colorScheme = MaterialTheme.colorScheme
     val isDynamic = colorScheme.primary != colorScheme.secondary
     return when {

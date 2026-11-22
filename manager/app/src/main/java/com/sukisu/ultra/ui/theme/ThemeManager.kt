@@ -760,8 +760,7 @@ object ThemeManager {
             // org.json's put(String, Any) throws on null, so every optional string needs a
             // fallback rather than a nullable value.
             put("colorStyle", settings.stringPref("color_style", PaletteStyle.TonalSpot.name) ?: PaletteStyle.TonalSpot.name)
-            // FolkPatch's enum name is M3E_2025; the importer here accepts both spellings.
-            put("colorStandard", if (colorSpec == ColorSpec.SpecVersion.SPEC_2021.name) "MD3_2021" else "M3E_2025")
+            put("colorStandard", if (colorSpec == ColorSpec.SpecVersion.SPEC_2021.name) "MD3_2021" else "MD3_2025")
             put("colorGenerationMode", settings.stringPref("color_generation_mode", COLOR_GENERATION_CUSTOM) ?: COLOR_GENERATION_CUSTOM)
             // Written under FolkPatch's name for the same layout, so a theme exported here is
             // understood there - it reads `kernelsu`, not `grid`.
@@ -1161,9 +1160,6 @@ object ThemeManager {
                     putString("color_style", PaletteStyle.TonalSpot.name)
                     putString("color_spec", ColorSpec.SpecVersion.SPEC_2025.name)
                     remove("home_layout_style")
-                    // Written by theme import as well, so a reset has to undo them too.
-                    remove("color_generation_mode")
-                    remove("color_contrast")
                 }
                 background.edit { clear() }
                 // The bar's icons are files plus preferences, and clearing the preferences alone

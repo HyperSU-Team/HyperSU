@@ -4,8 +4,7 @@ import android.content.pm.PackageInfo
 import com.sukisu.ultra.ui.viewmodel.SuperUserViewModel
 
 object AppInfoCache {
-    // Read from composition and written from background loaders; must be thread-safe.
-    private val appInfoMap = java.util.concurrent.ConcurrentHashMap<String, CachedAppInfo>()
+    private val appInfoMap = mutableMapOf<String, CachedAppInfo>()
 
     data class CachedAppInfo(
         val appName: String,

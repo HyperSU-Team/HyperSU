@@ -890,7 +890,7 @@ object BackgroundConfig {
         // slider was never touched, so changing the default alone would not have been visible to
         // them. A stored 1.0 is moved to the new half-strength default exactly once; anything else
         // is a value the user picked and is left alone.
-        if (!prefs.booleanPref(KEY_BANNER_OPACITY_MIGRATED, false)) {
+        if (!prefs.getBoolean(KEY_BANNER_OPACITY_MIGRATED, false)) {
             val wasOldDefault = bannerCustomOpacity >= 0.999f
             if (wasOldDefault) this.bannerCustomOpacity = DEFAULT_BANNER_OPACITY
             val editor = prefs.edit().putBoolean(KEY_BANNER_OPACITY_MIGRATED, true)
@@ -935,25 +935,6 @@ object BackgroundConfig {
         isFocusCardDualOpacityEnabled = false
         focusCardBgDayOpacity = 1f
         focusCardBgNightOpacity = 1f
-
-        gridWorkingCardBgUri = null
-        isGridWorkingCardBackgroundEnabled = false
-        isGridWorkingCardDualOpacityEnabled = false
-        gridWorkingCardBgOpacity = 1f
-        gridWorkingCardBgDayOpacity = 1f
-        gridWorkingCardBgNightOpacity = 1f
-        gridWorkingCardBgDim = 0f
-        isGridWorkingCardCheckHidden = false
-        isGridWorkingCardTextHidden = false
-        isGridWorkingCardModeHidden = false
-        isListWorkingCardModeHidden = false
-
-        isAdvancedTitleStyleEnabled = false
-        titleImageUri = null
-        titleImageDayOpacity = 1f
-        titleImageNightOpacity = 1f
-        titleImageDim = 0f
-        titleImageOffsetX = 0f
 
         dashboardTileWorkingBgUri = null
         dashboardTileSelinuxBgUri = null
