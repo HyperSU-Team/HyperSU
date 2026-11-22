@@ -256,6 +256,9 @@ dependencies {
     implementation(libs.xz)
     // Wallpaper / banner image loading.
     implementation(libs.coil.compose)
+    // Animated theme artwork (the character in the home tiles) is a GIF or animated WebP; without
+    // the GIF decoder Coil draws only its first frame, which is what made the tile look frozen.
+    implementation(libs.coil.gif)
     implementation(libs.ucrop)
     implementation(libs.protobuf.kotlin.lite)
 }

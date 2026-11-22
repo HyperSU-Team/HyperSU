@@ -3,6 +3,9 @@ package com.sukisu.ultra
 import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Context
+import coil.ImageLoader
+import coil.ImageLoaderFactory
+import coil.gif.GifDecoder
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
@@ -22,7 +25,7 @@ import java.util.Locale
 
 lateinit var ksuApp: KernelSUApplication
 
-class KernelSUApplication : Application(), ViewModelStoreOwner {
+class KernelSUApplication : Application(), ImageLoaderFactory, ViewModelStoreOwner {
 
     companion object {
         private const val TAG = "KernelSUApplication"
@@ -50,6 +53,18 @@ class KernelSUApplication : Application(), ViewModelStoreOwner {
 
     private fun isUserUnlocked(): Boolean =
         getSystemService(UserManager::class.java)?.isUserUnlocked == true
+
+    /**
+     * Coil's singleton loader, with animated GIF support.
+     *
+     * The theme artwork on the home tiles can be an animated GIF or WebP. `coil-gif` is a decoder
+     * module, not something Coil enables on its own, and without it the tile showed the first frame
+     * only - the character stood still instead of moving.
+     */
+    override fun newImageLoader(): ImageLoader =
+        ImageLoader.Builder(this)
+            .components { add(GifDecoder.Factory()) }
+            .build()
 
     override fun onCreate() {
         super.onCreate()
