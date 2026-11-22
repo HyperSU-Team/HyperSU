@@ -98,18 +98,30 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.53 - the manager stops shipping debuggable backups, and three buttons that lied about what they do are fixed or gone.
+            HyperSU v4.2.54 - a manager review pass: crashes, main-thread work, stale state and every string.
 
-            Security:
-            - `android:allowBackup` was `true` with the generated sample rules, so `adb backup` and cloud backup could carry the manager's data off the device (settings, intent token, appearance, cached lists). A root manager should not be a backup source; backups are off and the two unused rule files are deleted.
+            Crashes:
+            - SuperUser and SuLog no longer crash on an empty app label or a missing field, and the Markdown page swallows a bad request instead of taking the process down.
+            - The video wallpaper survives its player being released, and theme export, log save/send and module links report a failure instead of crashing.
+            - Dynamic manager and SuSFS no longer crash without root.
 
-            Interface:
-            - The alternate-launcher-icon feature is fully retired: its artwork is gone and the alias is kept only as a disabled launch bridge for devices that still have it selected, with the real activity re-enabled at start.
-            - The dynamic-manager page showed the current signature as a tappable row with an empty handler: it rippled and did nothing. It is a plain information row now.
-            - The WebUI debugging switch only wrote a preference that nothing read. It now calls `WebView.setWebContentsDebuggingEnabled`, so `chrome://inspect` works when it is on.
-            - The home copy switch is read per composition instead of being remembered for the life of the pager.
+            Main thread:
+            - Root shell calls and file IO moved off the main thread on home, install, template editor, app profile, the reboot sheet, module snackbars, SuSFS backup/restore, the manager APK digest check and the unmount-path save.
+            - The template ID is validated after typing stops instead of on every keystroke, and system monitoring stops sampling when the home page is left.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.52...v4.2.53
+            State:
+            - Module cards no longer act on stale data (uninstall followed by undo asked for confirmation again), and the bottom bar cannot drag to a hidden page or badge the wrong tab.
+            - DPI 'follow system' survives a reboot, a finished download stays finished, SuSFS autostart can be turned off and a new profile is usable without leaving the page.
+            - A just-downloaded theme is no longer deleted and the same theme stops appearing twice; the flash page does not show the previous result first.
+            - Rotating after a kernel flash no longer flashes the same package again, and rotating during a module action no longer runs the script twice.
+            - Exporting the 2025 palette specs writes the right values, and resetting the theme clears everything.
+            - The SELinux hide switch no longer flips when the write fails, and 'compact list bottom bar' applies immediately.
+
+            Removed: the duplicated profile mode row, the SuSFS current-values block and the no-op Grid dual-dim switch.
+
+            Text: every new message is a string resource, translated into all 47 locales - log-save failures, the flash error line, boot-slot and cleanup log lines, and SuLog restart/dropped tags. English copy and accessibility labels are polished.
+
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.53...v4.2.54
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
