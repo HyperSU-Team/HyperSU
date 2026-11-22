@@ -5,7 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import coil.ImageLoader
 import coil.ImageLoaderFactory
-import coil.gif.GifDecoder
+import coil.decode.GifDecoder
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo

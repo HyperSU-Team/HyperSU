@@ -1022,7 +1022,7 @@
     <string name="susfs_uname_invalid">The release value cannot contain spaces</string>
     <string name="banner_per_module_title">Banners for individual modules</string>
     <string name="banner_per_module_summary">Give a module its own banner when it ships none</string>
-    <string name="banner_per_module_help">Pick an image for any module that has no banner of its own. It stays in this app's storage and is not written into the module.</string>
+    <string name="banner_per_module_help">Pick an image for any module that has no banner of its own. It stays in this app\'s storage and is not written into the module.</string>
     <string name="banner_pick_for_module">Choose a banner image</string>
     <string name="banner_clear_custom">Remove the custom banner</string>
     <string name="banner_custom_set">The banner is saved</string>
