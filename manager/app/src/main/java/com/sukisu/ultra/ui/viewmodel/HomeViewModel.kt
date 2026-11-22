@@ -204,7 +204,7 @@ class HomeViewModel(
         // `Os.uname()` can fail or come back empty - a kernel that spoofs uname, a process that
         // started before the driver was up. `os.version` is the same string from the VM and is
         // what the earlier builds ended up showing, so it is the fallback rather than a dash.
-        kernelRelease = runCatching { Os.uname().release }.getOrNull()
+        kernelRelease = runCatching { Os.uname() }.getOrNull()?.release
             .orEmpty()
             .ifBlank { System.getProperty("os.version").orEmpty() },
         fingerprint = runCatching { Build.FINGERPRINT }.getOrNull()
@@ -213,20 +213,16 @@ class HomeViewModel(
         deviceModel = runCatching { resolveDeviceName() }.getOrNull()
             .orEmpty()
             .ifBlank { runCatching { Build.MODEL }.getOrNull().orEmpty() },
-        managerVersion = runCatching { getManagerVersion(ksuApp) }
-            .getOrElse { ManagerVersion(versionName = BuildConfig.VERSION_NAME, versionCode = 0L) }
-            .let { version ->
-                // A build whose versionName is the empty string passes the null check above and
-                // then renders as a blank row; prefer the compiled-in name and the real code.
-                if (version.versionName.isBlank() || version.versionCode == 0L) {
-                    ManagerVersion(
-                        versionName = version.versionName.ifBlank { BuildConfig.VERSION_NAME },
-                        versionCode = version.versionCode.takeIf { it != 0L } ?: BuildConfig.VERSION_CODE.toLong(),
-                    )
-                } else {
-                    version
-                }
-            },
+        // BuildConfig first, as the reference manager does: the package manager can report a null
+        // or empty versionName, and that is what turned this row into a dash.
+        managerVersion = ManagerVersion(
+            versionName = BuildConfig.VERSION_NAME.ifBlank {
+                runCatching { getManagerVersion(ksuApp) }.getOrNull()?.versionName.orEmpty()
+            }.ifBlank { "HyperSU" },
+            versionCode = BuildConfig.VERSION_CODE.takeIf { it > 0 }?.toLong()
+                ?: runCatching { getManagerVersion(ksuApp) }.getOrNull()?.versionCode
+                ?: 0L,
+        ),
         selinuxStatus = runCatching { getSELinuxStatusRaw() }.getOrNull().orEmpty(),
         // PR_GET_SECCOMP. Reports -1 rather than throwing when seccomp is not compiled in.
         seccompStatus = runCatching { Os.prctl(21 /* PR_GET_SECCOMP */, 0, 0, 0, 0) }.getOrDefault(-1),

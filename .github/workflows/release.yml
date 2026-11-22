@@ -98,12 +98,15 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.57 - the home facts fill in on their own instead of waiting for a language switch.
+            HyperSU v4.2.58 - the home facts read the same way the reference manager does, and cannot end up as dashes.
 
-            - A read that hung on a root shell stayed "in flight" for the life of the process, so every later refresh was a no-op. An in-flight read older than 20 seconds is now replaced.
-            - The home page keeps asking for the facts while they are missing (every 1.5s for up to 30s) instead of relying on one read at start-up. That is the read that only a language switch - which recreates the activity - used to trigger.
+            - Manager version comes from `BuildConfig` instead of the package manager: a package whose versionName resolves to null or empty produced an empty row.
+            - SELinux is read through `SuFile("/sys/fs/selinux/enforce")`, which retries through a shell when the app uid may not open the node (SELinux hiding, an enforcing kernel). A plain `File` read returned null there and the row said unknown.
+            - Kernel release falls back from `Os.uname().release` to the VM's `os.version`; the device name already walks the vendor market-name properties and then MANUFACTURER/Brand/MODEL.
+            - The fact rows now read these values where they are drawn and merge them with the view model's state, so a state that lost them no longer blanks the page; the grid tiles use the same merged SELinux and Seccomp readings.
+            - The root shell is no longer cached while un-rooted: a request that raced the daemon used to be kept for the life of the process, which made every later shell read fail until the process restarted.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.56...v4.2.57
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.57...v4.2.58
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

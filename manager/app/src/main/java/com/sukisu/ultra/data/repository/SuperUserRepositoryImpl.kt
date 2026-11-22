@@ -23,6 +23,7 @@ import com.sukisu.ultra.data.model.WEBVIEW_ZYGOTE_UID
 import com.sukisu.ultra.ksuApp
 import com.sukisu.ultra.ui.KsuService
 import com.sukisu.ultra.ui.util.KsuCli
+import com.sukisu.ultra.ui.util.getRootShell
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -34,7 +35,7 @@ class SuperUserRepositoryImpl : SuperUserRepository {
 
     override suspend fun getAppList(): Result<Pair<List<AppInfo>, List<Int>>> = withContext(Dispatchers.IO) {
         runCatching {
-            if (!KsuCli.SHELL.isRoot) {
+            if (!getRootShell().isRoot) {
                 return@withContext Result.failure(
                     IllegalStateException("Root access is required")
                 )
@@ -177,7 +178,7 @@ class SuperUserRepositoryImpl : SuperUserRepository {
                     Shell.EXECUTOR,
                     connection,
                 )
-                val shell = KsuCli.SHELL
+                val shell = getRootShell()
                 task?.let { shell.execTask(it) }
             }
         }

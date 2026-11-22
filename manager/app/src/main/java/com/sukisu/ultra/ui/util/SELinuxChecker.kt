@@ -2,7 +2,6 @@ package com.sukisu.ultra.ui.util
 
 import android.util.Log
 import com.topjohnwu.superuser.Shell
-import java.io.File
 
 private const val TAG = "SELinuxChecker"
 
@@ -32,12 +31,23 @@ fun getSELinuxStatusRaw(): String {
  * reporting "Disabled" for a file it could not open - those are different answers.
  */
 private fun readSelinuxEnforceNode(): String? = runCatching {
-    val node = File("/sys/fs/selinux/enforce")
-    if (!node.exists() || !node.canRead()) return@runCatching null
-    when (node.readText().trim()) {
-        "1" -> "Enforcing"
-        "0" -> "Permissive"
-        else -> null
+    // SuFile, not File: it retries through a shell when the app uid is not allowed to open the
+    // node, which is the common case when SELinux hiding is on. A plain File read returned null
+    // there and the row fell back to "unknown" even though the mode was readable.
+    val node = com.topjohnwu.superuser.io.SuFile("/sys/fs/selinux/enforce")
+    when {
+        !node.exists() -> "Disabled"
+        !node.isFile -> null
+        // Present but unreadable is what an enforcing kernel looks like from an unprivileged app.
+        !node.canRead() -> "Enforcing"
+        else -> when (
+            runCatching { node.newInputStream() }.getOrNull()?.bufferedReader()
+                ?.use { it.readText().trim() }
+        ) {
+            "1" -> "Enforcing"
+            "0" -> "Permissive"
+            else -> null
+        }
     }
 }.onFailure { Log.w(TAG, "could not read the SELinux enforce node", it) }.getOrNull()
 

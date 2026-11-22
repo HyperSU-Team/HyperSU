@@ -1,5 +1,11 @@
 package com.sukisu.ultra.ui.screen.home
 
+import androidx.compose.runtime.produceState
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
+import com.sukisu.ultra.BuildConfig
+import com.sukisu.ultra.ui.util.resolveDeviceName
+import com.sukisu.ultra.ui.util.getSELinuxStatusRaw
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.compose.foundation.Image
@@ -877,12 +883,89 @@ private fun HomeUnsupportedCard(
 // Facts
 // ---------------------------------------------------------------------------
 
+
+/**
+ * The home facts that need no root, no driver and no shell, read where they are drawn.
+ *
+ * Every one of these is available to a plain app process, yet the rows used to come from the view
+ * model alone: when that state lost them - a load that failed early, a preference that was reset -
+ * the rows showed a dash even though the values were readable. Merged with `ifBlank` below, the
+ * page can no longer show a dash for something the device can answer.
+ */
+private data class HomeBasicFacts(
+    val managerVersion: String,
+    val kernelRelease: String,
+    val deviceModel: String,
+    val fingerprint: String,
+    val selinuxStatus: String,
+    val seccompStatus: Int,
+)
+
+/** `uname` can fail or be spoofed; the VM property is the same release. */
+private fun readKernelRelease(): String =
+    runCatching { android.system.Os.uname().release }.getOrNull()
+        .orEmpty()
+        .ifBlank { System.getProperty("os.version").orEmpty() }
+
+private fun readDeviceModel(): String =
+    runCatching { resolveDeviceName() }.getOrNull()
+        .orEmpty()
+        .ifBlank { runCatching { android.os.Build.MODEL }.getOrNull().orEmpty() }
+
+@Composable
+private fun rememberHomeBasicFacts(): HomeBasicFacts {
+    val context = LocalContext.current
+    val managerVersion = remember(context) {
+        // BuildConfig rather than the package manager: the reference manager reads it this way, and
+        // a package whose versionName resolves to null or "" produced an empty row here.
+        val installed = runCatching { getManagerVersion(context) }.getOrNull()
+        val name = BuildConfig.VERSION_NAME.ifBlank {
+            installed?.versionName.orEmpty()
+        }
+        val code = BuildConfig.VERSION_CODE.takeIf { it > 0 } ?: installed?.versionCode ?: 0L
+        "${name.ifBlank { "HyperSU" }} ($code)"
+    }
+    val kernelRelease = remember { readKernelRelease() }
+    val deviceModel = remember { readDeviceModel() }
+    val fingerprint = remember {
+        runCatching { android.os.Build.FINGERPRINT }.getOrNull()
+            .orEmpty()
+            .ifBlank { runCatching { android.os.Build.DISPLAY }.getOrNull().orEmpty() }
+    }
+    val selinux by produceState(initialValue = "") {
+        value = withContext(Dispatchers.IO) {
+            runCatching { getSELinuxStatusRaw() }.getOrDefault("")
+        }
+    }
+    val seccomp = remember {
+        runCatching { android.system.Os.prctl(21 /* PR_GET_SECCOMP */, 0, 0, 0, 0) }.getOrDefault(-1)
+    }
+    return HomeBasicFacts(
+        managerVersion = managerVersion,
+        kernelRelease = kernelRelease,
+        deviceModel = deviceModel,
+        fingerprint = fingerprint,
+        selinuxStatus = selinux,
+        seccompStatus = seccomp,
+    )
+}
+
 @Composable
 private fun HomeFacts(state: HomeUiState) {
     val systemInfo = state.systemInfo
+    val basics = rememberHomeBasicFacts()
 
-    val selinuxDisplay = selinuxStatusLabel(systemInfo.selinuxStatus)
-    val seccompDisplay = seccompStatusLabel(systemInfo.seccompStatus)
+    // A state that came back without these must not turn them into dashes: each one is readable
+    // here, and the fallback is the same value the view model would have produced.
+    val managerText = systemInfo.managerVersion.ifBlank { basics.managerVersion }
+    val kernelText = systemInfo.kernelVersion.ifBlank { basics.kernelRelease }
+    val deviceText = systemInfo.deviceModel.ifBlank { basics.deviceModel }
+    val fingerprintText = systemInfo.fingerprint.ifBlank { basics.fingerprint }
+    val selinuxRaw = systemInfo.selinuxStatus.ifBlank { basics.selinuxStatus }
+    val seccompRaw = if (systemInfo.seccompStatus == -1) basics.seccompStatus else systemInfo.seccompStatus
+
+    val selinuxDisplay = selinuxStatusLabel(selinuxRaw)
+    val seccompDisplay = seccompStatusLabel(seccompRaw)
 
     val manualHookText = stringResource(R.string.manual_hook)
     val inlineHookText = stringResource(R.string.inline_hook)
@@ -898,8 +981,8 @@ private fun HomeFacts(state: HomeUiState) {
     )
 
     FolkFactsGroup {
-        fact(stringResource(R.string.home_manager_version), systemInfo.managerVersion)
-        fact(stringResource(R.string.home_kernel), systemInfo.kernelVersion)
+        fact(stringResource(R.string.home_manager_version), managerText)
+        fact(stringResource(R.string.home_kernel), kernelText)
 
         if (state.showFullStatus) {
             if (!systemInfo.kernelFullVersion.isNullOrBlank()) {
@@ -916,10 +999,10 @@ private fun HomeFacts(state: HomeUiState) {
         }
 
         if (state.showHomeDeviceModel) {
-            fact(stringResource(R.string.home_device_model), systemInfo.deviceModel)
+            fact(stringResource(R.string.home_device_model), deviceText)
         }
         if (state.showHomeFingerprint) {
-            fact(stringResource(R.string.home_fingerprint), systemInfo.fingerprint)
+            fact(stringResource(R.string.home_fingerprint), fingerprintText)
         }
         if (state.showHomeSelinux) {
             fact(stringResource(R.string.home_selinux_status), selinuxDisplay)
@@ -1048,6 +1131,15 @@ private fun HomeGridStatusCards(
     actions: HomeActions,
 ) {
     val heroWallpaper = gridHeroWallpaperUri()
+    // The tiles read the same two values as the fact rows; a state that lost them must not turn a
+    // readable SELinux mode into "unknown".
+    val basics = rememberHomeBasicFacts()
+    val selinuxRaw = state.systemInfo.selinuxStatus.ifBlank { basics.selinuxStatus }
+    val seccompRaw = if (state.systemInfo.seccompStatus == -1) {
+        basics.seccompStatus
+    } else {
+        state.systemInfo.seccompStatus
+    }
 
     Row(
         modifier = Modifier

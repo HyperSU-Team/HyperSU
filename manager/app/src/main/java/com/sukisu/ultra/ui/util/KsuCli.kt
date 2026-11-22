@@ -51,16 +51,57 @@ data class FlashResult(val code: Int, val err: String, val showReboot: Boolean) 
     constructor(result: Shell.Result) : this(result, result.isSuccess)
 }
 
+/**
+ * The process-wide root shell.
+ *
+ * Both were `val`s built when the object was first touched, which on a cold start is the very
+ * first read of the home page - often before the daemon has authorised this manager. When that
+ * request lost the race, `createRootShell` fell back to a plain `sh` and the *result was cached
+ * for the life of the process*: every later `ksud`, `getenforce` and module read ran unrooted, so
+ * the home facts stayed blank until something restarted the process (switching the language did,
+ * which is why that appeared to fix it). A shell that is not root is now never cached, and the
+ * next call asks again.
+ */
 object KsuCli {
-    val SHELL: Shell = createRootShell()
-    val GLOBAL_MNT_SHELL: Shell = createRootShell(true)
-}
+    @Volatile
+    private var shell: Shell? = null
 
-fun getRootShell(globalMnt: Boolean = false): Shell {
-    return if (globalMnt) KsuCli.GLOBAL_MNT_SHELL else {
-        KsuCli.SHELL
+    @Volatile
+    private var globalMntShell: Shell? = null
+
+    /** The un-rooted attempt and when it happened, so a rootless device is not asked every call. */
+    @Volatile
+    private var lastFailed: Shell? = null
+
+    @Volatile
+    private var lastFailedAt = 0L
+
+    fun shell(globalMnt: Boolean): Shell {
+        val cached = if (globalMnt) globalMntShell else shell
+        if (cached != null && cached.isRoot) return cached
+
+        val now = SystemClock.elapsedRealtime()
+        val failed = lastFailed
+        if (failed != null && now - lastFailedAt < FailureRetryMillis) return failed
+
+        val fresh = createRootShell(globalMnt)
+        if (fresh.isRoot) {
+            if (globalMnt) globalMntShell = fresh else shell = fresh
+            lastFailed = null
+        } else {
+            // Kept only as a short-lived fallback: the daemon may simply not be up yet, and the
+            // next call a moment later can succeed.
+            lastFailed = fresh
+            lastFailedAt = now
+        }
+        return fresh
     }
 }
+
+fun getRootShell(globalMnt: Boolean = false): Shell = KsuCli.shell(globalMnt)
+
+/** How long an un-rooted shell is reused before the daemon is asked again. */
+private const val FailureRetryMillis = 2_000L
 
 inline fun <T> withNewRootShell(
     globalMnt: Boolean = false,
