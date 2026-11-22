@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.annotation.StringRes
 import androidx.compose.ui.platform.LocalContext
@@ -32,7 +33,9 @@ import com.sukisu.ultra.ui.component.folk.FolkValuePreference
 import com.sukisu.ultra.ui.screen.themeSettings.crop.CropBackgroundContract
 import com.sukisu.ultra.ui.theme.BackgroundConfig
 import com.sukisu.ultra.ui.theme.BackgroundManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * The wallpaper rows of the appearance screen, ported from FolkPatch
@@ -51,7 +54,8 @@ fun AppearanceBackgroundSection(
     val scope = rememberCoroutineScope()
 
     // Which wallpaper the pending pick will replace: null once the pick finished.
-    var pendingTarget by remember { mutableStateOf<String?>(null) }
+    // Saveable: the picker/cropper is another activity, and this one may be recreated meanwhile.
+    var pendingTarget by rememberSaveable { mutableStateOf<String?>(null) }
 
     val showMessage: (Int) -> Unit = { resId ->
         val message = context.getString(resId)
@@ -148,7 +152,7 @@ fun AppearanceBackgroundSection(
         onConfirm = {
             scope.launch {
                 loadingDialog.show()
-                BackgroundManager.clearCustomBackground(context)
+                withContext(Dispatchers.IO) { BackgroundManager.clearCustomBackground(context) }
                 loadingDialog.hide()
                 showMessage(R.string.settings_background_image_cleared)
             }
@@ -159,7 +163,7 @@ fun AppearanceBackgroundSection(
         onConfirm = {
             scope.launch {
                 loadingDialog.show()
-                BackgroundManager.clearVideoBackground(context)
+                withContext(Dispatchers.IO) { BackgroundManager.clearVideoBackground(context) }
                 BackgroundConfig.setVideoBackgroundEnabledState(false)
                 BackgroundConfig.save(context)
                 loadingDialog.hide()

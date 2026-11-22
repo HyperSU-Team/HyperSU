@@ -233,7 +233,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.downloadedItems(
                 // Says which of the two empty cases this is: nothing stored, or files that could not
                 // be read. Without it the screen gives no way to tell a storage problem from an
                 // empty library.
-                if (state.libraryFiles > 0) {
+                // Only when the library itself is empty: a search that matches nothing must not
+                // claim the stored files are unreadable.
+                if (state.downloads.isEmpty() && state.libraryFiles > 0) {
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = stringResource(R.string.theme_store_library_unreadable, state.libraryFiles),
@@ -254,7 +256,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.downloadedItems(
         items(visible, key = { it.id }) { local ->
             LocalThemeCard(
                 theme = local,
-                busy = state.busyKey == local.id,
+                // Any operation in flight blocks these buttons: applyLocal ignores taps while busy,
+                // so an enabled button would silently do nothing.
+                busy = state.busyKey != null,
                 onApply = onApply,
                 onDelete = onDelete,
             )

@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -34,6 +35,7 @@ import com.sukisu.ultra.toRawFlags
 import com.sukisu.ultra.toRootProfileFlags
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.sukisu.ultra.ui.component.folk.FolkAlertDialog
 import com.sukisu.ultra.ui.component.folk.FolkButtonDefaults
@@ -202,6 +204,7 @@ fun TemplateConfig(
     onProfileChange: (Natives.Profile) -> Unit,
 ) {
     val showDialog = remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val template = profile.rootTemplate ?: ""
     // `listAppProfileTemplates` is a root shell round trip; it must not run during composition,
     // where every recomposition of the picker blocked the main thread on ksud.
@@ -225,22 +228,27 @@ fun TemplateConfig(
             itemTitle = { it.name },
             onConfirm = { selected ->
                 val tid = selected.id
-                val templateInfo = getTemplateInfoById(tid)
-                if (templateInfo != null &&
-                    setSepolicy(tid, templateInfo.rules.joinToString("\n"))
-                ) {
-                    onProfileChange(
-                        profile.copy(
-                            rootTemplate = tid,
-                            rootUseDefault = false,
-                            uid = templateInfo.uid,
-                            gid = templateInfo.gid,
-                            groups = templateInfo.groups,
-                            capabilities = templateInfo.capabilities,
-                            context = templateInfo.context,
-                            namespace = templateInfo.namespace,
+                // Both calls are root shell jobs; keep them off the main thread.
+                scope.launch {
+                    val templateInfo = withContext(Dispatchers.IO) {
+                        getTemplateInfoById(tid)?.takeIf {
+                            setSepolicy(tid, it.rules.joinToString("\n"))
+                        }
+                    }
+                    if (templateInfo != null) {
+                        onProfileChange(
+                            profile.copy(
+                                rootTemplate = tid,
+                                rootUseDefault = false,
+                                uid = templateInfo.uid,
+                                gid = templateInfo.gid,
+                                groups = templateInfo.groups,
+                                capabilities = templateInfo.capabilities,
+                                context = templateInfo.context,
+                                namespace = templateInfo.namespace,
+                            )
                         )
-                    )
+                    }
                 }
                 showDialog.value = false
             },
@@ -352,7 +360,7 @@ private fun GroupsPanel(
 
     if (showDialog.value) {
         MultiSelectDialog(
-            title = "Groups",
+            title = stringResource(R.string.profile_groups),
             subtitle = "${selected.size} / 32",
             items = groups,
             selectedItems = selected.toSet(),
@@ -494,7 +502,7 @@ private fun CapsPanel(
 
     if (showDialog.value) {
         MultiSelectDialog(
-            title = "Capabilities",
+            title = stringResource(R.string.profile_capabilities),
             subtitle = "${selectedCaps.size} / ${Capabilities.entries.size}",
             items = capabilities,
             selectedItems = selectedCaps.toSet(),

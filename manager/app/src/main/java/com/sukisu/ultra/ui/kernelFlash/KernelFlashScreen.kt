@@ -149,7 +149,7 @@ fun KernelFlashScreen(
                 }.onSuccess {
                     android.widget.Toast.makeText(
                         context,
-                        "Log saved to $it",
+                        "${context.getString(R.string.log_saved)}: $it",
                         android.widget.Toast.LENGTH_SHORT,
                     ).show()
                 }.onFailure {

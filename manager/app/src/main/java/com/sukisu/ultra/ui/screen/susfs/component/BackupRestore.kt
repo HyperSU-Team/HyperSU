@@ -38,8 +38,10 @@ import com.sukisu.ultra.ui.component.folk.FolkButtonDefaults
 import com.sukisu.ultra.ui.screen.susfs.util.BackupData
 import com.sukisu.ultra.ui.screen.susfs.util.SuSFSManager
 import com.sukisu.ultra.ui.theme.tokens.FolkType
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -84,16 +86,18 @@ fun BackupRestoreComponent(
 
                     val success = SuSFSManager.createBackup(context, tempFile.absolutePath)
                     if (success) {
-                        try {
-                            context.contentResolver.openOutputStream(fileUri)?.use { outputStream ->
-                                tempFile.inputStream().use { inputStream ->
-                                    inputStream.copyTo(outputStream)
+                        withContext(Dispatchers.IO) {
+                            try {
+                                context.contentResolver.openOutputStream(fileUri)?.use { outputStream ->
+                                    tempFile.inputStream().use { inputStream ->
+                                        inputStream.copyTo(outputStream)
+                                    }
                                 }
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            } finally {
+                                tempFile.delete()
                             }
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        } finally {
-                            tempFile.delete()
                         }
                     }
                 } catch (e: Exception) {
@@ -112,11 +116,13 @@ fun BackupRestoreComponent(
     ) { uri ->
         uri?.let { fileUri ->
             coroutineScope.launch {
+                val tempFile = File(context.cacheDir, "temp_restore.susfs_backup")
                 try {
-                    val tempFile = File(context.cacheDir, "temp_restore.susfs_backup")
-                    context.contentResolver.openInputStream(fileUri)?.use { inputStream ->
-                        tempFile.outputStream().use { outputStream ->
-                            inputStream.copyTo(outputStream)
+                    withContext(Dispatchers.IO) {
+                        context.contentResolver.openInputStream(fileUri)?.use { inputStream ->
+                            tempFile.outputStream().use { outputStream ->
+                                inputStream.copyTo(outputStream)
+                            }
                         }
                     }
 
@@ -130,6 +136,7 @@ fun BackupRestoreComponent(
                     }
                 } catch (e: Exception) {
                     e.printStackTrace()
+                    runCatching { tempFile.delete() }
                 } finally {
                     showRestoreDialog = false
                 }
@@ -227,6 +234,8 @@ fun BackupRestoreComponent(
     if (showRestoreConfirmDialog && info != null) {
         val dismissRestoreConfirm = {
             showRestoreConfirmDialog = false
+            // Cancelling must not leave the validated copy behind in the cache.
+            selectedBackupFile?.let { runCatching { File(it).delete() } }
             selectedBackupFile = null
             backupInfo = null
         }

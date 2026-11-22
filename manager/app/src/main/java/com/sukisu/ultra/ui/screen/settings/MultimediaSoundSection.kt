@@ -57,8 +57,15 @@ fun MultimediaSoundSection(
             scope.launch {
                 loadingDialog.show()
                 // The copy is file IO; only the dialog and the toast belong on the main thread.
-                val ok = withContext(Dispatchers.IO) { SoundEffectConfig.saveSoundEffectFile(context, uri) }
-                loadingDialog.hide()
+                // contentResolver.getType runs outside saveSoundEffectFile's try and can throw;
+                // treat that as a failed save instead of crashing with the dialog still up.
+                val ok = try {
+                    withContext(Dispatchers.IO) {
+                        runCatching { SoundEffectConfig.saveSoundEffectFile(context, uri) }.getOrDefault(false)
+                    }
+                } finally {
+                    loadingDialog.hide()
+                }
                 showMessage(if (ok) R.string.sound_saved else R.string.sound_save_failed)
             }
         }
@@ -70,8 +77,13 @@ fun MultimediaSoundSection(
         if (uri != null) {
             scope.launch {
                 loadingDialog.show()
-                val ok = withContext(Dispatchers.IO) { SoundEffectConfig.saveStartupSoundFile(context, uri) }
-                loadingDialog.hide()
+                val ok = try {
+                    withContext(Dispatchers.IO) {
+                        runCatching { SoundEffectConfig.saveStartupSoundFile(context, uri) }.getOrDefault(false)
+                    }
+                } finally {
+                    loadingDialog.hide()
+                }
                 showMessage(if (ok) R.string.sound_saved else R.string.sound_save_failed)
             }
         }

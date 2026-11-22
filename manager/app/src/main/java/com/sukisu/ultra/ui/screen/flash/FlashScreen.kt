@@ -30,9 +30,9 @@ fun FlashScreen(flashIt: FlashIt) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val logContent = FlashRunner.logContent
-    val needJailbreakWarning = flashIt is FlashIt.FlashBoot && Natives.isLateLoadMode
+    val needJailbreakWarning = remember(flashIt) { flashIt is FlashIt.FlashBoot && Natives.isLateLoadMode }
     // Soft reboot keeps the jailbreak and still applies modules
-    val softReboot = flashIt is FlashIt.FlashModules && isSoftRebootPreferred()
+    val softReboot = remember(flashIt) { flashIt is FlashIt.FlashModules && isSoftRebootPreferred() }
     var flashingEnabled by rememberSaveable { mutableStateOf(!needJailbreakWarning) }
     // Restored on recreation: the recreated screen must observe the application-scoped job
     // instead of asking for a second write, and a job that finished while the activity was
@@ -63,7 +63,8 @@ fun FlashScreen(flashIt: FlashIt) {
         // A finished flash changes what the module list should show, so ask it to reload on its
         // next resume. The success page stays up: it carries the reboot action, and closing the
         // activity a second after a successful install took that page away before it could be used.
-        if (flashingStatus == FlashingStatus.SUCCESS) {
+        // A SUCCESS left over from a previous flash (before this screen started its own) is ignored.
+        if (flashingStatus == FlashingStatus.SUCCESS && startRequested) {
             ModuleListRefresh.request()
         }
         // The navigation host must not dismiss this screen while the write is running; a swipe
@@ -79,10 +80,12 @@ fun FlashScreen(flashIt: FlashIt) {
         onDispose { NavLock.release() }
     }
 
+    // Until this screen has started its own flash, FlashRunner still holds the previous run's
+    // log and result; show a fresh page instead of that stale success/failure.
     val state = FlashUiState(
-        text = text,
-        showRebootAction = showRebootAction,
-        flashingStatus = flashingStatus,
+        text = if (startRequested) text else "",
+        showRebootAction = startRequested && showRebootAction,
+        flashingStatus = if (startRequested) flashingStatus else FlashingStatus.FLASHING,
         showJailbreakWarning = needJailbreakWarning && !flashingEnabled,
         rebootLabelRes = if (softReboot) R.string.reboot_soft else R.string.reboot,
     )

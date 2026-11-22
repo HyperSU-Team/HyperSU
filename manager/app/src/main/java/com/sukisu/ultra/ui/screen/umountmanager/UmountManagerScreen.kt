@@ -11,6 +11,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.dropUnlessResumed
 import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.component.dialog.ConfirmResult
 import com.sukisu.ultra.ui.component.dialog.rememberConfirmDialog
@@ -47,8 +48,8 @@ fun UmountManagerScreen() {
     val confirmDelete = stringResource(R.string.confirm_delete)
 
     fun loadPaths() {
+        isLoading = true
         scope.launch(Dispatchers.IO) {
-            isLoading = true
             val result = listUmountPaths()
             val entries = parseUmountPaths(result)
             withContext(Dispatchers.Main) {
@@ -70,9 +71,10 @@ fun UmountManagerScreen() {
 
             scope.launch(Dispatchers.IO) {
                 val success = addUmountPath(path, flags)
+                // Persisting runs a root shell command, so keep it off the main thread.
+                if (success) saveUmountConfig()
                 withContext(Dispatchers.Main) {
                     if (success) {
-                        saveUmountConfig()
                         Toast.makeText(context, umountPathAddedText, Toast.LENGTH_SHORT).show()
                         loadPaths()
                     } else {
@@ -134,7 +136,7 @@ fun UmountManagerScreen() {
                 }
             }
         },
-        onBack = { navigator.pop() }
+        onBack = dropUnlessResumed { navigator.pop() }
     )
 
     val state = UmountManagerUiState(

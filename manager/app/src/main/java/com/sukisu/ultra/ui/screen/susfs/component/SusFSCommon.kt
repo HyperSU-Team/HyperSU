@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Android
@@ -44,6 +46,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
@@ -258,9 +261,11 @@ internal fun FolkSusfsTabRow(
             Surface(
                 modifier = Modifier
                     .folkPressScale(interactionSource, true)
-                    .clickable(
+                    .selectable(
+                        selected = selected,
                         interactionSource = interactionSource,
                         indication = null,
+                        role = Role.Tab,
                     ) {
                         haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onSelect(index)
@@ -404,12 +409,14 @@ internal fun FolkAppSelectableRow(
         modifier = Modifier
             .fillMaxWidth()
             .folkPressScale(interactionSource, true)
-            .clickable(
+            .toggleable(
+                value = checked,
                 interactionSource = interactionSource,
                 indication = null,
-            ) {
+                role = Role.Checkbox,
+            ) { newValue ->
                 haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onCheckedChange(!checked)
+                onCheckedChange(newValue)
             }
             .padding(horizontal = 14.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,

@@ -5,11 +5,11 @@
     <string name="home_click_to_install">点击安装</string>
     <string name="home_working">工作中</string>
     <string name="home_working_version">版本：%s</string>
-    <string name="home_lkm_update_available">内嵌 LKM 有可用更新，点击更新</string>
+    <string name="home_lkm_update_available">内置 LKM 有可用更新，点击更新</string>
     <string name="home_lkm_custom">自定义</string>
     <string name="home_unsupported">不支持</string>
     <string name="home_reading_status">正在读取设备状态…</string>
-    <string name="home_unsupported_reason">内核上未检测到 KernelSU 驱动程序，内核错误?</string>
+    <string name="home_unsupported_reason">内核上未检测到 KernelSU 驱动程序，内核是否正确？</string>
     <string name="home_manager_unrecognized">管理器未被内核识别</string>
     <string name="home_manager_unrecognized_reason">Root 正常，但内核未把本应用识别为管理器（模块内置的管理器签名与本 APK 不一致）。请用本 APK 的签名重新构建并刷入内核模块。</string>
     <string name="home_manager_signature">本 APK 的签名：%s</string>
@@ -124,7 +124,7 @@
     <string name="app_profile_template_edit">编辑模板</string>
     <string name="app_profile_template_id">模板 ID</string>
     <string name="app_profile_template_id_invalid">模板 ID 不合法</string>
-    <string name="app_profile_template_name">名字</string>
+    <string name="app_profile_template_name">名称</string>
     <string name="app_profile_template_description">描述</string>
     <string name="app_profile_template_save">保存</string>
     <string name="app_profile_template_delete">删除</string>
@@ -176,7 +176,7 @@
     <string name="download_probe_failed">探测镜像失败：%1$s</string>
     <string name="install_inactive_slot">安装到未使用的槽位（OTA 后）</string>
     <string name="install_inactive_slot_warning">将在重启后强制切换到另一个槽位！注意只能在 OTA 更新完成后的重启之前使用</string>
-    <string name="jailbreak_flash_warning">当前处于**越狱模式**。在**未解锁 Bootloader** 的设备上刷写分区会破坏 AVB（Android 验证启动），可能导致设备**无法开机**。\n\n请确保 Bootloader 已解锁后再继续操作！</string>
+    <string name="jailbreak_flash_warning">当前处于**越狱模式**。在**未解锁 Bootloader** 的设备上刷入分区会破坏 AVB（Android 验证启动），可能导致设备**无法开机**。\n\n请确保 Bootloader 已解锁后再继续操作！</string>
     <string name="jailbreak_flash_warning_countdown">继续 (%1$d)</string>
     <string name="install_next">下一步</string>
     <string name="install_select_partition">选择分区</string>
@@ -194,9 +194,9 @@
     <string name="settings_uninstall_temporary_message">临时卸载 KernelSU，下次重启后恢复至原始状态</string>
     <string name="settings_uninstall_permanent_message">完全并永久卸载 KernelSU（Root 权限和所有模块）</string>
     <string name="settings_restore_stock_image_message">恢复原厂镜像（若存在备份），一般在 OTA 前使用；如果你需要卸载 KernelSU，请使用「永久卸载」</string>
-    <string name="flashing">刷写中</string>
-    <string name="flash_success">刷写完成</string>
-    <string name="flash_failed">刷写失败</string>
+    <string name="flashing">刷入中</string>
+    <string name="flash_success">刷入完成</string>
+    <string name="flash_failed">刷入失败</string>
     <string name="selected_lkm">已选择的 LKM：%s</string>
     <string name="save_log">保存日志</string>
     <string name="log_saved">日志已保存</string>
@@ -346,7 +346,7 @@
     <string name="settings_shell_su_adb_only_summary">只允许从 shell 或 adb 启动的进程获取 su，应用无法获取</string>
     <string name="settings_selinux_hide">隐藏 SELinux 修改</string>
     <string name="settings_selinux_hide_summary">阻止应用检测 SELinux 修改</string>
-    <string name="settings_selinux_hide_reboot_required">重启生效</string>
+    <string name="settings_selinux_hide_reboot_required">重启后生效</string>
     <string name="settings_selinux_hide_failed">错误：%d</string>
     <string name="settings_mount_hide">隐藏可疑挂载</string>
     <string name="settings_mount_hide_summary">从隔离进程与应用进程的 /proc 挂载视图中过滤 KernelSU 与模块的挂载记录</string>
@@ -407,7 +407,7 @@
     <string name="add_umount_path">添加 Umount 路径</string>
     <string name="mount_path">挂载路径</string>
     <string name="umount_flags">卸载标志</string>
-    <string name="umount_flags_hint">0=正常卸载, 2=MNT_DETACH</string>
+    <string name="umount_flags_hint">0=正常卸载，2=MNT_DETACH</string>
     <string name="flags">标志</string>
     <string name="confirm_delete">确认删除</string>
     <string name="confirm_delete_umount_path">确定要删除路径 %s 吗？</string>
@@ -431,23 +431,23 @@
     <string name="horizon_flashing">正在刷入内核…</string>
     <string name="horizon_flash_complete_status">刷入已完成</string>
     <string name="select_slot_title">选择刷入槽位</string>
-    <string name="select_slot_description">请选择要刷入boot的目标槽位</string>
+    <string name="select_slot_description">请选择要刷入 boot 的目标槽位</string>
     <string name="slot_a">槽位 A</string>
     <string name="slot_b">槽位 B</string>
-    <string name="selected_slot">已选槽位: %1$s</string>
+    <string name="selected_slot">已选槽位：%1$s</string>
     <string name="horizon_getting_original_slot">获取原始槽位</string>
     <string name="horizon_setting_target_slot">设置指定槽位</string>
     <string name="horizon_restoring_original_slot">恢复默认槽位</string>
-    <string name="current_slot">当前系统默认槽位：%1$s </string>
+    <string name="current_slot">当前系统默认槽位：%1$s</string>
     <string name="horizon_copy_failed">复制失败</string>
     <string name="horizon_unknown_error">未知错误</string>
     <string name="flash_failed_message">刷入失败</string>
     <string name="kernel_version_log">内核版本：%1$s</string>
     <string name="tools">工具</string>
-    <string name="root_required">需要root权限</string>
+    <string name="root_required">需要 Root 权限</string>
     <string name="kernel_flashing">内核刷入</string>
     <string name="horizon_kernel">AnyKernel3 内核</string>
-    <string name="horizon_kernel_summary">刷入AnyKernel3格式的内核zip包</string>
+    <string name="horizon_kernel_summary">刷入 AnyKernel3 格式的内核 zip 包</string>
     <string name="flash_confirm_title">要刷入此压缩包吗？</string>
     <string name="flash_confirm_file">文件</string>
     <string name="flash_confirm_slot">分区槽位</string>
@@ -474,7 +474,7 @@
     <string name="allowlist_backup_failed">备份失败</string>
     <string name="allowlist_restore_title">还原允许列表</string>
     <string name="allowlist_restore_summary_picker">选择备份文件进行导入</string>
-    <string name="allowlist_restore_success">还原成功,重启生效</string>
+    <string name="allowlist_restore_success">还原成功，重启生效</string>
     <string name="allowlist_restore_failed">还原失败</string>
     <!-- CPU Spoof -->
     <string name="tools_spoof_cpu_title">CPU 身份伪装</string>
@@ -503,7 +503,7 @@
     <string name="mixed_install_prompt_with_name">将安装以下文件：%1$s</string>
     <!-- SuSFS Configuration -->
     <string name="susfs_config_title">SuSFS 配置</string>
-    <string name="susfs_config_summary">配置SuSFS模块设置</string>
+    <string name="susfs_config_summary">配置 SuSFS 模块设置</string>
     <string name="dynamic_manager">多管理器适配</string>
     <string name="dynamic_manager_summary">允许内核接受另一个管理器的签名</string>
     <string name="dynamic_manager_current">当前动态签名</string>
@@ -530,8 +530,8 @@
     <string name="susfs_config_description_text">此功能允许您自定义 SuSFS 的 uname 值和构建时间伪装。输入您想要设置的值，点击应用即可生效</string>
     <string name="susfs_uname_label">Uname 值</string>
     <string name="susfs_build_time_label">构建时间伪装</string>
-    <string name="susfs_current_value">当前值: %s</string>
-    <string name="susfs_current_build_time">当前构建时间: %s</string>
+    <string name="susfs_current_value">当前值：%s</string>
+    <string name="susfs_current_build_time">当前构建时间：%s</string>
     <string name="susfs_apply">应用</string>
     <!-- SuSFS Reset Confirmation -->
     <string name="susfs_reset_confirm_title">确认重置</string>
@@ -601,10 +601,10 @@
     <string name="reset_kstat_config_title">重置 Kstat 配置</string>
     <string name="reset_kstat_config_message">确定要清除所有 Kstat 配置吗？此操作不可撤销</string>
     <string name="kstat_config_description_title">Kstat 配置说明</string>
-    <string name="kstat_config_description_add_statically">• add_sus_kstat_statically: 静态配置文件/目录的 stat 信息</string>
-    <string name="kstat_config_description_add">• add_sus_kstat: 在绑定挂载前添加路径，存储原始 stat 信息</string>
-    <string name="kstat_config_description_update">• update_sus_kstat: 更新目标 ino，保持 size 和 blocks 不变</string>
-    <string name="kstat_config_description_update_full_clone">• update_sus_kstat_full_clone: 仅更新 ino，其他保持原始值</string>
+    <string name="kstat_config_description_add_statically">• add_sus_kstat_statically：静态配置文件/目录的 stat 信息</string>
+    <string name="kstat_config_description_add">• add_sus_kstat：在绑定挂载前添加路径，存储原始 stat 信息</string>
+    <string name="kstat_config_description_update">• update_sus_kstat：更新目标 ino，保持 size 和 blocks 不变</string>
+    <string name="kstat_config_description_update_full_clone">• update_sus_kstat_full_clone：仅更新 ino，其他保持原始值</string>
     <string name="static_kstat_config">静态 Kstat 配置</string>
     <string name="kstat_path_management">Kstat 路径管理</string>
     <string name="no_kstat_config_message">暂无 Kstat 配置，点击下方按钮添加配置</string>
@@ -634,13 +634,13 @@
     <string name="susfs_backup_info_version">版本：%s</string>
     <string name="susfs_cmdline_or_bootconfig_title">欺骗 Cmdline / Bootconfig</string>
     <string name="susfs_cmdline_or_bootconfig_description">选择一个文本文件，其内容将通过 SuSFS 推送到内核，作为 /proc/cmdline（非 GKI）或 /proc/bootconfig（GKI）的替换。开启自动启动后将持久化并在每次开机时应用。</string>
-    <string name="susfs_cmdline_or_bootconfig_current">当前路径: %s</string>
+    <string name="susfs_cmdline_or_bootconfig_current">当前路径：%s</string>
     <string name="susfs_cmdline_or_bootconfig_none">（尚未选择）</string>
     <string name="susfs_cmdline_or_bootconfig_pick_file">选择 Cmdline / Bootconfig 文件</string>
     <string name="hide_bl_script">上锁状态</string>
     <string name="hide_bl_script_description">覆盖引导锁状态属性于 late_start 服务模式</string>
     <string name="cleanup_residue">清理工具残留</string>
-    <string name="cleanup_residue_description">清理各种模块以及工具的残留文件和目录（可能会误删导致丢失以及无法启动，谨慎使用）</string>
+    <string name="cleanup_residue_description">清理各种模块以及工具的残留文件和目录（可能误删文件导致数据丢失或无法开机，请谨慎使用）</string>
     <string name="susfs_edit_sus_path">编辑 SuS 路径</string>
     <string name="edit_kstat_statically_title">编辑 Kstat 静态配置</string>
     <string name="edit_kstat_path_title">编辑 Kstat 路径</string>
@@ -648,7 +648,7 @@
     <string name="edit">编辑</string>
     <string name="delete">删除</string>
     <string name="update">更新</string>
-    <string name="susfs_update_full_clone">Susfs 完整克隆更新</string>
+    <string name="susfs_update_full_clone">SuSFS 完整克隆更新</string>
     <string name="app_paths_section">应用路径</string>
     <string name="other_paths_section">其他路径</string>
     <string name="add_custom_path">其他</string>
@@ -676,19 +676,19 @@
     <string name="sus_loop_paths_description_title">循环路径配置</string>
     <string name="sus_loop_paths_description_text">循环路径会在每次非 root 用户应用或隔离服务启动时重新标记为 SUS_PATH。这有助于解决添加的路径可能因 inode 状态重置或内核中 inode 重新创建而失效的问题</string>
     <string name="avc_log_spoofing">AVC 日志欺骗</string>
-    <string name="avc_log_spoofing_description">禁用: 禁用在内核 AVC 日志中欺骗 \'su\' 的 sus tcontext。\n启用: 启用在内核 AVC 日志中将 \'su\' 的 sus tcontext 欺骗为 \'kernel\'</string>
+    <string name="avc_log_spoofing_description">禁用：禁用在内核 AVC 日志中欺骗 \'su\' 的 sus tcontext。\n启用：启用在内核 AVC 日志中将 \'su\' 的 sus tcontext 欺骗为 \'kernel\'</string>
     <!-- SUS Map Related Strings -->
-    <string name="susfs_tab_sus_maps">SUS映射</string>
+    <string name="susfs_tab_sus_maps">SUS 映射</string>
     <string name="susfs_sus_map_label">库文件路径</string>
-    <string name="susfs_add_sus_map">添加SUS映射</string>
-    <string name="susfs_edit_sus_map">编辑SUS映射</string>
-    <string name="susfs_no_sus_maps_configured">未配置SUS映射</string>
-    <string name="susfs_add_map_failed">添加SUS映射失败</string>
-    <string name="susfs_edit_map_failed">编辑SUS映射失败</string>
-    <string name="susfs_reset_sus_maps_title">重置SUS映射</string>
-    <string name="susfs_reset_sus_maps_message">这将移除所有已配置的SUS映射。此操作无法撤销。</string>
+    <string name="susfs_add_sus_map">添加 SUS 映射</string>
+    <string name="susfs_edit_sus_map">编辑 SUS 映射</string>
+    <string name="susfs_no_sus_maps_configured">未配置 SUS 映射</string>
+    <string name="susfs_add_map_failed">添加 SUS 映射失败</string>
+    <string name="susfs_edit_map_failed">编辑 SUS 映射失败</string>
+    <string name="susfs_reset_sus_maps_title">重置 SUS 映射</string>
+    <string name="susfs_reset_sus_maps_message">这将移除所有已配置的 SUS 映射。此操作无法撤销。</string>
     <string name="sus_maps_section">内存映射隐藏</string>
-    <string name="sus_maps_description_title">隐藏/proc/self/中各种映射中的mmap真实文件</string>
+    <string name="sus_maps_description_title">隐藏 /proc/self/ 下各类映射中 mmap 的真实文件</string>
     <string name="sus_maps_description_text">从 /proc/self/[maps|smaps|smaps_rollup|map_files|mem|pagemap] 中隐藏内存映射的真实文件路径。请注意：此功能不支持隐藏匿名内存映射，也无法隐藏由注入库本身产生的内联钩子或 PLT 钩子。</string>
     <string name="sus_maps_warning">重要提示：对于具备完善注入检测机制的应用，此功能可能无法有效绕过检测。</string>
     <string name="sus_maps_debug_info">首先通过 ps -enf 查找目标应用的 PID 和 UID，然后检查 /proc/&lt;pid&gt;/maps 中的相关路径，并与 /proc/1/mountinfo 中的设备号进行比对以确保一致性。只有当设备号一致时，隐藏映射才能正常工作。</string>

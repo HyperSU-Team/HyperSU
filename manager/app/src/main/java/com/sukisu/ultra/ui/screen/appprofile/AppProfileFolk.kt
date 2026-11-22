@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.DropdownMenuGroup
@@ -47,7 +46,6 @@ import androidx.core.content.pm.PackageInfoCompat
 import com.sukisu.ultra.Natives
 import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.component.AppIconImage
-import com.sukisu.ultra.ui.component.folk.FolkPreference
 import com.sukisu.ultra.ui.component.folk.FolkScaffold
 import com.sukisu.ultra.ui.component.folk.FolkSettingsGroup
 import com.sukisu.ultra.ui.component.folk.FolkSelectableRow
@@ -218,7 +216,6 @@ private fun AppProfileInner(
     }
     var rootMode by rememberSaveable(profile) { mutableStateOf(initialRootMode) }
     val nonRootMode = if (profile.nonRootUseDefault) Mode.Default else Mode.Custom
-    val mode = if (isRootGranted) rootMode else nonRootMode
 
     Column(modifier = modifier) {
         FolkSettingsGroup(
@@ -308,17 +305,11 @@ private fun AppProfileInner(
                     )
                 }
             }
-
-            item {
-                FolkPreference(
-                    title = stringResource(R.string.profile),
-                    summary = mode.text,
-                    icon = Icons.Filled.AccountCircle,
-                )
-            }
         }
 
         Crossfade(targetState = isRootGranted, label = "AppProfileMode") { current ->
+            // Derive the mode from the Crossfade's own state so the outgoing page keeps its mode.
+            val mode = if (current) rootMode else nonRootMode
             Column(modifier = Modifier.padding(bottom = 6.dp + 48.dp)) {
                 if (current) {
                     ProfileModePicker(

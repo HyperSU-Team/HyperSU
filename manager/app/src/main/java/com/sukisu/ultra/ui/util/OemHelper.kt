@@ -12,14 +12,21 @@ internal fun getSystemProperty(key: String): String {
     }
 }
 
+// Read-only build properties: resolve them once instead of reflecting on every call.
+private val isMiuiCached: Boolean by lazy { getSystemProperty("ro.miui.ui.version.name").isNotEmpty() }
+private val isHyperOSCached: Boolean by lazy { getSystemProperty("ro.mi.os.version.name").isNotEmpty() }
+private val isColorOSCached: Boolean by lazy {
+    getSystemProperty("ro.build.version.oplus.api").isNotEmpty() || getSystemProperty("ro.vendor.oplus.market.name").isNotEmpty()
+}
+
 fun isMiui(): Boolean {
-    return getSystemProperty("ro.miui.ui.version.name").isNotEmpty()
+    return isMiuiCached
 }
 
 fun isHyperOS(): Boolean {
-    return getSystemProperty("ro.mi.os.version.name").isNotEmpty()
+    return isHyperOSCached
 }
 
 fun isColorOS(): Boolean {
-    return getSystemProperty("ro.build.version.oplus.api").isNotEmpty() || getSystemProperty("ro.vendor.oplus.market.name").isNotEmpty()
+    return isColorOSCached
 }

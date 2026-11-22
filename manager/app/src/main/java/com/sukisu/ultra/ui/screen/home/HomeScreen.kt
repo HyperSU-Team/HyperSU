@@ -89,5 +89,6 @@ fun HomePager(
         state = uiState,
         actions = actions,
         bottomInnerPadding = bottomInnerPadding,
+        isCurrentPage = isCurrentPage,
     )
 }

@@ -17,8 +17,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.dropUnlessResumed
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import com.sukisu.ultra.R
 import com.sukisu.ultra.getKernelVersion
 import com.sukisu.ultra.ui.component.choosekmidialog.ChooseKmiDialog
@@ -77,12 +81,18 @@ fun InstallScreen(
     }
     var spoofRelease by rememberSaveable { mutableStateOf("") }
     var spoofVersion by rememberSaveable { mutableStateOf("") }
+    // Once the user has typed, the asynchronously loaded values must not overwrite the field
+    // (they arrive again after every recreation).
+    var spoofEdited by rememberSaveable { mutableStateOf(false) }
+    val spoofSaveMutex = remember { Mutex() }
 
     LaunchedEffect(bootConfig) {
+        if (spoofEdited) return@LaunchedEffect
         spoofRelease = bootConfig.spoofRelease.ifEmpty { spoofRelease }
         spoofVersion = bootConfig.spoofVersion.ifEmpty { spoofVersion }
     }
     LaunchedEffect(storedSpoof) {
+        if (spoofEdited) return@LaunchedEffect
         spoofRelease = spoofRelease.ifEmpty { storedSpoof.first }
         spoofVersion = spoofVersion.ifEmpty { storedSpoof.second }
     }
@@ -90,7 +100,8 @@ fun InstallScreen(
     val currentKmi by produceState(initialValue = "") { value = getCurrentKmi() }
     val partitions by produceState(initialValue = emptyList()) { value = getAvailablePartitions() }
     val defaultPartition by produceState(initialValue = "") { value = getDefaultPartition() }
-    val rootAvailable by produceState(initialValue = false) { value = rootAvailable() }
+    // rootAvailable() is blocking (it may create the root shell); keep it off the main thread.
+    val rootAvailable by produceState(initialValue = false) { value = withContext(Dispatchers.IO) { rootAvailable() } }
     // Null until the platform has answered. The archive flow keys on A/B, and treating the
     // placeholder "false" as the answer opened the confirmation for a two-slot device.
     val isAbDeviceState by produceState<Boolean?>(initialValue = null) { value = isAbDevice() }
@@ -461,14 +472,21 @@ fun InstallScreen(
         },
         onSpoofReleaseChange = {
             spoofRelease = it
+            spoofEdited = true
+            // Serialized in keystroke order so the last value typed is the one that is stored.
             scope.launch {
-                SuSFSManager.saveUnameValue(it.trim().ifBlank { "default" })
+                spoofSaveMutex.withLock {
+                    SuSFSManager.saveUnameValue(it.trim().ifBlank { "default" })
+                }
             }
         },
         onSpoofVersionChange = {
             spoofVersion = it
+            spoofEdited = true
             scope.launch {
-                SuSFSManager.saveBuildTimeValue(it.trim().ifBlank { "default" })
+                spoofSaveMutex.withLock {
+                    SuSFSManager.saveBuildTimeValue(it.trim().ifBlank { "default" })
+                }
             }
         },
         onHorizonKernelSelected = { method ->

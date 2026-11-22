@@ -41,6 +41,7 @@ import com.sukisu.ultra.BuildConfig
 import com.sukisu.ultra.R
 import com.sukisu.ultra.ui.component.dialog.rememberLoadingDialog
 import com.sukisu.ultra.ui.util.getBugreportFile
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -89,18 +90,26 @@ fun FolkSendLogSheet(
         val lifecycleScope = activity?.lifecycleScope ?: scope
         lifecycleScope.launch {
             loadingDialog.show()
-            try {
+            // Collecting the bundle needs root; without it the archive is never written and the
+            // read throws. Catch it so a failed export does not crash the app or claim success.
+            val saved = try {
                 withContext(Dispatchers.IO) {
                     context.contentResolver.openOutputStream(uri)?.use { output ->
                         getBugreportFile(context).inputStream().use { it.copyTo(output) }
-                    }
+                    } != null
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                false
             } finally {
                 loadingDialog.hide()
             }
             dismiss()
-            snackbarHostState.currentSnackbarData?.dismiss()
-            snackbarHostState.showSnackbar(logSaved)
+            if (saved) {
+                snackbarHostState.currentSnackbarData?.dismiss()
+                snackbarHostState.showSnackbar(logSaved)
+            }
         }
     }
 
@@ -144,9 +153,17 @@ fun FolkSendLogSheet(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.VirtualKey)
                             scope.launch {
-                                val bugreport = loadingDialog.withLoading {
-                                    withContext(Dispatchers.IO) { getBugreportFile(context) }
+                                val bugreport = try {
+                                    loadingDialog.withLoading {
+                                        withContext(Dispatchers.IO) { getBugreportFile(context) }
+                                    }
+                                } catch (e: CancellationException) {
+                                    throw e
+                                } catch (e: Exception) {
+                                    null
                                 }
+                                // Without root the archive is never written; sharing it would hand out a dead uri.
+                                if (bugreport == null || !bugreport.exists()) return@launch
 
                                 val uri: Uri = FileProvider.getUriForFile(
                                     context,

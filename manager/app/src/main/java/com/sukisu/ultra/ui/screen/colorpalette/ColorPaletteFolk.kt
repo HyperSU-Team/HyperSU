@@ -105,6 +105,7 @@ import com.sukisu.ultra.ui.theme.ColorMode
 import com.sukisu.ultra.ui.theme.keyColorOptions
 import com.sukisu.ultra.ui.theme.rememberKernelSUColorScheme
 import com.sukisu.ultra.ui.util.DpiUtils
+import kotlin.math.roundToInt
 
 /**
  * The theme picker in the FolkPatch design.
@@ -371,9 +372,9 @@ fun ColorPaletteScreenFolk(
                         value = uiState.moduleDescriptionMaxLines.toFloat(),
                         valueRange = 1f..5f,
                         steps = 3,
-                        valueFormat = { "${it.toInt()} $unitLinesLabel" },
+                        valueFormat = { "${it.roundToInt()} $unitLinesLabel" },
                         onValueChange = {
-                            actions.onSetModuleDescriptionMaxLines(it.toInt())
+                            actions.onSetModuleDescriptionMaxLines(it.roundToInt())
                         },
                     )
                 }
@@ -571,7 +572,8 @@ private fun DpiDialog(
                     valueRange = DpiUtils.MIN_DPI.toFloat()..DpiUtils.MAX_DPI.toFloat(),
                     // 40dpi steps, which is what the presets below use too.
                     steps = ((DpiUtils.MAX_DPI - DpiUtils.MIN_DPI) / 40) - 1,
-                    valueFormat = { "${it.toInt()} DPI" },
+                    // Snapped step values are not exact floats (e.g. 199.99998), so round, not truncate.
+                    valueFormat = { "${it.roundToInt()} DPI" },
                     onValueChange = { dpi = it },
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -598,7 +600,7 @@ private fun DpiDialog(
                 }
                 TextButton(
                     onClick = {
-                        onConfirm(if (useSystem) DpiUtils.DEFAULT_DPI else dpi.toInt())
+                        onConfirm(if (useSystem) DpiUtils.DEFAULT_DPI else dpi.roundToInt())
                     },
                     colors = FolkButtonDefaults.textColors(),
                 ) {
@@ -626,7 +628,7 @@ private fun ThemePreviewCard(
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp.toFloat()
     val screenHeight = configuration.screenHeightDp.toFloat()
-    val screenRatio = if (screenHeight > 0f) screenWidth / screenHeight else 0.5f
+    val screenRatio = if (screenHeight > 0f && screenWidth > 0f) screenWidth / screenHeight else 0.5f
     val useRail = useNavigationRail(enableFloatingBottomBar = false)
 
     val colorScheme = rememberKernelSUColorScheme(

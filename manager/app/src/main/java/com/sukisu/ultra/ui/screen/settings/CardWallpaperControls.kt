@@ -38,21 +38,26 @@ internal fun FolkSettingsGroupScope.CardWallpaperControls(
     nightOpacity: Float,
     onNightOpacityChange: (Float) -> Unit,
     onSaved: () -> Unit,
+    // Cards without a day/night dim pair (the Grid hero card) hide the dual-dim switch,
+    // which would otherwise be a dead toggle.
+    showDualDim: Boolean = true,
 ) {
-    item(key = "${keyPrefix}_dual_dim") {
-        FolkSwitchPreference(
-            title = stringResource(R.string.card_dual_dim_title),
-            summary = stringResource(R.string.card_dual_dim_desc),
-            icon = Icons.Outlined.Contrast,
-            checked = dualDimEnabled,
-            onCheckedChange = {
-                onDualDimChange(it)
-                onSaved()
-            },
-        )
+    if (showDualDim) {
+        item(key = "${keyPrefix}_dual_dim") {
+            FolkSwitchPreference(
+                title = stringResource(R.string.card_dual_dim_title),
+                summary = stringResource(R.string.card_dual_dim_desc),
+                icon = Icons.Outlined.Contrast,
+                checked = dualDimEnabled,
+                onCheckedChange = {
+                    onDualDimChange(it)
+                    onSaved()
+                },
+            )
+        }
     }
 
-    if (dualDimEnabled) {
+    if (showDualDim && dualDimEnabled) {
         item(key = "${keyPrefix}_day_dim") {
             FolkSliderPreference(
                 title = stringResource(R.string.card_day_dim),

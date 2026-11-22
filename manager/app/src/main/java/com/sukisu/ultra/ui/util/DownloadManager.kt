@@ -85,6 +85,8 @@ object DownloadManager {
     internal fun updateProgress(id: Int, progress: Int) {
         _downloads.update { map ->
             val state = map[id] ?: return@update map
+            // A late progress tick must not turn a finished download back into a running one.
+            if (state.status == Status.COMPLETED || state.status == Status.FAILED) return@update map
             map + (id to state.copy(progress = progress, status = Status.DOWNLOADING))
         }
     }

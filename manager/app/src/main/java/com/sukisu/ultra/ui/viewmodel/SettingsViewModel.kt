@@ -328,7 +328,10 @@ class SettingsViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val status = repo.setSelinuxHideEnabled(enabled)
             repo.execKsudFeatureSave()
-            _uiState.update { it.copy(isSelinuxHideEnabled = enabled) }
+            // A failed call leaves the kernel state unchanged, so the switch must not flip.
+            if (status == 0 || status == -OsConstants.EAGAIN) {
+                _uiState.update { it.copy(isSelinuxHideEnabled = enabled) }
+            }
             when (status) {
                 0 -> {}
                 -OsConstants.EAGAIN -> {

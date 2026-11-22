@@ -281,7 +281,9 @@ fun HyperSUTheme(
                 // preference itself is never rewritten.
                 LocalWallpaperDim provides wallpaperTheme.renderDim,
             ) {
-                MonetColorsProvider.UpdateCss(colorScheme)
+                // Keyed on the target scheme so the CSS LaunchedEffect does not restart on
+                // every frame of the colour animation; the final values are identical.
+                MonetColorsProvider.UpdateCss(wallpaperTheme.colorScheme)
                 content()
             }
         },

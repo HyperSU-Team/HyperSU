@@ -143,8 +143,15 @@ object MusicManager {
                 setVolume(MusicConfig.volume, MusicConfig.volume)
                 isLooping = MusicConfig.isLoopingEnabled
                 setOnPreparedListener { mp ->
-                    mp.start()
                     _duration.value = mp.duration
+                    // Preparing is async: the app may have gone to the background, or the user
+                    // may have paused, before it finished. Do not start playback in that case.
+                    if (MusicConfig.isUserPaused) return@setOnPreparedListener
+                    if (startedActivities == 0) {
+                        pausedByBackground = true
+                        return@setOnPreparedListener
+                    }
+                    mp.start()
                     _isPlaying.value = true
                     startProgressUpdater()
                 }

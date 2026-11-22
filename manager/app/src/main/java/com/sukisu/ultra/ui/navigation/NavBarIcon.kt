@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -55,14 +54,16 @@ fun NavBarIcon(
                 .data(customUri)
                 .crossfade(true)
                 .build(),
-            contentDescription = stringResource(destination.label),
+            // Decorative: every caller draws the destination label right next to the icon, so
+            // a description here made TalkBack read the tab name twice.
+            contentDescription = null,
             contentScale = ContentScale.Fit,
             modifier = modifier.size(size),
         )
     } else {
         Icon(
             imageVector = if (selected) destination.iconSelected else destination.iconNotSelected,
-            contentDescription = stringResource(destination.label),
+            contentDescription = null,
             tint = tint,
             modifier = modifier.size(size),
         )

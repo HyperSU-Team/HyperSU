@@ -18,6 +18,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.webkit.WebViewAssetLoader
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import com.sukisu.ultra.R
 import com.sukisu.ultra.data.repository.ModuleRepositoryImpl
@@ -84,6 +85,12 @@ internal suspend fun prepareWebView(
             }
         }
         val shell = createRootShell(true)
+        // The activity may have closed while the shell was being created; its dispose() has
+        // already run, so nothing else would close this shell.
+        if (!isActive) {
+            runCatching { shell.close() }
+            return@withContext
+        }
         webUIState.rootShell = shell
 
         withContext(Dispatchers.Main) {

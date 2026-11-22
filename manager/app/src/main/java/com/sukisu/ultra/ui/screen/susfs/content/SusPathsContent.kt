@@ -18,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -136,14 +137,16 @@ fun SusPathsContent(
                     count = appPathGroups.size,
                 )
                 appPathGroups.forEach { (packageName, paths) ->
-                    AppPathGroup(
-                        packageName = packageName,
-                        paths = paths,
-                        onDeleteGroup = { paths.forEach { path -> onRemovePath(path) } },
-                        onEditGroup = onEditPath?.let { edit -> { edit(paths.first()) } },
-                        isLoading = isLoading,
-                    )
-                    Spacer(Modifier.height(8.dp))
+                    key(packageName) {
+                        AppPathGroup(
+                            packageName = packageName,
+                            paths = paths,
+                            onDeleteGroup = { paths.forEach { path -> onRemovePath(path) } },
+                            onEditGroup = onEditPath?.let { edit -> { edit(paths.first()) } },
+                            isLoading = isLoading,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
                 }
             }
         }
@@ -192,7 +195,7 @@ fun SusPathsContent(
     BottomActionButtons(
         primaryButtonText = stringResource(R.string.add_custom_path),
         onPrimaryClick = onAddPath,
-        secondaryButtonText = stringResource(R.string.susfs_apply),
+        secondaryButtonText = stringResource(R.string.susfs_add_app_path),
         onSecondaryClick = onAddAppPath,
         isLoading = isLoading,
     )

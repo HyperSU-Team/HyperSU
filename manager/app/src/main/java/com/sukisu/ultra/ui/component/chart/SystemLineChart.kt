@@ -54,7 +54,8 @@ fun SystemLineChart(
 
     LaunchedEffect(dataPoints) {
         val newPoints = normalizePoints(dataPoints)
-        prevPoints = currentPoints
+        // Start from what is on screen now, so an update that interrupts the animation does not jump.
+        prevPoints = interpolatePoints(prevPoints, currentPoints, animatable.value)
         currentPoints = newPoints
         animatable.snapTo(0f)
         animatable.animateTo(
@@ -62,8 +63,6 @@ fun SystemLineChart(
             animationSpec = progressSpec
         )
     }
-
-    val progress = animatable.value
 
     Box(
         modifier = modifier
@@ -108,7 +107,7 @@ fun SystemLineChart(
                     .matchParentSize()
                     .padding(start = 16.dp, end = 16.dp, top = 48.dp, bottom = 36.dp)
             ) {
-                val interpolated = interpolatePoints(prevPoints, currentPoints, progress)
+                val interpolated = interpolatePoints(prevPoints, currentPoints, animatable.value)
                 val linePath = buildBezierPath(interpolated, size, heightFraction = 0.75f)
                 val fillPath = buildFillPath(linePath, size)
 

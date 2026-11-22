@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
@@ -62,6 +63,8 @@ fun KernelFlashFolk(
     logText: String,
 ) {
     val scrollState = rememberScrollState()
+    // onDispose must see the latest state, not the one captured on the first composition.
+    val latestState by rememberUpdatedState(state)
 
     BackHandler {
         actions.onBack()
@@ -73,7 +76,7 @@ fun KernelFlashFolk(
 
     DisposableEffect(Unit) {
         onDispose {
-            if (state.isCompleted || state.error.isNotEmpty()) {
+            if (latestState.isCompleted || latestState.error.isNotEmpty()) {
                 KernelFlashStateHolder.clear()
             }
         }

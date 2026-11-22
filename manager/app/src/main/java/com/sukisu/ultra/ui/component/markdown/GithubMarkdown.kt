@@ -18,7 +18,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.toArgb
@@ -65,6 +67,9 @@ fun GithubMarkdown(
     val pageScale = density.density / systemDensity
     val newTextZoom = (90 * pageScale * fontScale).toInt()
     val scrollInterface = remember { MarkdownScrollInterface() }
+    // The WebViewClient is created once in factory; route its callbacks through the latest lambda
+    // so a caller whose callback changes (e.g. new content) is still notified.
+    val currentOnLoadingChange by rememberUpdatedState(onLoadingChange)
 
     val isDark = isInDarkTheme()
     val dir = if (LocalLayoutDirection.current == LayoutDirection.Rtl) "rtl" else "ltr"
@@ -233,11 +238,11 @@ fun GithubMarkdown(
                             request: WebResourceRequest,
                             error: android.webkit.WebResourceError,
                         ) {
-                            if (request.isForMainFrame) onLoadingChange(false)
+                            if (request.isForMainFrame) currentOnLoadingChange(false)
                         }
 
                         override fun onPageCommitVisible(view: WebView?, url: String?) {
-                            onLoadingChange(false)
+                            currentOnLoadingChange(false)
                         }
 
                         override fun shouldInterceptRequest(
@@ -247,14 +252,14 @@ fun GithubMarkdown(
                             val scheme = request.url.scheme ?: return null
                             if (!scheme.startsWith("http")) return null
                             val client: OkHttpClient = ksuApp.okhttpClient
-                            val call = client.newCall(
-                                Request.Builder()
-                                    .url(request.url.toString())
-                                    .method(request.method, null)
-                                    .headers(request.requestHeaders.toHeaders())
-                                    .build()
-                            )
                             return try {
+                                val call = client.newCall(
+                                    Request.Builder()
+                                        .url(request.url.toString())
+                                        .method(request.method, null)
+                                        .headers(request.requestHeaders.toHeaders())
+                                        .build()
+                                )
                                 val reply = call.execute()
                                 val header = reply.header("content-type", "text/plain; charset=utf-8")
                                 val contentTypes = header?.split(SEMICOLON_SPLIT) ?: emptyList()
@@ -267,6 +272,10 @@ fun GithubMarkdown(
                                     "text/html", "utf-8",
                                     ByteArrayInputStream(Log.getStackTraceString(e).toByteArray())
                                 )
+                            } catch (e: IllegalArgumentException) {
+                                // e.g. a POST (needs a body) or a malformed header: let WebView load it itself.
+                                Log.w("GithubMarkdown", "Request not proxied: ${request.url}", e)
+                                null
                             }
                         }
                     }

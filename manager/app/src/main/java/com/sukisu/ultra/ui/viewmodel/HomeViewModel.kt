@@ -78,7 +78,11 @@ class HomeViewModel(
             // in, so any way the coroutine could end early left the screen blank with nothing left
             // running to replace it. Publishing here means the rows are already correct before the
             // driver, the root shell or `ksud` are touched at all.
-            _uiState.update { previous -> if (previous.loaded) previous else readBasicsState() }
+            // Read off the main thread: getSELinuxStatusRaw() may fall back to a shell.
+            if (!_uiState.value.loaded) {
+                val basicsState = withContext(Dispatchers.IO) { readBasicsState() }
+                _uiState.update { previous -> if (previous.loaded) previous else basicsState }
+            }
 
             // A cold start's first read can come back without the facts that need no root at all:
             // the driver is still coming up, the package manager has not settled, or the process

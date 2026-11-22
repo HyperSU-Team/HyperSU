@@ -67,7 +67,9 @@ import com.sukisu.ultra.ui.util.ManagerUpdateChecker
 import com.sukisu.ultra.ui.util.download
 import com.sukisu.ultra.ui.util.installApk
 import com.sukisu.ultra.ui.util.sha256Of
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * The settings hub in the FolkPatch design.
@@ -125,11 +127,14 @@ fun SettingPagerFolk(
                                     // before handing the file to the installer.
                                     val expected = available.apkDigest
                                     if (expected != null) {
-                                        val actual = sha256Of(context, apk)
+                                        // Hashing the whole APK is file IO; keep it off the main thread.
+                                        val actual = withContext(Dispatchers.IO) { sha256Of(context, apk) }
                                         if (!expected.equals(actual, ignoreCase = true)) {
                                             // A mirror that served something else left a file behind;
                                             // remove it rather than leaving a bad APK in Downloads.
-                                            runCatching { context.contentResolver.delete(apk, null, null) }
+                                            withContext(Dispatchers.IO) {
+                                                runCatching { context.contentResolver.delete(apk, null, null) }
+                                            }
                                             error("downloaded apk does not match the release digest")
                                         }
                                     }
@@ -207,7 +212,7 @@ fun SettingPagerFolk(
             // Update checks (KSU only). Only module updates are offered: the manager no longer
             // compares itself against upstream releases, which used to prompt "new version,
             // tap to upgrade" and push the upstream APK over this build.
-            item {
+            item(key = "check_update") {
                 KsuIsValid {
                     FolkSettingsSectionGroup(title = stringResource(R.string.settings_check_update)) {
                         item {
@@ -227,7 +232,7 @@ fun SettingPagerFolk(
             // module one, because it is a different question: this build, not a module. It is
             // manual again: the automatic check was flaky on a filtered network and kept prompting
             // on every launch.
-            item {
+            item(key = "manager_update") {
                 FolkSettingsSectionGroup(title = stringResource(R.string.settings_manager_update)) {
                     item {
                         FolkValuePreference(
@@ -267,7 +272,7 @@ fun SettingPagerFolk(
             }
 
             // Appearance.
-            item {
+            item(key = "appearance") {
                 FolkSettingsSectionGroup(title = stringResource(R.string.settings_theme)) {
                     item {
                         val languageIndex = languageTags.indexOf(uiState.appLanguage)
@@ -300,7 +305,7 @@ fun SettingPagerFolk(
             }
 
             // Templates and tools (KSU only).
-            item {
+            item(key = "templates_tools") {
                 KsuIsValid {
                     FolkSettingsSectionGroup(title = stringResource(R.string.settings_profile_template)) {
                         item {
@@ -325,7 +330,7 @@ fun SettingPagerFolk(
 
             // SuSFS is a ksud feature of its own, gated only by SuSFS support.
             if (isSusfsSupported) {
-                item {
+                item(key = "susfs") {
                     FolkSettingsSectionGroup(title = stringResource(R.string.susfs_config_title)) {
                         item {
                             FolkNavigationPreference(
@@ -340,7 +345,7 @@ fun SettingPagerFolk(
             }
 
             // Multi-manager adaptation: the extra signature the kernel accepts beside ours.
-            item {
+            item(key = "dynamic_manager") {
                 KsuIsValid {
                     FolkSettingsSectionGroup(title = stringResource(R.string.dynamic_manager)) {
                         item {
@@ -356,7 +361,7 @@ fun SettingPagerFolk(
             }
 
             // Kernel features (KSU only).
-            item {
+            item(key = "kernel_features") {
                 KsuIsValid {
                     FolkSettingsSectionGroup(title = stringResource(R.string.settings_sucompat)) {
                         item {
@@ -488,7 +493,7 @@ fun SettingPagerFolk(
             }
 
             // Behaviour (KSU only).
-            item {
+            item(key = "behaviour") {
                 KsuIsValid {
                     FolkSettingsSectionGroup(title = stringResource(R.string.settings_umount_modules_default)) {
                         item {
@@ -533,7 +538,7 @@ fun SettingPagerFolk(
 
             // What the home screen's facts list shows. Each row is independent, so a user who only
             // wants the kernel version can turn the rest off without losing the whole list.
-            item {
+            item(key = "home_display") {
                 FolkSettingsSectionGroup(title = stringResource(R.string.settings_home_display)) {
                     item {
                         FolkSwitchPreference(
@@ -581,7 +586,7 @@ fun SettingPagerFolk(
 
             // Uninstall, only meaningful in LKM mode.
             if (uiState.isLkmMode) {
-                item {
+                item(key = "uninstall") {
                     FolkSettingsSectionGroup(title = stringResource(R.string.settings_uninstall)) {
                         item {
                             FolkNavigationPreference(
@@ -596,7 +601,7 @@ fun SettingPagerFolk(
             }
 
             // Diagnostics and about.
-            item {
+            item(key = "about") {
                 FolkSettingsSectionGroup(title = stringResource(R.string.about)) {
                     item {
                         FolkNavigationPreference(
@@ -615,7 +620,7 @@ fun SettingPagerFolk(
                 }
             }
 
-            item { Spacer(Modifier.height(8.dp)) }
+            item(key = "bottom_spacer") { Spacer(Modifier.height(8.dp)) }
         }
 
         if (showBottomSheet) {

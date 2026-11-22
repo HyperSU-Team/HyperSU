@@ -34,6 +34,9 @@ fun TemplateEditorScreen(template: TemplateViewModel.TemplateInfo, readOnly: Boo
     var idErrorHint by remember { mutableStateOf("") }
     val autoSaveScope = rememberCoroutineScope()
     var autoSaveJob by remember { mutableStateOf<Job?>(null) }
+    var idCheckJob by remember { mutableStateOf<Job?>(null) }
+    // Guards the async back/delete paths so a double tap cannot pop the back stack twice.
+    var isFinishing by remember { mutableStateOf(false) }
 
     val saveTemplateFailed = stringResource(id = R.string.app_profile_template_save_failed)
     val idConflictError = stringResource(id = R.string.app_profile_template_id_exist)
@@ -47,11 +50,20 @@ fun TemplateEditorScreen(template: TemplateViewModel.TemplateInfo, readOnly: Boo
         // Flush a pending debounced autosave before the composition (and its scope) goes away.
         // Read-only entry never edits, so it never has a pending save to flush.
         if (autoSave && !readOnly) {
+            if (isFinishing) return
+            isFinishing = true
             autoSaveJob?.cancel()
-            if (!saveTemplate(currentTemplate)) {
-                showToast(saveTemplateFailed)
-                return
+            val templateToSave = currentTemplate
+            // saveTemplate is a root shell job; run it off the main thread.
+            autoSaveScope.launch {
+                if (withContext(Dispatchers.IO) { saveTemplate(templateToSave) }) {
+                    navigator.setResult("template_edit", true)
+                } else {
+                    isFinishing = false
+                    showToast(saveTemplateFailed)
+                }
             }
+            return
         }
         if (!readOnly) {
             navigator.setResult("template_edit", true)
@@ -83,21 +95,22 @@ fun TemplateEditorScreen(template: TemplateViewModel.TemplateInfo, readOnly: Boo
     )
 
     fun saveCurrentTemplate() {
-        when (if (isCreation) idCheck(currentTemplate.id) else 0) {
-            1 -> {
-                showToast(idConflictError)
-                return
-            }
-
-            2 -> {
-                showToast(idInvalidError)
-                return
-            }
-        }
-
         val templateToSave = currentTemplate
         autoSaveJob?.cancel()
         autoSaveScope.launch {
+            // idCheck queries ksud; keep it off the main thread together with the save.
+            when (if (isCreation) withContext(Dispatchers.IO) { idCheck(templateToSave.id) } else 0) {
+                1 -> {
+                    showToast(idConflictError)
+                    return@launch
+                }
+
+                2 -> {
+                    showToast(idInvalidError)
+                    return@launch
+                }
+            }
+
             val saved = withContext(Dispatchers.IO) { saveTemplate(templateToSave, isCreation) }
             if (saved) {
                 navigator.setResult("template_edit", true)
@@ -110,8 +123,17 @@ fun TemplateEditorScreen(template: TemplateViewModel.TemplateInfo, readOnly: Boo
     val actions = TemplateEditorActions(
         onBack = dropUnlessResumed { finishEditing() },
         onDelete = {
-            if (deleteAppProfileTemplate(currentTemplate.id)) {
-                navigator.setResult("template_edit", true)
+            val id = currentTemplate.id
+            if (!isFinishing) {
+                isFinishing = true
+                autoSaveJob?.cancel()
+                autoSaveScope.launch {
+                    if (withContext(Dispatchers.IO) { deleteAppProfileTemplate(id) }) {
+                        navigator.setResult("template_edit", true)
+                    } else {
+                        isFinishing = false
+                    }
+                }
             }
         },
         onSave = ::saveCurrentTemplate,
@@ -119,14 +141,21 @@ fun TemplateEditorScreen(template: TemplateViewModel.TemplateInfo, readOnly: Boo
             updateTemplate(currentTemplate.copy(name = value))
         },
         onIdChange = { value ->
-            idErrorHint = if (isTemplateExist(value)) {
-                idConflictError
-            } else if (!isValidTemplateId(value)) {
-                idInvalidError
-            } else {
-                ""
-            }
             currentTemplate = currentTemplate.copy(id = value)
+            // isTemplateExist is a root shell exec: debounce it and run it off the main thread
+            // instead of blocking on every keystroke.
+            idCheckJob?.cancel()
+            idCheckJob = autoSaveScope.launch {
+                delay(300)
+                val exists = withContext(Dispatchers.IO) { isTemplateExist(value) }
+                idErrorHint = if (exists) {
+                    idConflictError
+                } else if (!isValidTemplateId(value)) {
+                    idInvalidError
+                } else {
+                    ""
+                }
+            }
         },
         onAuthorChange = { value ->
             updateTemplate(currentTemplate.copy(author = value))

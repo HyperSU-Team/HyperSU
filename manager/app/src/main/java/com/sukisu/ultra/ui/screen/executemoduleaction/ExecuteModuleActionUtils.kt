@@ -107,7 +107,7 @@ fun saveLog(
                     saveTextToDownloads(context, fileName, logContent.toString())
                 }
             }.onSuccess {
-                showMessage("Log saved to $it")
+                showMessage("${context.getString(R.string.log_saved)}: $it")
             }.onFailure {
                 showMessage("Failed to save log: ${it.message ?: "unknown error"}")
             }

@@ -47,6 +47,8 @@ import com.sukisu.ultra.ui.screen.susfs.util.SuSFSManager
 import com.sukisu.ultra.ui.screen.susfs.viewmodel.SuSFSViewModel
 import com.sukisu.ultra.ui.theme.tokens.FolkType
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * The SuSFS configuration screen in the FolkPatch design.
@@ -66,6 +68,8 @@ fun SuSFSFolk() {
     val viewModel: SuSFSViewModel = viewModel()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
+    // Serialises read-modify-write removals so a group delete does not lose updates.
+    val removeMutex = remember { Mutex() }
 
     var isNavigating by remember { mutableStateOf(false) }
     val allTabs = SuSFSTab.getAllTabs()
@@ -82,7 +86,10 @@ fun SuSFSFolk() {
 
     LaunchedEffect(uiState.canEnableAutoStart, uiState.autoStartEnabled) {
         if (!uiState.canEnableAutoStart && uiState.autoStartEnabled) {
-            viewModel.configureAutoStart(context, false)
+            // viewModel.configureAutoStart() bails out when canEnableAutoStart is false,
+            // so disable through the manager directly and resync the state.
+            SuSFSManager.configureAutoStart(context, false)
+            viewModel.reloadConfig()
         }
     }
 
@@ -392,7 +399,9 @@ fun SuSFSFolk() {
                         },
                         onRemovePath = { path ->
                             coroutineScope.launch {
-                                if (SuSFSManager.removeSusPath(path)) viewModel.reloadConfig()
+                                removeMutex.withLock {
+                                    if (SuSFSManager.removeSusPath(path)) viewModel.reloadConfig()
+                                }
                             }
                         },
                         onEditPath = { viewModel.openAddPathDialog(it) },
@@ -406,7 +415,9 @@ fun SuSFSFolk() {
                         onAddLoopPath = { viewModel.openAddLoopPathDialog() },
                         onRemoveLoopPath = { path ->
                             coroutineScope.launch {
-                                if (SuSFSManager.removeSusLoopPath(path)) viewModel.reloadConfig()
+                                removeMutex.withLock {
+                                    if (SuSFSManager.removeSusLoopPath(path)) viewModel.reloadConfig()
+                                }
                             }
                         },
                         onEditLoopPath = { viewModel.openAddLoopPathDialog(it) },
@@ -420,7 +431,9 @@ fun SuSFSFolk() {
                         onAddSusMap = { viewModel.openAddSusMapDialog() },
                         onRemoveSusMap = { map ->
                             coroutineScope.launch {
-                                if (SuSFSManager.removeSusMap(map)) viewModel.reloadConfig()
+                                removeMutex.withLock {
+                                    if (SuSFSManager.removeSusMap(map)) viewModel.reloadConfig()
+                                }
                             }
                         },
                         onEditSusMap = { viewModel.openAddSusMapDialog(it) },
@@ -436,13 +449,17 @@ fun SuSFSFolk() {
                         onAddKstat = { viewModel.openAddKstatDialog() },
                         onRemoveKstatConfig = { config ->
                             coroutineScope.launch {
-                                if (SuSFSManager.removeKstatConfig(config)) viewModel.reloadConfig()
+                                removeMutex.withLock {
+                                    if (SuSFSManager.removeKstatConfig(config)) viewModel.reloadConfig()
+                                }
                             }
                         },
                         onEditKstatConfig = { viewModel.openAddKstatStaticallyDialog(it) },
                         onRemoveAddKstat = { path ->
                             coroutineScope.launch {
-                                if (SuSFSManager.removeAddKstat(path)) viewModel.reloadConfig()
+                                removeMutex.withLock {
+                                    if (SuSFSManager.removeAddKstat(path)) viewModel.reloadConfig()
+                                }
                             }
                         },
                         onEditAddKstat = { viewModel.openAddKstatDialog(it) },

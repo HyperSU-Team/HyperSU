@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.dropUnlessResumed
 import androidx.core.graphics.drawable.toBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.sukisu.ultra.Natives
@@ -41,7 +42,8 @@ fun DynamicManagerScreen() {
 
     suspend fun reload() {
         val (config, apps) = withContext(Dispatchers.IO) {
-            getDynamicManagerConfig() to loadManagerApps(context.packageManager)
+            // A failing root shell must not crash the screen or leave it stuck in `submitting`.
+            runCatching { getDynamicManagerConfig() }.getOrNull() to loadManagerApps(context.packageManager)
         }
         state = DynamicManagerState(
             size = config?.size ?: 0,
@@ -67,7 +69,9 @@ fun DynamicManagerScreen() {
             )
             if (confirmed != ConfirmResult.Confirmed) return@launch
             state = state.copy(submitting = true)
-            val ok = withContext(Dispatchers.IO) { setDynamicManagerApk(app.apkPath) }
+            val ok = withContext(Dispatchers.IO) {
+                runCatching { setDynamicManagerApk(app.apkPath) }.getOrDefault(false)
+            }
             reload()
             toast(
                 if (ok) R.string.dynamic_manager_set_success
@@ -77,7 +81,7 @@ fun DynamicManagerScreen() {
     }
 
     val actions = DynamicManagerActions(
-        onBack = { navigator.pop() },
+        onBack = dropUnlessResumed { navigator.pop() },
         onSelectApp = { app -> if (!app.isAuthorized) grant(app) },
         onClear = {
             if (!state.submitting && state.isSet) {
@@ -89,7 +93,9 @@ fun DynamicManagerScreen() {
                     )
                     if (confirmed != ConfirmResult.Confirmed) return@launch
                     state = state.copy(submitting = true)
-                    val ok = withContext(Dispatchers.IO) { clearDynamicManager() }
+                    val ok = withContext(Dispatchers.IO) {
+                        runCatching { clearDynamicManager() }.getOrDefault(false)
+                    }
                     reload()
                     toast(
                         if (ok) R.string.dynamic_manager_cleared

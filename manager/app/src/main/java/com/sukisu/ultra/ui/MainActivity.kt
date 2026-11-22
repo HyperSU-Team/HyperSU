@@ -437,7 +437,9 @@ fun MainScreen(
         pagerState = pagerState,
         animatePageChanges = true,
     )
-    val isFullFeatured = Natives.isFullFeatured()
+    // isFullFeatured() does JNI reads plus a root-shell lookup; evaluate it once instead of on
+    // every recomposition of the main screen.
+    val isFullFeatured = remember { Natives.isFullFeatured() }
     val pagerMode = PagerInterceptionMode.entries.getOrElse(pagerInterceptionMode) {
         PagerInterceptionMode.Native
     }

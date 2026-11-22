@@ -78,6 +78,7 @@ class MainActivityViewModel(
             "enable_navigation_badge",
             "enable_swipe_dismiss",
             "pager_interception_mode",
+            "simple_list_bottom_bar",
         )
     }
 }

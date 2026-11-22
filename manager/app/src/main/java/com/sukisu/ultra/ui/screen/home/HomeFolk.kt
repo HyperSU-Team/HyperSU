@@ -218,6 +218,7 @@ internal fun HomePagerFolk(
     state: HomeUiState,
     actions: HomeActions,
     bottomInnerPadding: Dp,
+    isCurrentPage: Boolean = true,
 ) {
     val settingsRepo = remember { SettingsRepositoryImpl() }
     // Observed rather than remembered once: a theme import rewrites home_layout_style while
@@ -254,11 +255,17 @@ internal fun HomePagerFolk(
         // so reserving it again here would add both allowances and push the last row under it.
         addBottomClearance = false,
     ) { innerPadding ->
+        // Derived from the already-loaded state rather than Natives.isFullFeatured(), which calls
+        // rootAvailable() and so could open a root shell on the main thread during composition.
+        val fullFeatured = state.systemInfo.kernelFullVersion.let {
+            it != null && Natives.isVersionLessThan(it, Natives.MINIMAL_SUPPORTED_KERNEL_FULL)
+        } || (state.isManager && state.kernelUAPIVersion == state.managerUAPIVersion &&
+            state.isRootAvailable)
         val contentPadding = PaddingValues(
             top = innerPadding.calculateTopPadding() + 8.dp,
             bottom = innerPadding.calculateBottomPadding() +
                 bottomInnerPadding +
-                if (!Natives.isFullFeatured()) {
+                if (!fullFeatured) {
                     WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                 } else {
                     0.dp
@@ -270,7 +277,7 @@ internal fun HomePagerFolk(
             HOME_LAYOUT_FOCUS -> HomeLayoutFocus(state, actions, contentPadding)
             HOME_LAYOUT_DASHBOARD -> HomeLayoutDashboard(state, actions, contentPadding)
             HOME_LAYOUT_GRID -> HomeLayoutGrid(state, actions, contentPadding)
-            HOME_LAYOUT_STATS -> HomeLayoutStats(state, actions, contentPadding)
+            HOME_LAYOUT_STATS -> HomeLayoutStats(state, actions, contentPadding, isCurrentPage)
             else -> HomeLayoutCircle(state, actions, contentPadding)
         }
     }
@@ -874,19 +881,8 @@ private fun HomeUnsupportedCard(
 private fun HomeFacts(state: HomeUiState) {
     val systemInfo = state.systemInfo
 
-    val selinuxDisplay = when (systemInfo.selinuxStatus) {
-        "Enforcing" -> stringResource(R.string.selinux_status_enforcing)
-        "Permissive" -> stringResource(R.string.selinux_status_permissive)
-        "Disabled" -> stringResource(R.string.selinux_status_disabled)
-        else -> stringResource(R.string.selinux_status_unknown)
-    }
-    val seccompDisplay = when (systemInfo.seccompStatus) {
-        -1 -> stringResource(R.string.seccomp_status_not_supported)
-        0 -> stringResource(R.string.seccomp_status_disabled)
-        1 -> stringResource(R.string.seccomp_status_strict)
-        2 -> stringResource(R.string.seccomp_status_filter)
-        else -> stringResource(R.string.seccomp_status_unknown)
-    }
+    val selinuxDisplay = selinuxStatusLabel(systemInfo.selinuxStatus)
+    val seccompDisplay = seccompStatusLabel(systemInfo.seccompStatus)
 
     val manualHookText = stringResource(R.string.manual_hook)
     val inlineHookText = stringResource(R.string.inline_hook)
@@ -932,6 +928,25 @@ private fun HomeFacts(state: HomeUiState) {
             fact(stringResource(R.string.home_seccomp_status), seccompDisplay)
         }
     }
+}
+
+/** The localised SELinux mode, shared by the fact list and the status tiles. */
+@Composable
+private fun selinuxStatusLabel(status: String): String = when (status) {
+    "Enforcing" -> stringResource(R.string.selinux_status_enforcing)
+    "Permissive" -> stringResource(R.string.selinux_status_permissive)
+    "Disabled" -> stringResource(R.string.selinux_status_disabled)
+    else -> stringResource(R.string.selinux_status_unknown)
+}
+
+/** The localised seccomp mode (PR_GET_SECCOMP result), shared by the fact list and the tiles. */
+@Composable
+private fun seccompStatusLabel(status: Int): String = when (status) {
+    -1 -> stringResource(R.string.seccomp_status_not_supported)
+    0 -> stringResource(R.string.seccomp_status_disabled)
+    1 -> stringResource(R.string.seccomp_status_strict)
+    2 -> stringResource(R.string.seccomp_status_filter)
+    else -> stringResource(R.string.seccomp_status_unknown)
 }
 
 /** The two quick links, as Folk rows. */
@@ -1087,7 +1102,7 @@ private fun HomeGridStatusCards(
                 modifier = Modifier.padding(top = 12.dp),
                 icon = Icons.Outlined.Security,
                 label = stringResource(R.string.home_selinux_status),
-                value = state.systemInfo.selinuxStatus,
+                value = selinuxStatusLabel(state.systemInfo.selinuxStatus),
                 severity = if (state.isSELinuxPermissive) FolkSeverity.Caution else FolkSeverity.Positive,
                 plain = true,
             )
@@ -1106,6 +1121,7 @@ private fun HomeLayoutStats(
     state: HomeUiState,
     actions: HomeActions,
     contentPadding: PaddingValues,
+    isCurrentPage: Boolean = true,
 ) {
     val context = LocalContext.current
     val viewModel = viewModel<DashboardViewModel>()
@@ -1116,8 +1132,10 @@ private fun HomeLayoutStats(
     // Every reading costs a root shell command, so sampling runs only while this is on screen and
     // only where there is a kernel to ask.
     val canSample = state.isManager
-    LifecycleStartEffect(canSample) {
-        if (canSample) {
+    // The pager keeps the home tab composed while another tab is shown, so the page flag gates
+    // polling too; otherwise the shell commands kept running in the background.
+    LifecycleStartEffect(canSample, isCurrentPage) {
+        if (canSample && isCurrentPage) {
             viewModel.startPolling(context)
             viewModel.loadModuleStats()
         }
@@ -1192,25 +1210,29 @@ private fun HomeLayoutList(
         FolkSettingsGroup {
             item {
                 FolkPreference(
-                    title = stringResource(R.string.home_working),
+                    title = stringResource(
+                        if (state.ksuVersion != null) R.string.home_working else R.string.home_not_installed,
+                    ),
                     summary = state.ksuVersion?.let {
                         stringResource(
                             R.string.home_working_version,
                             "$it-${state.kernelUAPIVersion}",
                         )
-                    } ?: stringResource(R.string.home_not_installed),
+                    } ?: stringResource(R.string.home_click_to_install),
                     icon = if (state.ksuVersion != null) Icons.Rounded.CheckCircle else Icons.Rounded.ErrorOutline,
                     onClick = if (!state.isLateLoadMode) actions.onInstallClick else null,
                 )
             }
-            item {
-                FolkPreference(
-                    title = stringResource(R.string.home_click_to_install),
-                    summary = stringResource(R.string.home_jailbreak),
-                    icon = Icons.Outlined.SystemUpdate,
-                    enabled = state.isSELinuxPermissive,
-                    onClick = actions.onJailbreakClick,
-                )
+            // Same condition as the hero card's jailbreak button: only meaningful with no kernel
+            // driver and a permissive SELinux, so it is not shown as a permanently disabled row.
+            if (state.ksuVersion == null && state.isSELinuxPermissive) {
+                item {
+                    FolkPreference(
+                        title = stringResource(R.string.home_jailbreak),
+                        icon = Icons.Outlined.SystemUpdate,
+                        onClick = actions.onJailbreakClick,
+                    )
+                }
             }
         }
 
@@ -1286,7 +1308,7 @@ private fun HomeLayoutDashboard(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Outlined.Security,
                 label = stringResource(R.string.home_selinux_status),
-                value = state.systemInfo.selinuxStatus,
+                value = selinuxStatusLabel(state.systemInfo.selinuxStatus),
                 severity = if (state.isSELinuxPermissive) FolkSeverity.Caution else FolkSeverity.Positive,
                 cardId = BackgroundConfig.DASHBOARD_TILE_SELINUX,
             )
@@ -1308,7 +1330,7 @@ private fun HomeLayoutDashboard(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Outlined.Extension,
                 label = stringResource(R.string.home_seccomp_status),
-                value = state.systemInfo.seccompStatus.toString(),
+                value = seccompStatusLabel(state.systemInfo.seccompStatus),
                 severity = FolkSeverity.Neutral,
                 cardId = BackgroundConfig.DASHBOARD_TILE_SECCOMP,
             )

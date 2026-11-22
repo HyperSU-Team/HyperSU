@@ -39,7 +39,10 @@ object SuSFSCommands {
     suspend fun executeSusfsCommand(context: Context, command: String): Boolean {
         val result = executeSusfsCommandDirect(command)
         if (!result.isSuccess) {
-            showToast(context, "${context.getString(R.string.susfs_command_failed)}\n${result.output}\n${result.errorOutput}")
+            val message = listOf(context.getString(R.string.susfs_command_failed), result.output, result.errorOutput)
+                .filter { it.isNotBlank() }
+                .joinToString("\n")
+            showToast(context, message)
         }
         return result.isSuccess
     }

@@ -56,8 +56,8 @@ fun AddAppPathDialog(
     var selectedApps by remember { mutableStateOf(setOf<AppInfo>()) }
 
     val addedPackageNames = remember(existingSusPaths) {
+        val regex = Regex(".*/Android/data/([^/]+)/?.*")
         existingSusPaths.mapNotNull { path ->
-            val regex = Regex(".*/Android/data/([^/]+)/?.*")
             regex.find(path)?.groupValues?.get(1)
         }.toSet()
     }

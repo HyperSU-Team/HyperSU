@@ -111,10 +111,13 @@ class ModuleRepoViewModel(
         }
     }
 
-    private fun refreshSearchResults() {
+    private suspend fun refreshSearchResults() {
         val state = _uiState.value
         val text = state.searchStatus.searchText
-        val results = sortModules(filterModules(state.modules, text), state.sortOrder)
+        // Pinyin conversion over the whole index is too heavy for the main thread.
+        val results = withContext(Dispatchers.Default) {
+            sortModules(filterModules(state.modules, text), state.sortOrder)
+        }
         _uiState.update {
             it.copy(
                 searchResults = results,

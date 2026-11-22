@@ -2,6 +2,8 @@ package com.sukisu.ultra.ui.component
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -19,9 +21,10 @@ fun <T> ObserveAsEvents(
     onEvent: suspend (T) -> Unit,
 ) {
     val lifecycleOwner = LocalLifecycleOwner.current
+    val currentOnEvent by rememberUpdatedState(onEvent)
     LaunchedEffect(events, lifecycleOwner, minActiveState) {
         lifecycleOwner.repeatOnLifecycle(minActiveState) {
-            events.collect { onEvent(it) }
+            events.collect { currentOnEvent(it) }
         }
     }
 }

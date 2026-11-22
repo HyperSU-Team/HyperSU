@@ -462,7 +462,8 @@ private fun GroupCard(
         item(key = "header-${group.uid}") {
             AppRow(
                 app = group.primary,
-                title = if (multiApp) ownerNameForUid(group.uid) else group.primary.label,
+                // ownerName is precomputed off the main thread when the groups are built.
+                title = if (multiApp) group.ownerName ?: ownerNameForUid(group.uid) else group.primary.label,
                 summary = summaryText,
                 selected = expanded,
                 onClick = onClickPrimary,

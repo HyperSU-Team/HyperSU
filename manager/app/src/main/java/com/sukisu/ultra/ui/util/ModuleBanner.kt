@@ -108,6 +108,8 @@ object ModuleBanner {
         // first request is still out (a recomposition, a scroll back), and firing a second identical
         // request only made both slower. Checked and registered under one lock so two callers
         // cannot both start a fetch.
+        // The fetch outlives the caller in a process-wide scope, so it must not hold an Activity.
+        val appContext = context.applicationContext ?: context
         val job = synchronized(inFlight) {
             inFlight[moduleId] ?: scope.async {
                 loadSemaphore.withPermit {
@@ -119,9 +121,9 @@ object ModuleBanner {
                         // a banner that appears a few hundred milliseconds later, which is what the
                         // card's fade is for. `resolve` is cheap on success, so a healthy module pays
                         // nothing for this.
-                        resolve(context, moduleId) ?: run {
+                        resolve(appContext, moduleId) ?: run {
                             delay(BANNER_RETRY_DELAY_MS)
-                            resolve(context, moduleId)
+                            resolve(appContext, moduleId)
                         }
                     }
                     // A null means the fetch did not succeed; leaving it out of the cache lets the next

@@ -91,7 +91,9 @@ object ThemeStoreRepository {
     fun previewCandidates(url: String): List<String> {
         if (url.isBlank()) return emptyList()
         val bare = url.removePrefix("https://").removePrefix("http://")
-        val resized = "https://wsrv.nl/?url=$bare&w=$PREVIEW_WIDTH&output=webp&we"
+        // Encoded so a source url with its own query (`?jwt=...&...`) is not split into the
+        // proxy's parameters.
+        val resized = "https://wsrv.nl/?url=${Uri.encode(bare)}&w=$PREVIEW_WIDTH&output=webp&we"
         return listOf(resized, url)
     }
 

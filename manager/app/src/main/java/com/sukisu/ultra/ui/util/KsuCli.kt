@@ -705,19 +705,8 @@ suspend fun streamFile(path: String): List<String> = withContext(Dispatchers.IO)
     val shell = getRootShell()
     val outLines = mutableListOf<String>()
 
-    val stdoutCallback: CallbackList<String?> = object : CallbackList<String?>() {
-        override fun onAddElement(s: String?) {
-            if (s != null) outLines.add(s)
-        }
-    }
-
-    val stderrCallback: CallbackList<String?> = object : CallbackList<String?>() {
-        override fun onAddElement(s: String?) {
-            // ignore stderr for now
-        }
-    }
-
-    shell.newJob().add("cat ${path.shellArg()} || true").to(stdoutCallback, stderrCallback).exec()
+    // A default CallbackList posts to the main thread, so the list could still be empty here.
+    shell.newJob().add("cat ${path.shellArg()} || true").to(outLines, null).exec()
     outLines
 }
 

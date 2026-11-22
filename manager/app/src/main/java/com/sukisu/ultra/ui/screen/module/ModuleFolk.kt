@@ -344,7 +344,10 @@ internal fun ModulePagerFolk(
                         duration = SnackbarDuration.Long,
                     )
                     if (result == SnackbarResult.ActionPerformed) {
-                        reboot(if (softReboot) "soft_reboot" else "")
+                        // reboot() runs ksud / a root shell; keep it off the main thread.
+                        withContext(Dispatchers.IO) {
+                            reboot(if (softReboot) "soft_reboot" else "")
+                        }
                     }
                 }
             }
@@ -387,6 +390,15 @@ internal fun ModulePagerFolk(
                     }
                     if (uris.isEmpty()) return@rememberLauncherForActivityResult
 
+                    // With the confirmation turned off the metadata is not needed, so the flash
+                    // starts now instead of waiting for a dialog that will not be shown.
+                    if (!installConfirmRequired) {
+                        pendingInstall = null
+                        pendingInfoLoading = false
+                        actions.onOpenFlash(uris)
+                        return@rememberLauncherForActivityResult
+                    }
+
                     // Hold the selection and read its metadata; the flash starts only from the
                     // dialog's confirm. The first archive describes the selection - a multi-pick
                     // is still one flash, and its other entries are reported by count.
@@ -400,13 +412,6 @@ internal fun ModulePagerFolk(
                             pendingInfo = info
                             pendingInfoLoading = false
                         }
-                    }
-                    // With the confirmation turned off the metadata is not needed, so the flash
-                    // starts now instead of waiting for a dialog that will not be shown.
-                    if (!installConfirmRequired) {
-                        pendingInstall = null
-                        pendingInfoLoading = false
-                        actions.onOpenFlash(uris)
                     }
                 }
 
@@ -553,7 +558,7 @@ private fun ModuleSortMenu(
         IconButton(onClick = { showDropdown = true }) {
             Icon(
                 imageVector = Icons.Filled.MoreVert,
-                contentDescription = stringResource(R.string.settings),
+                contentDescription = stringResource(R.string.menu_sort),
             )
         }
         DropdownMenuPopup(
@@ -639,9 +644,9 @@ private fun ModuleList(
             // compares parameters by equality to decide whether to skip a child. With five fresh
             // lambdas per card, ModuleItem could never skip - so scrolling past a module whose
             // data had not changed still recomposed the whole card, text and banner layer included.
-            // The captured values are the module and `actions`, both immutable, so keying on the
-            // id is enough.
-            val onUninstallClicked = remember(module.id, actions) {
+            // The captured values are the module and `actions`. Keyed on the module itself (a data
+            // class), not its id: a refreshed module keeps its id, so an id key kept the old flags.
+            val onUninstallClicked = remember(module, actions) {
                 {
                     if (module.remove) {
                         actions.onUndoUninstallModule(module)
@@ -650,7 +655,7 @@ private fun ModuleList(
                     }
                 }
             }
-            val onCheckChanged = remember(module.id, actions) {
+            val onCheckChanged = remember(module, actions) {
                 // The switch's new value is not used: the view model reads the module's current
                 // state and flips it, so passing the value through would only be a second source
                 // of truth for the same thing.
@@ -659,16 +664,16 @@ private fun ModuleList(
             // No loading dialog. The chip itself spins while the update is being prepared, so a
             // dialog on top of it only said the same thing twice - and a dialog that appears and
             // disappears for a fraction of a second reads as a flash, not as progress.
-            val onUpdate = remember(module.id, actions, moduleUpdateInfo) {
+            val onUpdate = remember(module, actions, moduleUpdateInfo) {
                 { actions.onRequestUpdateConfirmation(module, moduleUpdateInfo) }
             }
-            val onAddShortcut = remember(module.id, actions) {
+            val onAddShortcut = remember(module, actions) {
                 { type: ShortcutType -> onModuleAddShortcut(module, type) }
             }
-            val onOpenWebUi = remember(module.id, actions) {
+            val onOpenWebUi = remember(module, actions) {
                 { if (module.hasWebUi) actions.onOpenWebUi(module) }
             }
-            val onExecuteAction = remember(module.id, actions) {
+            val onExecuteAction = remember(module, actions) {
                 { actions.onExecuteModuleAction(module) }
             }
 

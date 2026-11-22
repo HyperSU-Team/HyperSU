@@ -32,8 +32,9 @@ open class APDialogBlurBehindUtils {
 
         private fun updateWindowForBlurs(window: Window, blursEnabled: Boolean) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                window.setDimAmount(0.27f)
                 window.attributes.blurBehindRadius = 20
+                // setDimAmount dispatches the attributes, so set the radius first.
+                window.setDimAmount(0.27f)
             } else if (Build.VERSION.SDK_INT == Build.VERSION_CODES.R) {
                 if (blursEnabled) {
                     val view = window.decorView

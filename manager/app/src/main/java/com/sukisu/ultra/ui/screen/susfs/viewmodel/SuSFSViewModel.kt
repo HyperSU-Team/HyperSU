@@ -239,7 +239,9 @@ class SuSFSViewModel(
     fun configureAutoStart(context: Context, enabled: Boolean) {
         viewModelScope.launch {
             val canEnable = _uiState.value.canEnableAutoStart
-            if (!canEnable) return@launch
+            // Only gate enabling: turning auto start off must always be allowed (the screen
+            // disables it automatically once no configuration is left).
+            if (enabled && !canEnable) return@launch
             _uiState.update { it.copy(isLoading = true) }
             val success = SuSFSManager.configureAutoStart(context, enabled)
             _uiState.update {
@@ -303,12 +305,17 @@ class SuSFSViewModel(
 
     fun reloadConfig() {
         viewModelScope.launch {
-            val config = SuSFSManager.loadCurrentModuleConfig()
+            val (config, autoStart) = runCatching {
+                SuSFSManager.loadCurrentModuleConfig() to SuSFSManager.isAutoStartEnabled()
+            }.getOrElse { e ->
+                _uiState.update { it.copy(error = e) }
+                return@launch
+            }
             _uiState.update {
                 it.copy(
                     unameValue = config.unameValue,
                     buildTimeValue = config.buildTimeValue,
-                    autoStartEnabled = SuSFSManager.isAutoStartEnabled(),
+                    autoStartEnabled = autoStart,
                     executeInPostFsData = config.executeInPostFsData,
                     susPaths = config.susPaths,
                     susLoopPaths = config.susLoopPaths,
@@ -319,7 +326,8 @@ class SuSFSViewModel(
                     enableHideBl = config.enableHideBl,
                     enableCleanupResidue = config.enableCleanupResidue,
                     enableAvcLogSpoofing = config.enableAvcLogSpoofing,
-                    cmdlineOrBootconfigPath = config.cmdlineOrBootconfigPath
+                    cmdlineOrBootconfigPath = config.cmdlineOrBootconfigPath,
+                    canEnableAutoStart = it.canEnableAutoStart || config.hasAutoStartConfig()
                 )
             }
         }

@@ -70,7 +70,7 @@ class TemplateViewModel(
     ) {
         repo.importTemplates(templates)
             .onSuccess { onSuccess() }
-            .onFailure { onFailure(it.message ?: "Unknown error") }
+            .onFailure { onFailure(it.message ?: com.sukisu.ultra.ksuApp.getString(com.sukisu.ultra.R.string.horizon_unknown_error)) }
     }
 
     suspend fun exportTemplates(onTemplateEmpty: suspend () -> Unit, callback: suspend (String) -> Unit) {

@@ -33,9 +33,11 @@ object DpiUtils {
             .getInt(KEY_DPI, DEFAULT_DPI)
 
     fun save(context: Context, dpi: Int) {
+        // DEFAULT_DPI means "follow the system"; clamping it would silently store MIN_DPI.
+        val value = if (dpi == DEFAULT_DPI) DEFAULT_DPI else dpi.coerceIn(MIN_DPI, MAX_DPI)
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
-            .putInt(KEY_DPI, dpi.coerceIn(MIN_DPI, MAX_DPI))
+            .putInt(KEY_DPI, value)
             .apply()
     }
 
@@ -56,10 +58,10 @@ object DpiUtils {
      */
     fun wrap(base: Context): Context {
         val dpi = currentDpi(base)
-        if (dpi == DEFAULT_DPI) return base
+        if (dpi <= 0) return base
         return runCatching {
             val config = Configuration(base.resources.configuration)
-            config.densityDpi = dpi
+            config.densityDpi = dpi.coerceIn(MIN_DPI, MAX_DPI)
             base.createConfigurationContext(config)
         }.getOrElse { base }
     }

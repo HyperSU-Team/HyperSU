@@ -142,7 +142,7 @@ fun FolkBottomBar(
                         onClick = { activateTab(index) },
                         modifier = Modifier.defaultMinSize(minWidth = 76.dp),
                     ) {
-                        val navBadge = badgeFor(index, badge)
+                        val navBadge = badgeFor(destination.pageIndex, badge)
                         val icon: @Composable () -> Unit = {
                             // The destination's own glyph, or the user's image when one is set.
                             NavBarIcon(
@@ -202,13 +202,17 @@ fun FolkBottomBar(
             // accumulates enough travel to cross a threshold, and up to the threshold the
             // drag is swallowed rather than forwarded - a deliberate horizontal swipe on
             // the bar changes pages instead of scrolling whatever sits behind it.
-            .pointerInput(destinations.size) {
-                var target = currentSelected
+            .pointerInput(destinations) {
+                // `target` is a position in `destinations`, not a page index: the two differ
+                // once Superuser and Module are dropped.
+                fun positionOf(page: Int) =
+                    destinations.indexOfFirst { it.pageIndex == page }.coerceAtLeast(0)
+                var target = positionOf(currentSelected)
                 var travelled = 0f
                 val threshold = with(density) { 56.dp.toPx() }
                 detectDragGestures(
                     onDragStart = {
-                        target = currentSelected
+                        target = positionOf(currentSelected)
                         travelled = 0f
                     },
                     onDrag = { change, dragAmount ->
@@ -220,7 +224,7 @@ fun FolkBottomBar(
                             if (next != target) {
                                 target = next
                                 haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                currentSelect(target)
+                                currentSelect(destinations[target].pageIndex)
                             }
                             travelled = 0f
                         }
@@ -284,7 +288,7 @@ fun FolkBottomBar(
                 )
 
                 val pillColor = MaterialTheme.colorScheme.secondaryContainer
-                val navBadge = badgeFor(index, badge)
+                val navBadge = badgeFor(destination.pageIndex, badge)
                 val interactionSource = remember { MutableInteractionSource() }
 
                 Column(

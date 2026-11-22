@@ -82,7 +82,8 @@ fun ToolsScreen() {
                         if (success && actual == target) {
                             context.getString(
                                 R.string.tools_selinux_apply_success,
-                                context.getString(if (actual) R.string.selinux_status_enforcing else R.string.selinux_status_permissive)
+                                // Same labels as the row summary, so the toast and the row agree.
+                                context.getString(if (actual) R.string.tools_selinux_enforcing else R.string.tools_selinux_permissive)
                             )
                         } else {
                             context.getString(R.string.tools_selinux_apply_failed)

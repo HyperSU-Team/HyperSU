@@ -119,8 +119,6 @@ private fun AdaptiveButtonRowLayout(
     spacing: Int,
     opacity: Float
 ) {
-    var iconOnlyCount by remember(buttons.size) { mutableIntStateOf(0) }
-    
     SubcomposeLayout(
         modifier = Modifier.fillMaxWidth()
     ) { constraints ->
@@ -208,7 +206,7 @@ private fun AdaptiveButtonRowLayout(
         }
         
         // 限制在按钮数量范围内
-        iconOnlyCount = currentIconOnlyCount.coerceAtMost(buttons.size)
+        val iconOnlyCount = currentIconOnlyCount.coerceAtMost(buttons.size)
         
         // 5. 确定尾部按钮是否需要纯图标
         val leftButtonsWidth = buttons.indices.sumOf { index ->
@@ -283,7 +281,8 @@ fun ModuleActionButton(
     ) {
         Icon(
             imageVector = config.icon,
-            contentDescription = config.contentDescription,
+            // The visible text already labels the button; only icon-only mode needs a description.
+            contentDescription = if (iconOnly) config.contentDescription else null,
             modifier = Modifier.size(20.dp)
         )
         if (!iconOnly) {

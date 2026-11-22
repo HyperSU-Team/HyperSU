@@ -7,6 +7,7 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import com.materialkolor.PaletteStyle
@@ -64,7 +65,10 @@ fun rememberKernelSUColorScheme(
     // palette was generated instead, so the whole app came out in different colours from the one
     // the theme asked for.
     if (classicKey != null) {
-        return FolkThemeCatalog.scheme(classicKey, isDark).amoledBackground(isAmoled)
+        // Parsing the catalog row is not free; keep it out of every recomposition.
+        return remember(classicKey, isDark, isAmoled) {
+            FolkThemeCatalog.scheme(classicKey, isDark).amoledBackground(isAmoled)
+        }
     }
     // dynamicDarkColorScheme()/dynamicLightColorScheme() only exist from Android 12. Calling them
     // on 8-11 threw NoSuchMethodError before the first frame, so the app could not start there at

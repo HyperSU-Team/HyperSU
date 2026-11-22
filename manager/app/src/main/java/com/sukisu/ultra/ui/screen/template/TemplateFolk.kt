@@ -203,7 +203,8 @@ fun AppProfileTemplateScreenFolk(
                 )
 
                 templateList.isEmpty() -> FolkStateView(
-                    title = stringResource(R.string.app_profile_template_import_empty),
+                    // "Clipboard is empty!" was shown here; an empty library is not a clipboard state.
+                    title = stringResource(R.string.settings_profile_template),
                     hint = stringResource(R.string.app_profile_template_create),
                     modifier = Modifier.fillMaxSize(),
                 )
