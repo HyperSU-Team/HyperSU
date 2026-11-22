@@ -98,12 +98,12 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.66 - the cached root shell is verified before it is used.
+            HyperSU v4.2.67 - the multi-manager list finds the other managers again.
 
-            - `Shell.isRoot` is what the builder asked for, not what it got. A `su` request that loses the race with the daemon still reports the flag, and caching that shell made every later `cat`, `getenforce` and `ksud` run unprivileged for the rest of the process - which is why SELinux stayed "unknown" until the app process was recreated by a language change.
-            - `getRootShell()` now asks the shell for `id -u` and only caches it when the answer is 0; a shell that cannot answer is retried at most once a second. The home row keeps re-reading every two seconds, so it fills in as soon as the daemon is ready.
+            - The list was built from the installed native library directory, and a modern APK keeps its libraries inside the archive (`extractNativeLibs=false`), so those apps had no `libksud.so` on disk and were skipped. The app's APK is checked as well, which is what "ships libksud.so" actually means.
+            - v4.2.66's root-shell verification is included: `Shell.isRoot` is the builder flag, so `getRootShell()` asks for `id -u` and only caches a shell that answers 0.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.65...v4.2.66
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.65...v4.2.67
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

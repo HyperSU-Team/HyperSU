@@ -110,6 +110,27 @@ fun DynamicManagerScreen() {
 }
 
 /**
+ * Whether the app ships `libksud.so`.
+ *
+ * The extracted library directory is the quick answer, but a modern APK keeps its native libraries
+ * inside the archive (`extractNativeLibs=false`), so that directory holds no `libksud.so` even
+ * though the app ships one - which is why this list showed only this manager, whose own manifest
+ * still extracts them. The archive is checked as well.
+ */
+private fun shipsKsudLibrary(app: android.content.pm.ApplicationInfo, apkPath: String): Boolean {
+    val libDir = app.nativeLibraryDir
+    if (libDir != null && File(libDir, "libksud.so").isFile) return true
+    return runCatching {
+        java.util.zip.ZipFile(apkPath).use { zip ->
+            zip.entries().asSequence().any { entry ->
+                val name = entry.name
+                name.startsWith("lib/") && name.substringAfterLast('/') == "libksud.so"
+            }
+        }
+    }.getOrDefault(false)
+}
+
+/**
  * Manager apps are the ones that ship `libksud.so`; the kernel's manager table says which uid is
  * currently authorized and, if so, through which signature slot.
  */
@@ -119,9 +140,8 @@ private fun loadManagerApps(pm: PackageManager): List<DynamicManagerApp> {
         pm.getInstalledPackages(0)
             .mapNotNull { info ->
                 val app = info.applicationInfo ?: return@mapNotNull null
-                val libDir = app.nativeLibraryDir ?: return@mapNotNull null
-                if (!File(libDir, "libksud.so").isFile) return@mapNotNull null
                 val apkPath = app.publicSourceDir ?: return@mapNotNull null
+                if (!shipsKsudLibrary(app, apkPath)) return@mapNotNull null
                 val icon = runCatching {
                     pm.getApplicationIcon(app.packageName).toBitmap(96, 96).asImageBitmap()
                 }.getOrNull()
