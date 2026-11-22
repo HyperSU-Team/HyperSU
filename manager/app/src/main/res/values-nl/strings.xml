@@ -951,4 +951,12 @@
     <string name="music_pause">Muziek pauzeren</string>
     <string name="module_download_failed">Downloaden mislukt</string>
     <string name="susfs_reset_confirm_message">Hiermee worden alle SuSFS-instellingen teruggezet naar de standaardwaarden. Weet je zeker dat je wilt doorgaan?</string>
+    <string name="log_save_failed">Logboek opslaan mislukt: %1$s</string>
+    <string name="error_unknown">Onbekende fout</string>
+    <string name="flash_log_restore_slot_failed">Opstartslot herstellen mislukt: %1$s</string>
+    <string name="flash_log_cleanup_failed">Tijdelijke bestanden van het schrijfproces verwijderen mislukt: %1$s</string>
+    <string name="flash_error_code">Foutcode: %1$d.\n%2$s Sla het logboek op en controleer het.</string>
+    <string name="sulog_restart_tag">Herstart #%1$s</string>
+    <string name="sulog_daemon_restarted">Achtergronddienst opnieuw gestart</string>
+    <string name="sulog_dropped_tag">%1$s verloren</string>
 </resources>

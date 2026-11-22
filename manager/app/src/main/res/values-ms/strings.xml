@@ -949,4 +949,12 @@
     <string name="music_pause">Jeda muzik</string>
     <string name="module_download_failed">Muat turun gagal</string>
     <string name="susfs_reset_confirm_message">Ini akan memulihkan semua tetapan SuSFS kepada lalai. Adakah anda pasti mahu meneruskan?</string>
+    <string name="log_save_failed">Gagal menyimpan catatan: %1$s</string>
+    <string name="error_unknown">Ralat tidak diketahui</string>
+    <string name="flash_log_restore_slot_failed">Gagal memulihkan slot permulaan: %1$s</string>
+    <string name="flash_log_cleanup_failed">Gagal mengalih keluar fail sementara proses tulis: %1$s</string>
+    <string name="flash_error_code">Kod ralat: %1$d.\n%2$s Sila simpan catatan dan semaknya.</string>
+    <string name="sulog_restart_tag">Mula semula #%1$s</string>
+    <string name="sulog_daemon_restarted">Perkhidmatan latar belakang dimulakan semula</string>
+    <string name="sulog_dropped_tag">%1$s hilang</string>
 </resources>

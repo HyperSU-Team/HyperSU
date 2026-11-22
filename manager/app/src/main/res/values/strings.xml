@@ -1008,4 +1008,12 @@
 
 
     <string name="module_download_failed">Download failed</string>
+    <string name="log_save_failed">Failed to save the log: %1$s</string>
+    <string name="error_unknown">Unknown error</string>
+    <string name="flash_log_restore_slot_failed">Failed to restore the boot slot: %1$s</string>
+    <string name="flash_log_cleanup_failed">Failed to remove the flash temporary files: %1$s</string>
+    <string name="flash_error_code">Error code: %1$d.\n%2$s Please save the log and check it.</string>
+    <string name="sulog_restart_tag">Restart #%1$s</string>
+    <string name="sulog_daemon_restarted">Daemon restarted</string>
+    <string name="sulog_dropped_tag">%1$s lost</string>
 </resources>

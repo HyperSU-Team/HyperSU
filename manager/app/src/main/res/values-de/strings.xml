@@ -951,4 +951,12 @@
     <string name="music_pause">Musik pausieren</string>
     <string name="module_download_failed">Download fehlgeschlagen</string>
     <string name="susfs_reset_confirm_message">Dadurch werden alle SuSFS-Einstellungen auf die Standardwerte zurückgesetzt. Bist du sicher, dass du fortfahren möchtest?</string>
+    <string name="log_save_failed">Protokoll konnte nicht gespeichert werden: %1$s</string>
+    <string name="error_unknown">Unbekannter Fehler</string>
+    <string name="flash_log_restore_slot_failed">Der Start-Slot konnte nicht wiederhergestellt werden: %1$s</string>
+    <string name="flash_log_cleanup_failed">Die temporären Dateien des Schreibvorgangs konnten nicht entfernt werden: %1$s</string>
+    <string name="flash_error_code">Fehlercode: %1$d.\n%2$s Bitte speichern Sie das Protokoll und prüfen Sie es.</string>
+    <string name="sulog_restart_tag">Neustart #%1$s</string>
+    <string name="sulog_daemon_restarted">Hintergrunddienst neu gestartet</string>
+    <string name="sulog_dropped_tag">%1$s verloren</string>
 </resources>

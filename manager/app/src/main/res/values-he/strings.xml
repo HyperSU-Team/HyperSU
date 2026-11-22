@@ -947,4 +947,12 @@
     <string name="music_pause">השהה מוזיקה</string>
     <string name="module_download_failed">ההורדה נכשלה</string>
     <string name="susfs_reset_confirm_message">פעולה זו תשחזר את כל הגדרות SuSFS לברירת המחדל. האם אתה בטוח שברצונך להמשיך?</string>
+    <string name="log_save_failed">שמירת היומן נכשלה: %1$s</string>
+    <string name="error_unknown">שגיאה לא ידועה</string>
+    <string name="flash_log_restore_slot_failed">שחזור משבצת האתחול נכשל: %1$s</string>
+    <string name="flash_log_cleanup_failed">הסרת הקבצים הזמניים של הצריבה נכשלה: %1$s</string>
+    <string name="flash_error_code">קוד שגיאה: %1$d.\n%2$s נא לשמור את היומן ולבדוק אותו.</string>
+    <string name="sulog_restart_tag">הפעלה מחדש #%1$s</string>
+    <string name="sulog_daemon_restarted">תהליך הרקע הופעל מחדש</string>
+    <string name="sulog_dropped_tag">אבדו %1$s</string>
 </resources>

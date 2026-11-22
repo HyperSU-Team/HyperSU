@@ -949,4 +949,12 @@
     <string name="music_pause">Peata muusika</string>
     <string name="module_download_failed">Allalaadimine ebaõnnestus</string>
     <string name="susfs_reset_confirm_message">See taastab kõik SuSFS-i seaded vaikeväärtustele. Kas oled kindel, et soovid jätkata?</string>
+    <string name="log_save_failed">Logi salvestamine nurjus: %1$s</string>
+    <string name="error_unknown">Tundmatu viga</string>
+    <string name="flash_log_restore_slot_failed">Alglaadimispesa taastamine nurjus: %1$s</string>
+    <string name="flash_log_cleanup_failed">Kirjutamise ajutiste failide eemaldamine nurjus: %1$s</string>
+    <string name="flash_error_code">Veakood: %1$d.\n%2$s Salvestage logi ja kontrollige seda.</string>
+    <string name="sulog_restart_tag">Taaskäivitus #%1$s</string>
+    <string name="sulog_daemon_restarted">Taustateenus taaskäivitati</string>
+    <string name="sulog_dropped_tag">%1$s läks kaotsi</string>
 </resources>

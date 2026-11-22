@@ -953,4 +953,12 @@
     <string name="music_play">Играть музыку</string>
     <string name="music_pause">Пауза</string>
     <string name="susfs_reset_confirm_message">Это восстановит все настройки SuSFS по умолчанию. Вы уверены, что хотите продолжить?</string>
+    <string name="log_save_failed">Не удалось сохранить журнал: %1$s</string>
+    <string name="error_unknown">Неизвестная ошибка</string>
+    <string name="flash_log_restore_slot_failed">Не удалось восстановить слот загрузки: %1$s</string>
+    <string name="flash_log_cleanup_failed">Не удалось удалить временные файлы записи: %1$s</string>
+    <string name="flash_error_code">Код ошибки: %1$d.\n%2$s Сохраните журнал и проверьте его.</string>
+    <string name="sulog_restart_tag">Перезапуск #%1$s</string>
+    <string name="sulog_daemon_restarted">Фоновая служба перезапущена</string>
+    <string name="sulog_dropped_tag">%1$s потеряно</string>
 </resources>

@@ -949,4 +949,12 @@
     <string name="music_pause">音楽を一時停止</string>
     <string name="module_download_failed">ダウンロードに失敗しました</string>
     <string name="susfs_reset_confirm_message">これにより、すべての SuSFS 設定が既定値に戻ります。続行してもよろしいですか？</string>
+    <string name="log_save_failed">ログを保存できませんでした: %1$s</string>
+    <string name="error_unknown">不明なエラー</string>
+    <string name="flash_log_restore_slot_failed">ブートスロットを復元できませんでした: %1$s</string>
+    <string name="flash_log_cleanup_failed">フラッシュの一時ファイルを削除できませんでした: %1$s</string>
+    <string name="flash_error_code">エラーコード: %1$d.\n%2$s ログを保存して確認してください。</string>
+    <string name="sulog_restart_tag">再起動 #%1$s</string>
+    <string name="sulog_daemon_restarted">常駐サービスが再起動しました</string>
+    <string name="sulog_dropped_tag">%1$s が失われました</string>
 </resources>

@@ -949,4 +949,12 @@
     <string name="music_pause">Пауза на музиката</string>
     <string name="module_download_failed">Изтеглянето е неуспешно</string>
     <string name="susfs_reset_confirm_message">Това ще възстанови всички настройки на SuSFS по подразбиране. Сигурни ли сте, че искате да продължите?</string>
+    <string name="log_save_failed">Неуспешно запазване на журнала: %1$s</string>
+    <string name="error_unknown">Неизвестна грешка</string>
+    <string name="flash_log_restore_slot_failed">Неуспешно възстановяване на слота за стартиране: %1$s</string>
+    <string name="flash_log_cleanup_failed">Неуспешно премахване на временните файлове за запис: %1$s</string>
+    <string name="flash_error_code">Код на грешката: %1$d.\n%2$s Моля, запазете журнала и го проверете.</string>
+    <string name="sulog_restart_tag">Повторно стартиране #%1$s</string>
+    <string name="sulog_daemon_restarted">Фоновата услуга беше стартирана отново</string>
+    <string name="sulog_dropped_tag">%1$s загубени</string>
 </resources>

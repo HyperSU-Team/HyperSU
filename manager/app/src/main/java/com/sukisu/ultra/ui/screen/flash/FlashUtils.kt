@@ -232,7 +232,7 @@ object FlashRunner {
                 })
             }
             if (result.code != 0) {
-                currentText += "Error code: ${result.code}.\n ${result.err} Please save and check the log.\n"
+                currentText += ksuApp.getString(R.string.flash_error_code, result.code, result.err) + "\n"
                 _text.value = currentText
             }
             if (result.showReboot) {
@@ -263,7 +263,7 @@ fun saveLog(
             }.onSuccess {
                 showMessage("${context.getString(R.string.log_saved)}: $it")
             }.onFailure {
-                showMessage("Failed to save log: ${it.message ?: "unknown error"}")
+                showMessage(ksuApp.getString(R.string.log_save_failed, it.message ?: ksuApp.getString(R.string.error_unknown)))
             }
         }
     }

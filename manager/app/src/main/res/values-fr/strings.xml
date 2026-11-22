@@ -949,4 +949,12 @@
     <string name="music_pause">Mettre la musique en pause</string>
     <string name="module_download_failed">Échec du téléchargement</string>
     <string name="susfs_reset_confirm_message">Cela rétablira tous les paramètres SuSFS par défaut. Voulez-vous vraiment continuer ?</string>
+    <string name="log_save_failed">Échec de l\'enregistrement du journal : %1$s</string>
+    <string name="error_unknown">Erreur inconnue</string>
+    <string name="flash_log_restore_slot_failed">Échec de la restauration de l\'emplacement de démarrage : %1$s</string>
+    <string name="flash_log_cleanup_failed">Échec de la suppression des fichiers temporaires de flashage : %1$s</string>
+    <string name="flash_error_code">Code d\'erreur : %1$d.\n%2$s Veuillez enregistrer le journal et le vérifier.</string>
+    <string name="sulog_restart_tag">Redémarrage #%1$s</string>
+    <string name="sulog_daemon_restarted">Démon redémarré</string>
+    <string name="sulog_dropped_tag">Perte de %1$s</string>
 </resources>

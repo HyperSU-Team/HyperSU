@@ -949,4 +949,12 @@
     <string name="music_pause">I-pause ang music</string>
     <string name="module_download_failed">Nabigo ang pag-download</string>
     <string name="susfs_reset_confirm_message">Ibabalik nito ang lahat ng setting ng SuSFS sa default. Sigurado ka bang gusto mong magpatuloy?</string>
+    <string name="log_save_failed">Nabigo ang pag-save ng log: %1$s</string>
+    <string name="error_unknown">Hindi kilalang error</string>
+    <string name="flash_log_restore_slot_failed">Nabigo ang pagpapanumbalik ng puwang ng pag-boot: %1$s</string>
+    <string name="flash_log_cleanup_failed">Nabigo ang pag-alis ng mga pansamantalang file ng pag-flash: %1$s</string>
+    <string name="flash_error_code">Kodigo ng error: %1$d.\n%2$s Pakisave ang log at suriin ito.</string>
+    <string name="sulog_restart_tag">Pag-restart #%1$s</string>
+    <string name="sulog_daemon_restarted">Muling pinasimulan ang serbisyong panglikuran</string>
+    <string name="sulog_dropped_tag">Nawala ang %1$s</string>
 </resources>

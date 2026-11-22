@@ -949,4 +949,12 @@
     <string name="music_pause">Tạm dừng nhạc</string>
     <string name="module_download_failed">Tải xuống thất bại</string>
     <string name="susfs_reset_confirm_message">Thao tác này sẽ khôi phục mọi cài đặt SuSFS về mặc định. Bạn có chắc muốn tiếp tục không?</string>
+    <string name="log_save_failed">Không thể lưu nhật ký: %1$s</string>
+    <string name="error_unknown">Lỗi không xác định</string>
+    <string name="flash_log_restore_slot_failed">Không thể khôi phục ô khởi động: %1$s</string>
+    <string name="flash_log_cleanup_failed">Không thể xóa các tệp tạm thời của quá trình ghi: %1$s</string>
+    <string name="flash_error_code">Mã lỗi: %1$d.\n%2$s Vui lòng lưu nhật ký và kiểm tra.</string>
+    <string name="sulog_restart_tag">Khởi động lại #%1$s</string>
+    <string name="sulog_daemon_restarted">Tiến trình nền đã khởi động lại</string>
+    <string name="sulog_dropped_tag">%1$s bị mất</string>
 </resources>

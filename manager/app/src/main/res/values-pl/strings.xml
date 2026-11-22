@@ -951,4 +951,12 @@
     <string name="music_pause">Wstrzymaj muzykę</string>
     <string name="module_download_failed">Pobieranie nie powiodło się</string>
     <string name="susfs_reset_confirm_message">Spowoduje to przywrócenie wszystkich ustawień SuSFS do domyślnych. Czy na pewno chcesz kontynuować?</string>
+    <string name="log_save_failed">Nie udało się zapisać dziennika: %1$s</string>
+    <string name="error_unknown">Nieznany błąd</string>
+    <string name="flash_log_restore_slot_failed">Nie udało się przywrócić slotu rozruchowego: %1$s</string>
+    <string name="flash_log_cleanup_failed">Nie udało się usunąć tymczasowych plików zapisu: %1$s</string>
+    <string name="flash_error_code">Kod błędu: %1$d.\n%2$s Zapisz dziennik i sprawdź go.</string>
+    <string name="sulog_restart_tag">Ponowne uruchomienie #%1$s</string>
+    <string name="sulog_daemon_restarted">Usługa w tle została ponownie uruchomiona</string>
+    <string name="sulog_dropped_tag">Utracono %1$s</string>
 </resources>

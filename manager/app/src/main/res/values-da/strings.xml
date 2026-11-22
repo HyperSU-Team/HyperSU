@@ -947,4 +947,12 @@
     <string name="music_pause">Pause musik</string>
     <string name="module_download_failed">Download mislykkedes</string>
     <string name="susfs_reset_confirm_message">Dette vil gendanne alle SuSFS-indstillinger til standard. Er du sikker på, at du vil fortsætte?</string>
+    <string name="log_save_failed">Logfilen kunne ikke gemmes: %1$s</string>
+    <string name="error_unknown">Ukendt fejl</string>
+    <string name="flash_log_restore_slot_failed">Startslotten kunne ikke gendannes: %1$s</string>
+    <string name="flash_log_cleanup_failed">De midlertidige filer fra skrivningen kunne ikke fjernes: %1$s</string>
+    <string name="flash_error_code">Fejlkode: %1$d.\n%2$s Gem logfilen, og kontroller den.</string>
+    <string name="sulog_restart_tag">Genstart #%1$s</string>
+    <string name="sulog_daemon_restarted">Baggrundstjenesten er genstartet</string>
+    <string name="sulog_dropped_tag">%1$s gik tabt</string>
 </resources>

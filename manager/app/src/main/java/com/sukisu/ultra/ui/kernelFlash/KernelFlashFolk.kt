@@ -26,10 +26,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
@@ -63,8 +61,6 @@ fun KernelFlashFolk(
     logText: String,
 ) {
     val scrollState = rememberScrollState()
-    // onDispose must see the latest state, not the one captured on the first composition.
-    val latestState by rememberUpdatedState(state)
 
     BackHandler {
         actions.onBack()
@@ -74,14 +70,10 @@ fun KernelFlashFolk(
         it.key == Key.VolumeDown || it.key == Key.VolumeUp
     }
 
-    DisposableEffect(Unit) {
-        onDispose {
-            if (latestState.isCompleted || latestState.error.isNotEmpty()) {
-                KernelFlashStateHolder.clear()
-            }
-        }
-    }
-
+    // The finished state is deliberately kept when this screen goes away: a rotation disposes it
+    // too, and clearing here handed the recreated screen an empty state - it showed a blank
+    // "flashing" page with no result, and, before the start guard in KernelFlashScreen, it flashed
+    // the same archive again. A later entry of this route discards a finished state by itself.
     FolkScaffold(
         title = stringResource(
             when {

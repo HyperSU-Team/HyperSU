@@ -951,4 +951,12 @@
     <string name="music_pause">Müziği duraklat</string>
     <string name="module_download_failed">İndirme başarısız</string>
     <string name="susfs_reset_confirm_message">Bu, tüm SuSFS ayarlarını varsayılana sıfırlar. Devam etmek istediğinizden emin misiniz?</string>
+    <string name="log_save_failed">Günlük kaydedilemedi: %1$s</string>
+    <string name="error_unknown">Bilinmeyen hata</string>
+    <string name="flash_log_restore_slot_failed">Önyükleme yuvası geri yüklenemedi: %1$s</string>
+    <string name="flash_log_cleanup_failed">Yazma işleminin geçici dosyaları kaldırılamadı: %1$s</string>
+    <string name="flash_error_code">Hata kodu: %1$d.\n%2$s Lütfen günlüğü kaydedin ve kontrol edin.</string>
+    <string name="sulog_restart_tag">Yeniden başlatma #%1$s</string>
+    <string name="sulog_daemon_restarted">Arka plan hizmeti yeniden başlatıldı</string>
+    <string name="sulog_dropped_tag">%1$s kayboldu</string>
 </resources>

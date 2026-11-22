@@ -951,4 +951,12 @@
     <string name="music_pause">Pauză muzică</string>
     <string name="module_download_failed">Descărcarea a eșuat</string>
     <string name="susfs_reset_confirm_message">Aceasta va restabili toate setările SuSFS la valorile implicite. Sigur doriți să continuați?</string>
+    <string name="log_save_failed">Salvarea jurnalului a eșuat: %1$s</string>
+    <string name="error_unknown">Eroare necunoscută</string>
+    <string name="flash_log_restore_slot_failed">Restaurarea slotului de pornire a eșuat: %1$s</string>
+    <string name="flash_log_cleanup_failed">Ștergerea fișierelor temporare ale scrierii a eșuat: %1$s</string>
+    <string name="flash_error_code">Cod de eroare: %1$d.\n%2$s Salvați jurnalul și verificați-l.</string>
+    <string name="sulog_restart_tag">Repornire #%1$s</string>
+    <string name="sulog_daemon_restarted">Serviciul din fundal a fost repornit</string>
+    <string name="sulog_dropped_tag">%1$s pierdute</string>
 </resources>

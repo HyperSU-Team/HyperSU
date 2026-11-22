@@ -949,4 +949,12 @@
     <string name="music_pause">संगीत थांबवा</string>
     <string name="module_download_failed">डाउनलोड अयशस्वी</string>
     <string name="susfs_reset_confirm_message">यामुळे SuSFS ची सर्व सेटिंग्ज डीफॉल्टवर पुनर्संचयित होतील. तुम्हाला खात्री आहे की तुम्ही सुरू ठेवू इच्छिता?</string>
+    <string name="log_save_failed">लॉग जतन करता आला नाही: %1$s</string>
+    <string name="error_unknown">अज्ञात त्रुटी</string>
+    <string name="flash_log_restore_slot_failed">बूट स्लॉट पुनर्संचयित करता आला नाही: %1$s</string>
+    <string name="flash_log_cleanup_failed">फ्लॅशच्या तात्पुरत्या फाइल्स काढता आल्या नाहीत: %1$s</string>
+    <string name="flash_error_code">त्रुटीचा कोड: %1$d.\n%2$s कृपया लॉग जतन करा आणि तपासा.</string>
+    <string name="sulog_restart_tag">पुन्हा सुरू करा #%1$s</string>
+    <string name="sulog_daemon_restarted">पार्श्वभूमी सेवा पुन्हा सुरू झाली</string>
+    <string name="sulog_dropped_tag">%1$s हरवले</string>
 </resources>

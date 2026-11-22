@@ -949,4 +949,12 @@
     <string name="music_pause">Pauziraj glazbu</string>
     <string name="module_download_failed">Preuzimanje nije uspjelo</string>
     <string name="susfs_reset_confirm_message">Ovo će vratiti sve SuSFS postavke na zadane vrijednosti. Jeste li sigurni da želite nastaviti?</string>
+    <string name="log_save_failed">Spremanje dnevnika nije uspjelo: %1$s</string>
+    <string name="error_unknown">Nepoznata pogreška</string>
+    <string name="flash_log_restore_slot_failed">Vraćanje utora za podizanje nije uspjelo: %1$s</string>
+    <string name="flash_log_cleanup_failed">Uklanjanje privremenih datoteka za zapisivanje nije uspjelo: %1$s</string>
+    <string name="flash_error_code">Kod pogreške: %1$d.\n%2$s Spremite dnevnik i provjerite ga.</string>
+    <string name="sulog_restart_tag">Ponovno pokretanje #%1$s</string>
+    <string name="sulog_daemon_restarted">Pozadinska usluga je ponovno pokrenuta</string>
+    <string name="sulog_dropped_tag">%1$s izgubljeno</string>
 </resources>

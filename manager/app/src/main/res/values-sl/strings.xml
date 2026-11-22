@@ -947,4 +947,12 @@
     <string name="music_pause">Ustavi glasbo</string>
     <string name="module_download_failed">Prenos ni uspel</string>
     <string name="susfs_reset_confirm_message">To bo vse nastavitve SuSFS povrnilo na privzete vrednosti. Ali ste prepričani, da želite nadaljevati?</string>
+    <string name="log_save_failed">Dnevnika ni bilo mogoče shraniti: %1$s</string>
+    <string name="error_unknown">Neznana napaka</string>
+    <string name="flash_log_restore_slot_failed">Reže za zagon ni bilo mogoče obnoviti: %1$s</string>
+    <string name="flash_log_cleanup_failed">Začasnih datotek za pisanje ni bilo mogoče odstraniti: %1$s</string>
+    <string name="flash_error_code">Koda napake: %1$d.\n%2$s Shranite dnevnik in ga preverite.</string>
+    <string name="sulog_restart_tag">Ponovni zagon #%1$s</string>
+    <string name="sulog_daemon_restarted">Ozadnja storitev je bila znova zagnana</string>
+    <string name="sulog_dropped_tag">%1$s izgubljeno</string>
 </resources>

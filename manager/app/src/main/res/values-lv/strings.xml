@@ -951,4 +951,12 @@
     <string name="music_pause">Pauzēt mūziku</string>
     <string name="module_download_failed">Lejupielāde neizdevās</string>
     <string name="susfs_reset_confirm_message">Tas atjaunos visus SuSFS iestatījumus uz noklusējuma vērtībām. Vai tiešām vēlaties turpināt?</string>
+    <string name="log_save_failed">Neizdevās saglabāt žurnālu: %1$s</string>
+    <string name="error_unknown">Nezināma kļūda</string>
+    <string name="flash_log_restore_slot_failed">Neizdevās atjaunot sāknēšanas ligzdu: %1$s</string>
+    <string name="flash_log_cleanup_failed">Neizdevās noņemt rakstīšanas pagaidu failus: %1$s</string>
+    <string name="flash_error_code">Kļūdas kods: %1$d.\n%2$s Lūdzu, saglabājiet žurnālu un pārbaudiet to.</string>
+    <string name="sulog_restart_tag">Atkārtota palaišana #%1$s</string>
+    <string name="sulog_daemon_restarted">Fona pakalpojums ir palaists no jauna</string>
+    <string name="sulog_dropped_tag">%1$s pazaudēts</string>
 </resources>

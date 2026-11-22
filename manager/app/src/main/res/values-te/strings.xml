@@ -947,4 +947,12 @@
     <string name="music_pause">సంగీతం ఆపివేయి</string>
     <string name="module_download_failed">డౌన్‌లోడ్ విఫలమైంది</string>
     <string name="susfs_reset_confirm_message">ఇది అన్ని SuSFS సెట్టింగ్‌లను డిఫాల్ట్‌కి పునరుద్ధరిస్తుంది. మీరు కొనసాగించాలనుకుంటున్నారా?</string>
+    <string name="log_save_failed">లాగ్ సేవ్ చేయడం విఫలమైంది: %1$s</string>
+    <string name="error_unknown">తెలియని లోపం</string>
+    <string name="flash_log_restore_slot_failed">బూట్ స్లాట్ పునరుద్ధరించడం విఫలమైంది: %1$s</string>
+    <string name="flash_log_cleanup_failed">ఫ్లాష్ తాత్కాలిక ఫైల్లను తీసివేయడం విఫలమైంది: %1$s</string>
+    <string name="flash_error_code">లోపం కోడ్: %1$d.\n%2$s దయచేసి లాగ్ను సేవ్ చేసి తనిఖీ చేయండి.</string>
+    <string name="sulog_restart_tag">పునఃప్రారంభం #%1$s</string>
+    <string name="sulog_daemon_restarted">నేపథ్య సేవ పునఃప్రారంభించబడింది</string>
+    <string name="sulog_dropped_tag">%1$s పోయింది</string>
 </resources>

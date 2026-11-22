@@ -96,19 +96,29 @@ fun KernelFlashScreen(
     // dismissible with its own back button, and the flash lock is released as soon as it finishes,
     // so nothing is trapped here.
 
+    // Guards the write against a recreated composition. `flashState` alone cannot do it: the state
+    // holder is cleared when this screen leaves, so a rotation right after completion handed the
+    // recreated screen an empty state (not flashing, not completed) and it flashed the same package
+    // a second time. A saveable flag survives the recreation and a fresh navigation starts false.
+    var startRequested by rememberSaveable { mutableStateOf(false) }
+
     LaunchedEffect(Unit) {
-        if (!KernelFlashStateHolder.isFlashing && !flashState.isCompleted && flashState.error.isEmpty()) {
-            withContext(Dispatchers.IO) {
-                KernelFlashStateHolder.isFlashing = true
-                val worker = HorizonKernelWorker(
-                    context = context,
-                    state = horizonKernelState,
-                    slot = selectedSlot,
-                )
-                worker.uri = kernelUri
-                worker.setOnFlashCompleteListener(onFlashComplete)
-                worker.start()
-            }
+        if (startRequested) return@LaunchedEffect
+        startRequested = true
+        // A flash already running (a previous entry of this route) is adopted, not restarted. The
+        // state object itself was already rebuilt above when the archive differs or the previous
+        // run finished, so there is no stale result to clear here.
+        if (KernelFlashStateHolder.isFlashing) return@LaunchedEffect
+        withContext(Dispatchers.IO) {
+            KernelFlashStateHolder.isFlashing = true
+            val worker = HorizonKernelWorker(
+                context = context,
+                state = horizonKernelState,
+                slot = selectedSlot,
+            )
+            worker.uri = kernelUri
+            worker.setOnFlashCompleteListener(onFlashComplete)
+            worker.start()
         }
     }
 

@@ -947,4 +947,12 @@
     <string name="music_pause">ಸಂಗೀತ ವಿರಾಮಗೊಳಿಸಿ</string>
     <string name="module_download_failed">ಡೌನ್‌ಲೋಡ್ ವಿಫಲವಾಗಿದೆ</string>
     <string name="susfs_reset_confirm_message">ಇದು ಎಲ್ಲಾ SuSFS ಸೆಟ್ಟಿಂಗ್‌ಗಳನ್ನು ಡೀಫಾಲ್ಟ್‌ಗೆ ಮರುಸ್ಥಾಪಿಸುತ್ತದೆ. ನೀವು ಮುಂದುವರಿಸಲು ಖಚಿತವಾಗಿದ್ದೀರಾ?</string>
+    <string name="log_save_failed">ಲಾಗ್ ಉಳಿಸಲು ವಿಫಲವಾಗಿದೆ: %1$s</string>
+    <string name="error_unknown">ಅಜ್ಞಾತ ದೋಷ</string>
+    <string name="flash_log_restore_slot_failed">ಬೂಟ್ ಸ್ಲಾಟ್ ಮರುಸ್ಥಾಪಿಸಲು ವಿಫಲವಾಗಿದೆ: %1$s</string>
+    <string name="flash_log_cleanup_failed">ಫ್ಲಾಶ್ ತಾತ್ಕಾಲಿಕ ಫೈಲ್‌ಗಳನ್ನು ತೆಗೆದುಹಾಕಲು ವಿಫಲವಾಗಿದೆ: %1$s</string>
+    <string name="flash_error_code">ದೋಷ ಕೋಡ್: %1$d.\n%2$s ದಯವಿಟ್ಟು ಲಾಗ್ ಉಳಿಸಿ ಮತ್ತು ಪರಿಶೀಲಿಸಿ.</string>
+    <string name="sulog_restart_tag">ಮರುಪ್ರಾರಂಭ #%1$s</string>
+    <string name="sulog_daemon_restarted">ಹಿನ್ನೆಲೆ ಸೇವೆ ಮರುಪ್ರಾರಂಭವಾಗಿದೆ</string>
+    <string name="sulog_dropped_tag">%1$s ಕಳೆದುಹೋಗಿದೆ</string>
 </resources>

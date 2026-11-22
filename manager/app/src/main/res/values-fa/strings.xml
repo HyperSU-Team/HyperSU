@@ -949,4 +949,12 @@
     <string name="music_pause">توقف موسیقی</string>
     <string name="module_download_failed">دانلود ناموفق بود</string>
     <string name="susfs_reset_confirm_message">این کار همه تنظیمات SuSFS را به حالت پیش‌فرض برمی‌گرداند. آیا مطمئن هستید که می‌خواهید ادامه دهید؟</string>
+    <string name="log_save_failed">ذخیرهٔ گزارش ناموفق بود: %1$s</string>
+    <string name="error_unknown">خطای ناشناخته</string>
+    <string name="flash_log_restore_slot_failed">بازیابی جایگاه راه‌اندازی ناموفق بود: %1$s</string>
+    <string name="flash_log_cleanup_failed">حذف فایل‌های موقت فرایند نوشتن ناموفق بود: %1$s</string>
+    <string name="flash_error_code">کد خطا: %1$d.\n%2$s لطفاً گزارش را ذخیره و بررسی کنید.</string>
+    <string name="sulog_restart_tag">راه‌اندازی مجدد #%1$s</string>
+    <string name="sulog_daemon_restarted">سرویس پس‌زمینه دوباره راه‌اندازی شد</string>
+    <string name="sulog_dropped_tag">%1$s از دست رفت</string>
 </resources>

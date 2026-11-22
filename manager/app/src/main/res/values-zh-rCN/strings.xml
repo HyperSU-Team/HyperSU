@@ -997,4 +997,12 @@
     <string name="release_no_releases">暂无发布版本</string>
     <string name="module_download_failed">下载失败</string>
     <string name="susfs_reset_confirm_message">这会将所有 SuSFS 设置恢复为默认值，确定要继续吗？</string>
+    <string name="log_save_failed">保存日志失败：%1$s</string>
+    <string name="error_unknown">未知错误</string>
+    <string name="flash_log_restore_slot_failed">恢复启动分区失败：%1$s</string>
+    <string name="flash_log_cleanup_failed">清理刷写临时文件失败：%1$s</string>
+    <string name="flash_error_code">错误码：%1$d。\n%2$s 请保存日志并检查。</string>
+    <string name="sulog_restart_tag">重启 #%1$s</string>
+    <string name="sulog_daemon_restarted">守护进程已重启</string>
+    <string name="sulog_dropped_tag">丢失 %1$s 条</string>
 </resources>

@@ -947,4 +947,12 @@
     <string name="music_pause">Musiqini dayandır</string>
     <string name="module_download_failed">Yükləmə alınmadı</string>
     <string name="susfs_reset_confirm_message">Bu, bütün SuSFS parametrlərini ilkin vəziyyətinə qaytaracaq. Davam etmək istədiyinizə əminsiniz?</string>
+    <string name="log_save_failed">Jurnalı saxlamaq alınmadı: %1$s</string>
+    <string name="error_unknown">Naməlum xəta</string>
+    <string name="flash_log_restore_slot_failed">Yükləmə yuvasını bərpa etmək alınmadı: %1$s</string>
+    <string name="flash_log_cleanup_failed">Yazma əməliyyatının müvəqqəti fayllarını silmək alınmadı: %1$s</string>
+    <string name="flash_error_code">Xəta kodu: %1$d.\n%2$s Zəhmət olmasa jurnalı saxlayın və yoxlayın.</string>
+    <string name="sulog_restart_tag">Yenidən başlatma #%1$s</string>
+    <string name="sulog_daemon_restarted">Fon xidməti yenidən işə salındı</string>
+    <string name="sulog_dropped_tag">%1$s itirildi</string>
 </resources>

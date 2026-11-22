@@ -951,4 +951,12 @@
     <string name="music_pause">Пауза музики</string>
     <string name="module_download_failed">Не вдалося завантажити</string>
     <string name="susfs_reset_confirm_message">Це відновить усі налаштування SuSFS до типових. Ви впевнені, що хочете продовжити?</string>
+    <string name="log_save_failed">Не вдалося зберегти журнал: %1$s</string>
+    <string name="error_unknown">Невідома помилка</string>
+    <string name="flash_log_restore_slot_failed">Не вдалося відновити слот завантаження: %1$s</string>
+    <string name="flash_log_cleanup_failed">Не вдалося видалити тимчасові файли запису: %1$s</string>
+    <string name="flash_error_code">Код помилки: %1$d.\n%2$s Збережіть журнал і перевірте його.</string>
+    <string name="sulog_restart_tag">Перезапуск #%1$s</string>
+    <string name="sulog_daemon_restarted">Фонову службу перезапущено</string>
+    <string name="sulog_dropped_tag">%1$s втрачено</string>
 </resources>

@@ -949,4 +949,12 @@
     <string name="music_pause">Zene szüneteltetése</string>
     <string name="module_download_failed">A letöltés nem sikerült</string>
     <string name="susfs_reset_confirm_message">Ez visszaállítja az összes SuSFS-beállítást az alapértelmezett értékre. Biztosan folytatja?</string>
+    <string name="log_save_failed">Nem sikerült menteni a naplót: %1$s</string>
+    <string name="error_unknown">Ismeretlen hiba</string>
+    <string name="flash_log_restore_slot_failed">Nem sikerült visszaállítani a rendszerbetöltési rekeszt: %1$s</string>
+    <string name="flash_log_cleanup_failed">Nem sikerült eltávolítani az írás ideiglenes fájljait: %1$s</string>
+    <string name="flash_error_code">Hibakód: %1$d.\n%2$s Kérjük, mentse el a naplót, és ellenőrizze.</string>
+    <string name="sulog_restart_tag">Újraindítás #%1$s</string>
+    <string name="sulog_daemon_restarted">A háttérszolgáltatás újraindult</string>
+    <string name="sulog_dropped_tag">%1$s elveszett</string>
 </resources>

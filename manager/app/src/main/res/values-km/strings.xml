@@ -947,4 +947,12 @@
     <string name="music_pause">ផ្អាកតន្ត្រី</string>
     <string name="module_download_failed">ការទាញយកបានបរាជ័យ</string>
     <string name="susfs_reset_confirm_message">ការនេះនឹងស្តារការកំណត់ SuSFS ទាំងអស់ទៅលំនាំដើមវិញ។ តើអ្នកប្រាកដថាចង់បន្តឬ?</string>
+    <string name="log_save_failed">រក្សាទុកកំណត់ហេតុមិនបានសម្រេច៖ %1$s</string>
+    <string name="error_unknown">កំហុសមិនស្គាល់</string>
+    <string name="flash_log_restore_slot_failed">ស្តារកន្លែងចាប់ផ្ដើមឡើងវិញមិនបានសម្រេច៖ %1$s</string>
+    <string name="flash_log_cleanup_failed">លុបឯកសារបណ្ដោះអាសន្ននៃការសរសេរមិនបានសម្រេច៖ %1$s</string>
+    <string name="flash_error_code">កូដកំហុស៖ %1$d.\n%2$s សូមរក្សាទុកកំណត់ហេតុ ហើយពិនិត្យវា។</string>
+    <string name="sulog_restart_tag">ចាប់ផ្ដើមឡើងវិញ #%1$s</string>
+    <string name="sulog_daemon_restarted">សេវាផ្ទៃខាងក្រោយបានចាប់ផ្ដើមឡើងវិញ</string>
+    <string name="sulog_dropped_tag">%1$s បាត់បង់</string>
 </resources>

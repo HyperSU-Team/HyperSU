@@ -951,4 +951,12 @@
     <string name="music_pause">Pausar música</string>
     <string name="module_download_failed">Falha no download</string>
     <string name="susfs_reset_confirm_message">Isso vai restaurar todas as configurações do SuSFS para os padrões. Tem certeza de que deseja continuar?</string>
+    <string name="log_save_failed">Falha ao salvar o registro: %1$s</string>
+    <string name="error_unknown">Erro desconhecido</string>
+    <string name="flash_log_restore_slot_failed">Falha ao restaurar o slot de inicialização: %1$s</string>
+    <string name="flash_log_cleanup_failed">Falha ao remover os arquivos temporários da gravação: %1$s</string>
+    <string name="flash_error_code">Código de erro: %1$d.\n%2$s Salve o registro e verifique-o.</string>
+    <string name="sulog_restart_tag">Reinício #%1$s</string>
+    <string name="sulog_daemon_restarted">O serviço em segundo plano foi reiniciado</string>
+    <string name="sulog_dropped_tag">Perderam-se %1$s</string>
 </resources>

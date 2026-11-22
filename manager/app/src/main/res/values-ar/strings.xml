@@ -951,4 +951,12 @@
     <string name="music_pause">إيقاف الموسيقى</string>
     <string name="module_download_failed">فشل التنزيل</string>
     <string name="susfs_reset_confirm_message">سيؤدي هذا إلى استعادة كل إعدادات SuSFS إلى وضعها الافتراضي. هل أنت متأكد من أنك تريد المتابعة؟</string>
+    <string name="log_save_failed">تعذّر حفظ السجل: %1$s</string>
+    <string name="error_unknown">خطأ غير معروف</string>
+    <string name="flash_log_restore_slot_failed">تعذّرت استعادة فتحة الإقلاع: %1$s</string>
+    <string name="flash_log_cleanup_failed">تعذّرت إزالة الملفات المؤقتة لعملية الكتابة: %1$s</string>
+    <string name="flash_error_code">رمز الخطأ: %1$d.\n%2$s يُرجى حفظ السجل والتحقق منه.</string>
+    <string name="sulog_restart_tag">إعادة التشغيل #%1$s</string>
+    <string name="sulog_daemon_restarted">أُعيد تشغيل البرنامج الخفي</string>
+    <string name="sulog_dropped_tag">فُقد %1$s</string>
 </resources>

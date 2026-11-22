@@ -949,4 +949,12 @@
     <string name="music_pause">Pristabdyti muziką</string>
     <string name="module_download_failed">Atsisiuntimas nepavyko</string>
     <string name="susfs_reset_confirm_message">Tai atkurs visus SuSFS nustatymus į numatytuosius. Ar tikrai norite tęsti?</string>
+    <string name="log_save_failed">Nepavyko išsaugoti žurnalo: %1$s</string>
+    <string name="error_unknown">Nežinoma klaida</string>
+    <string name="flash_log_restore_slot_failed">Nepavyko atkurti įkrovos lizdo: %1$s</string>
+    <string name="flash_log_cleanup_failed">Nepavyko pašalinti laikinųjų įrašymo failų: %1$s</string>
+    <string name="flash_error_code">Klaidos kodas: %1$d.\n%2$s Išsaugokite žurnalą ir patikrinkite jį.</string>
+    <string name="sulog_restart_tag">Paleidimas iš naujo #%1$s</string>
+    <string name="sulog_daemon_restarted">Fono tarnyba paleista iš naujo</string>
+    <string name="sulog_dropped_tag">%1$s prarasta</string>
 </resources>

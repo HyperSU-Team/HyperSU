@@ -947,4 +947,12 @@
     <string name="music_pause">Jeda musik</string>
     <string name="module_download_failed">Unduhan gagal</string>
     <string name="susfs_reset_confirm_message">Ini akan mengembalikan semua pengaturan SuSFS ke bawaan. Apakah Anda yakin ingin melanjutkan?</string>
+    <string name="log_save_failed">Gagal menyimpan catatan: %1$s</string>
+    <string name="error_unknown">Kesalahan tidak diketahui</string>
+    <string name="flash_log_restore_slot_failed">Gagal memulihkan slot pemuatan: %1$s</string>
+    <string name="flash_log_cleanup_failed">Gagal menghapus berkas sementara proses penulisan: %1$s</string>
+    <string name="flash_error_code">Kode kesalahan: %1$d.\n%2$s Simpan catatan dan periksa.</string>
+    <string name="sulog_restart_tag">Mulai ulang #%1$s</string>
+    <string name="sulog_daemon_restarted">Layanan latar belakang dimulai ulang</string>
+    <string name="sulog_dropped_tag">%1$s hilang</string>
 </resources>

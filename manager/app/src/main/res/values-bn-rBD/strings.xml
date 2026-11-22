@@ -949,4 +949,12 @@
     <string name="music_pause">মিউজিক থামান</string>
     <string name="module_download_failed">ডাউনলোড ব্যর্থ হয়েছে</string>
     <string name="susfs_reset_confirm_message">এটি SuSFS-এর প্রতিটি সেটিং ডিফল্টে ফিরিয়ে দেবে। আপনি কি নিশ্চিত যে আপনি চালিয়ে যেতে চান?</string>
+    <string name="log_save_failed">লগ সংরক্ষণ করতে ব্যর্থ হয়েছে: %1$s</string>
+    <string name="error_unknown">অজানা ত্রুটি</string>
+    <string name="flash_log_restore_slot_failed">বুট স্লট পুনরুদ্ধার করতে ব্যর্থ হয়েছে: %1$s</string>
+    <string name="flash_log_cleanup_failed">ফ্ল্যাশের অস্থায়ী ফাইলগুলি মুছে ফেলতে ব্যর্থ হয়েছে: %1$s</string>
+    <string name="flash_error_code">ত্রুটি কোড: %1$d.\n%2$s অনুগ্রহ করে লগ সংরক্ষণ করুন এবং পরীক্ষা করুন।</string>
+    <string name="sulog_restart_tag">পুনরায় আরম্ভ #%1$s</string>
+    <string name="sulog_daemon_restarted">পটভূমি পরিষেবা পুনরায় আরম্ভ হয়েছে</string>
+    <string name="sulog_dropped_tag">%1$s হারিয়ে গেছে</string>
 </resources>

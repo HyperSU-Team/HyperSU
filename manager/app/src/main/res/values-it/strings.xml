@@ -951,4 +951,12 @@
     <string name="music_pause">Metti in pausa la musica</string>
     <string name="module_download_failed">Download non riuscito</string>
     <string name="susfs_reset_confirm_message">Questo ripristinerà tutte le impostazioni di SuSFS ai valori predefiniti. Sei sicuro di voler continuare?</string>
+    <string name="log_save_failed">Impossibile salvare il registro: %1$s</string>
+    <string name="error_unknown">Errore sconosciuto</string>
+    <string name="flash_log_restore_slot_failed">Impossibile ripristinare lo slot di avvio: %1$s</string>
+    <string name="flash_log_cleanup_failed">Impossibile rimuovere i file temporanei della scrittura: %1$s</string>
+    <string name="flash_error_code">Codice errore: %1$d.\n%2$s Salva il registro e controllalo.</string>
+    <string name="sulog_restart_tag">Riavvio #%1$s</string>
+    <string name="sulog_daemon_restarted">Il demone è stato riavviato</string>
+    <string name="sulog_dropped_tag">%1$s persi</string>
 </resources>

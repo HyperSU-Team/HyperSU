@@ -949,4 +949,12 @@
     <string name="music_pause">संगीत रोकें</string>
     <string name="module_download_failed">डाउनलोड विफल</string>
     <string name="susfs_reset_confirm_message">इससे SuSFS की सभी सेटिंग्स डिफ़ॉल्ट पर रीसेट हो जाएंगी। क्या आप वाकई जारी रखना चाहते हैं?</string>
+    <string name="log_save_failed">लॉग सहेजा नहीं जा सका: %1$s</string>
+    <string name="error_unknown">अज्ञात त्रुटि</string>
+    <string name="flash_log_restore_slot_failed">बूट स्लॉट पुनर्स्थापित नहीं किया जा सका: %1$s</string>
+    <string name="flash_log_cleanup_failed">फ़्लैश की अस्थायी फ़ाइलें हटाई नहीं जा सकीं: %1$s</string>
+    <string name="flash_error_code">त्रुटि कोड: %1$d.\n%2$s कृपया लॉग सहेजें और जाँचें।</string>
+    <string name="sulog_restart_tag">पुनः आरंभ #%1$s</string>
+    <string name="sulog_daemon_restarted">पृष्ठभूमि सेवा पुनः आरंभ हुई</string>
+    <string name="sulog_dropped_tag">%1$s खो गया</string>
 </resources>

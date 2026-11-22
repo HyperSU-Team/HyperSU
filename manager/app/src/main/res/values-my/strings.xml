@@ -947,4 +947,12 @@
     <string name="music_pause">တေးဂီတ ခေတ္တရပ်</string>
     <string name="module_download_failed">ဒေါင်းလုဒ် မအောင်မြင်ပါ</string>
     <string name="susfs_reset_confirm_message">ဤအရာက SuSFS ဆက်တင်အားလုံးကို မူလအတိုင်း ပြန်လည်သတ်မှတ်ပါမည်။ ဆက်လုပ်ရန် သေချာပါသလား?</string>
+    <string name="log_save_failed">မှတ်တမ်းကို သိမ်းဆည်း၍ မရပါ: %1$s</string>
+    <string name="error_unknown">အမည်မသိ အမှား</string>
+    <string name="flash_log_restore_slot_failed">စတင်တင်သည့် အပေါက်ကို ပြန်လည်ရယူ၍ မရပါ: %1$s</string>
+    <string name="flash_log_cleanup_failed">ရေးသွင်းခြင်း၏ ယာယီဖိုင်များကို ဖယ်ရှား၍ မရပါ: %1$s</string>
+    <string name="flash_error_code">အမှားကုဒ်: %1$d.\n%2$s မှတ်တမ်းကို သိမ်းဆည်းပြီး စစ်ဆေးပါ။</string>
+    <string name="sulog_restart_tag">ပြန်လည်စတင်ခြင်း #%1$s</string>
+    <string name="sulog_daemon_restarted">နောက်ခံဝန်ဆောင်မှုကို ပြန်လည်စတင်ပြီးပါပြီ</string>
+    <string name="sulog_dropped_tag">%1$s ဆုံးရှုံးသွားသည်</string>
 </resources>

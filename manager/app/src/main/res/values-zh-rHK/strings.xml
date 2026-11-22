@@ -948,4 +948,12 @@
     <string name="release_no_releases">暫無釋出版本</string>
     <string name="module_download_failed">下載失敗</string>
     <string name="susfs_reset_confirm_message">這會將所有 SuSFS 設定恢復為預設值，確定要繼續嗎？</string>
+    <string name="log_save_failed">儲存日誌失敗：%1$s</string>
+    <string name="error_unknown">未知錯誤</string>
+    <string name="flash_log_restore_slot_failed">還原啟動分區失敗：%1$s</string>
+    <string name="flash_log_cleanup_failed">清理刷寫暫存檔失敗：%1$s</string>
+    <string name="flash_error_code">錯誤碼：%1$d。\n%2$s 請儲存日誌並檢查。</string>
+    <string name="sulog_restart_tag">重新啟動 #%1$s</string>
+    <string name="sulog_daemon_restarted">守護程式已重新啟動</string>
+    <string name="sulog_dropped_tag">遺失 %1$s 筆</string>
 </resources>

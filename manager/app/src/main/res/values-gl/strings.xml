@@ -947,4 +947,12 @@
     <string name="music_pause">Pausar a música</string>
     <string name="module_download_failed">Erro na descarga</string>
     <string name="susfs_reset_confirm_message">Isto restaurará todos os axustes de SuSFS aos valores predeterminados. Seguro que queres continuar?</string>
+    <string name="log_save_failed">Non se puido gardar o rexistro: %1$s</string>
+    <string name="error_unknown">Erro descoñecido</string>
+    <string name="flash_log_restore_slot_failed">Non se puido restaurar a ranura de arranque: %1$s</string>
+    <string name="flash_log_cleanup_failed">Non se puideron eliminar os ficheiros temporais do proceso de escritura: %1$s</string>
+    <string name="flash_error_code">Código de erro: %1$d.\n%2$s Garda o rexistro e revísao.</string>
+    <string name="sulog_restart_tag">Reinicio #%1$s</string>
+    <string name="sulog_daemon_restarted">Reiniciouse o servizo en segundo plano</string>
+    <string name="sulog_dropped_tag">Perdéronse %1$s</string>
 </resources>
