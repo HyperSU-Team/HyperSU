@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import com.sukisu.ultra.ui.navigation.LocalBottomBarVisible
 import com.sukisu.ultra.ui.navigation.LocalIsFloatingNavMode
 import com.sukisu.ultra.ui.navigation.LocalIsRootPage
+import com.sukisu.ultra.ui.theme.LocalBottomBarHeight
 import com.sukisu.ultra.ui.theme.tokens.FolkTheme
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.Alignment
