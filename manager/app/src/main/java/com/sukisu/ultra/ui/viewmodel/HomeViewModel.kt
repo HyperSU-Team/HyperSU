@@ -287,11 +287,6 @@ class HomeViewModel(
         // "show_full_status", not FolkPatch's "show_fingerprint": that one means "hide the
         // fingerprint" and defaults to false, so reading it here inverted the setting for anyone
         // who had ever touched it.
-        val showFullStatus = runCatching { settingsRepo.showFullStatus }.getOrDefault(true)
-        val showHomeDeviceModel = runCatching { settingsRepo.showHomeDeviceModel }.getOrDefault(true)
-        val showHomeFingerprint = runCatching { settingsRepo.showHomeFingerprint }.getOrDefault(true)
-        val showHomeSelinux = runCatching { settingsRepo.showHomeSelinux }.getOrDefault(true)
-        val showHomeSeccomp = runCatching { settingsRepo.showHomeSeccomp }.getOrDefault(true)
 
         val systemInfo = basicsAsSystemInfo(basics, managerUAPIVersion)
             .copy(kernelFullVersion = kernelFullVersion, zygiskImplementation = zygiskImplementation)
@@ -312,11 +307,6 @@ class HomeViewModel(
             isSafeMode = runCatching { Natives.isSafeMode }.getOrDefault(false),
             loaded = true,
             isLateLoadMode = runCatching { Natives.isLateLoadMode }.getOrDefault(false),
-            showFullStatus = showFullStatus,
-            showHomeDeviceModel = showHomeDeviceModel,
-            showHomeFingerprint = showHomeFingerprint,
-            showHomeSelinux = showHomeSelinux,
-            showHomeSeccomp = showHomeSeccomp,
             managerSignature = runCatching { managerSignatureSha256(ksuApp) }.getOrNull(),
             currentManagerVersionCode = basics.managerVersion.versionCode,
             systemInfo = systemInfo,

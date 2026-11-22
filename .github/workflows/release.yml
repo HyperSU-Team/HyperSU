@@ -98,15 +98,12 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.58 - the home facts read the same way the reference manager does, and cannot end up as dashes.
+            HyperSU v4.2.59 - SELinux status reads through the root shell, and the home display switches are gone.
 
-            - Manager version comes from `BuildConfig` instead of the package manager: a package whose versionName resolves to null or empty produced an empty row.
-            - SELinux is read through `SuFile("/sys/fs/selinux/enforce")`, which retries through a shell when the app uid may not open the node (SELinux hiding, an enforcing kernel). A plain `File` read returned null there and the row said unknown.
-            - Kernel release falls back from `Os.uname().release` to the VM's `os.version`; the device name already walks the vendor market-name properties and then MANUFACTURER/Brand/MODEL.
-            - The fact rows now read these values where they are drawn and merge them with the view model's state, so a state that lost them no longer blanks the page; the grid tiles use the same merged SELinux and Seccomp readings.
-            - The root shell is no longer cached while un-rooted: a request that raced the daemon used to be kept for the life of the process, which made every later shell read fail until the process restarted.
+            - SELinux status showed "unknown" on a device that hides `/sys/fs/selinux/enforce` from apps: the only fallback was a plain `sh`, which fails exactly there. The order is now the node through `SuFile`, `getenforce` through the manager's root shell, a plain `sh`, and only then an inference.
+            - The settings page no longer has the "home display" section: the five switches are gone, and the home facts are always shown. Their preferences are no longer read.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.57...v4.2.58
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.58...v4.2.59
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

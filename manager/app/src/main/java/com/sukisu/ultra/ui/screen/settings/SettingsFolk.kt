@@ -536,54 +536,6 @@ fun SettingPagerFolk(
                 }
             }
 
-            // What the home screen's facts list shows. Each row is independent, so a user who only
-            // wants the kernel version can turn the rest off without losing the whole list.
-            item(key = "home_display") {
-                FolkSettingsSectionGroup(title = stringResource(R.string.settings_home_display)) {
-                    item {
-                        FolkSwitchPreference(
-                            title = stringResource(R.string.settings_home_show_full_status),
-                            summary = stringResource(R.string.settings_home_show_full_status_summary),
-                            icon = Icons.Filled.Info,
-                            checked = uiState.showFullStatus,
-                            onCheckedChange = actions.onSetShowFullStatus,
-                        )
-                    }
-                    item {
-                        FolkSwitchPreference(
-                            title = stringResource(R.string.home_device_model),
-                            icon = Icons.Filled.PhoneAndroid,
-                            checked = uiState.showHomeDeviceModel,
-                            onCheckedChange = actions.onSetShowHomeDeviceModel,
-                        )
-                    }
-                    item {
-                        FolkSwitchPreference(
-                            title = stringResource(R.string.home_fingerprint),
-                            icon = Icons.Filled.Fingerprint,
-                            checked = uiState.showHomeFingerprint,
-                            onCheckedChange = actions.onSetShowHomeFingerprint,
-                        )
-                    }
-                    item {
-                        FolkSwitchPreference(
-                            title = stringResource(R.string.home_selinux_status),
-                            icon = Icons.Filled.Security,
-                            checked = uiState.showHomeSelinux,
-                            onCheckedChange = actions.onSetShowHomeSelinux,
-                        )
-                    }
-                    item {
-                        FolkSwitchPreference(
-                            title = stringResource(R.string.home_seccomp_status),
-                            icon = Icons.Filled.Shield,
-                            checked = uiState.showHomeSeccomp,
-                            onCheckedChange = actions.onSetShowHomeSeccomp,
-                        )
-                    }
-                }
-            }
-
             // Uninstall, only meaningful in LKM mode.
             if (uiState.isLkmMode) {
                 item(key = "uninstall") {
