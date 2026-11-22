@@ -116,6 +116,14 @@ fun DynamicManagerScreen() {
  * root shell nor a read of another app's data directory - which is what the previous library test
  * did, and why it could only ever see this app.
  */
+private val KSU_NAME_HINTS = listOf("kernelsu", "sukisu", "hypersu", "ksunext", "ksu")
+
+/** A KernelSU-family manager, by the name it is published under. */
+private fun isKsuManager(pkg: String, self: String): Boolean =
+    pkg == self ||
+        pkg in KSU_MANAGER_PACKAGES ||
+        KSU_NAME_HINTS.any { pkg.contains(it, ignoreCase = true) }
+
 private val KSU_MANAGER_PACKAGES = setOf(
     "me.weishu.kernelsu",       // KernelSU
     "com.sukisu.ultra",         // SukiSU Ultra
@@ -138,7 +146,7 @@ private fun loadManagerApps(context: android.content.Context, pm: PackageManager
             .mapNotNull { info ->
                 val app = info.applicationInfo ?: return@mapNotNull null
                 val pkg = app.packageName
-                if (pkg != self && pkg !in KSU_MANAGER_PACKAGES) return@mapNotNull null
+                if (!isKsuManager(pkg, self)) return@mapNotNull null
                 val apkPath = app.publicSourceDir ?: return@mapNotNull null
                 val icon = runCatching {
                     pm.getApplicationIcon(pkg).toBitmap(96, 96).asImageBitmap()
