@@ -131,13 +131,14 @@ private fun shipsKsudLibrary(app: android.content.pm.ApplicationInfo, apkPath: S
 }
 
 /**
- * Native libraries that only a root manager ships.
+ * The library that identifies a KernelSU-family manager.
  *
- * `libksud.so` covers the KernelSU family. `libkptools.so` / `libapd.so` are APatch's tooling - its
- * manager carries neither a `ksud` nor an APatch `ksud`, so those two names are what identify it.
- * Only the file name is compared: the ABI directory varies and a manager may ship a single ABI.
+ * Only `libksud.so`: an APatch manager ships `libkptools.so` instead and is deliberately not
+ * offered here - this list is for the managers whose signatures this kernel's manager table can
+ * accept. Only the file name is compared; the ABI directory varies and a manager may ship a single
+ * ABI.
  */
-private val MANAGER_LIBRARIES = setOf("libksud.so", "libkptools.so", "libapd.so")
+private val MANAGER_LIBRARIES = setOf("libksud.so")
 
 /**
  * Manager apps are the ones that ship `libksud.so`; the kernel's manager table says which uid is

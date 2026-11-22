@@ -98,12 +98,12 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.70 - the module page's restart prompt sits where the update prompt does.
+            HyperSU v4.2.71 - the multi-manager list covers the KernelSU family only.
 
-            - Material3 lifts a snackbar above the floating action button when the button reaches higher than the bottom bar, and the install button's `padding(bottom = …)` moved its *placement*, not just its drawing. The button is translated instead, so it looks the same while the snackbar returns to the bar-height offset every other page uses.
-            - Includes v4.2.68's SELinux reader logging and root-shell verification, and v4.2.69's APatch-family manager detection (`libksud.so`, `libkptools.so`, `libapd.so`, inside the APK as well as on disk).
+            - An APatch manager ships `libkptools.so` instead of `libksud.so` and is not offered as a dynamic manager; only `libksud.so` identifies a candidate now. Libraries inside the APK are still checked as well as the extracted directory, so a manager built with `extractNativeLibs=false` is found.
+            - Includes v4.2.70's snackbar placement fix, v4.2.68's SELinux reader logging and root-shell verification.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.65...v4.2.70
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.65...v4.2.71
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
