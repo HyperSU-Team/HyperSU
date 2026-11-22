@@ -47,6 +47,18 @@ fun HomePager(
         }
     }
 
+    // Keep asking until the facts are there. The driver can come up well after this page is first
+    // composed, and the single read the view model did was the only one: the rows stayed blank
+    // until something recreated the activity (switching the language was the reliable way).
+    LaunchedEffect(isCurrentPage) {
+        if (!isCurrentPage) return@LaunchedEffect
+        repeat(20) {
+            if (viewModel.hasFacts()) return@LaunchedEffect
+            viewModel.refresh()
+            delay(1500.milliseconds)
+        }
+    }
+
     LifecycleResumeEffect(Unit) {
         if (initialResumeHandled.value && latestIsCurrentPage) {
             viewModel.refresh()

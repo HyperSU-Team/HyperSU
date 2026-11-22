@@ -98,13 +98,12 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.56 - the home facts no longer come back as dashes.
+            HyperSU v4.2.57 - the home facts fill in on their own instead of waiting for a language switch.
 
-            - Manager version, kernel version, device model, fingerprint, SELinux and Seccomp were blank together on a device where the driver answered: a basic read that comes back empty now falls back to `os.version`, `Build.DISPLAY`, `Build.MODEL` and the compiled-in version name instead of a dash.
-            - A full read that loses only the basic facts keeps the driver fields (the working card, the module counts) and takes those facts from the guarded fallback, instead of publishing a half-blank page.
-            - A cold start is retried five times instead of three, with a shorter first delay, so a slow driver has time to come up.
+            - A read that hung on a root shell stayed "in flight" for the life of the process, so every later refresh was a no-op. An in-flight read older than 20 seconds is now replaced.
+            - The home page keeps asking for the facts while they are missing (every 1.5s for up to 30s) instead of relying on one read at start-up. That is the read that only a language switch - which recreates the activity - used to trigger.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.55...v4.2.56
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.56...v4.2.57
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

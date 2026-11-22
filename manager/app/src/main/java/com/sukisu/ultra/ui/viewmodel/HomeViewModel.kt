@@ -1,6 +1,7 @@
 package com.sukisu.ultra.ui.viewmodel
 
 import android.os.Build
+import android.os.SystemClock
 import android.system.Os
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -60,14 +61,29 @@ class HomeViewModel(
      *  start a second - each one is a root shell and a `ksud module list`. */
     private var loadJob: Job? = null
 
+    /** When [loadJob] started, so a read that never returns can be replaced instead of blocking. */
+    private var loadStartedAt = 0L
+
     init {
         reload()
     }
 
     fun refresh() = reload()
 
+    /** Whether the current state carries the facts the page can always show. */
+    fun hasFacts(): Boolean = _uiState.value.hasAlwaysAvailableFacts()
+
     private fun reload() {
-        if (loadJob?.isActive == true) return
+        val active = loadJob?.isActive == true
+        if (active) {
+            // A read that has been running for a long time is stuck on something (a root shell
+            // that never answers). Replacing it is what finally gets the facts onto the screen;
+            // before this, "refresh" was a no-op for the life of the process and only a language
+            // switch - which recreated the view model - brought the values back.
+            if (SystemClock.elapsedRealtime() - loadStartedAt < LoadStaleMillis) return
+            loadJob?.cancel()
+        }
+        loadStartedAt = SystemClock.elapsedRealtime()
         loadJob = viewModelScope.launch {
             // The facts that need no root are published on their own first, before anything that
             // can fail, and the full reading replaces them when it arrives.
@@ -313,6 +329,9 @@ class HomeViewModel(
 
     private companion object {
         const val TAG = "HomeViewModel"
+
+        /** After this long an in-flight read is considered stuck and may be replaced. */
+        const val LoadStaleMillis = 20_000L
 
         /** How many times a cold start's incomplete read is retried before it is shown as it is. */
         const val MaxLoadAttempts = 5
