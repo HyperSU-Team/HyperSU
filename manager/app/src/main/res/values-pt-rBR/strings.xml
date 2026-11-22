@@ -951,4 +951,5 @@
     <string name="music_pause">Pausar música</string>
     <string name="module_download_failed">Falha no download</string>
     <string name="susfs_reset_confirm_message">Isso vai restaurar todas as configurações do SuSFS para os padrões. Tem certeza de que deseja continuar?</string>
+    <string name="external_link_open_failed">Não foi possível abrir o link</string>
 </resources>

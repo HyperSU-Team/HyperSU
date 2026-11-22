@@ -947,4 +947,5 @@
     <string name="music_pause">Pausar a música</string>
     <string name="module_download_failed">Erro na descarga</string>
     <string name="susfs_reset_confirm_message">Isto restaurará todos os axustes de SuSFS aos valores predeterminados. Seguro que queres continuar?</string>
+    <string name="external_link_open_failed">Non se puido abrir a ligazón</string>
 </resources>

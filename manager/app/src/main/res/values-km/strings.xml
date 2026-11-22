@@ -947,4 +947,5 @@
     <string name="music_pause">ផ្អាកតន្ត្រី</string>
     <string name="module_download_failed">ការទាញយកបានបរាជ័យ</string>
     <string name="susfs_reset_confirm_message">ការនេះនឹងស្តារការកំណត់ SuSFS ទាំងអស់ទៅលំនាំដើមវិញ។ តើអ្នកប្រាកដថាចង់បន្តឬ?</string>
+    <string name="external_link_open_failed">មិនអាចបើកតំណបានទេ</string>
 </resources>

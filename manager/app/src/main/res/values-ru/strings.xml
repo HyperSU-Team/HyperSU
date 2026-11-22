@@ -953,4 +953,5 @@
     <string name="music_play">Играть музыку</string>
     <string name="music_pause">Пауза</string>
     <string name="susfs_reset_confirm_message">Это восстановит все настройки SuSFS по умолчанию. Вы уверены, что хотите продолжить?</string>
+    <string name="external_link_open_failed">Не удалось открыть ссылку</string>
 </resources>

@@ -997,4 +997,5 @@
     <string name="release_no_releases">暂无发布版本</string>
     <string name="module_download_failed">下载失败</string>
     <string name="susfs_reset_confirm_message">这会将所有 SuSFS 设置恢复为默认值，确定要继续吗？</string>
+    <string name="external_link_open_failed">无法打开链接</string>
 </resources>

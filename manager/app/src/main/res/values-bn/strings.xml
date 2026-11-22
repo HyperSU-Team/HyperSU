@@ -949,4 +949,5 @@
     <string name="music_pause">মিউজিক থামান</string>
     <string name="module_download_failed">ডাউনলোড ব্যর্থ হয়েছে</string>
     <string name="susfs_reset_confirm_message">এটি SuSFS-এর প্রতিটি সেটিং ডিফল্টে ফিরিয়ে দেবে। আপনি কি নিশ্চিত যে আপনি চালিয়ে যেতে চান?</string>
+    <string name="external_link_open_failed">লিঙ্ক খোলা যায়নি</string>
 </resources>

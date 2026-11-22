@@ -949,4 +949,5 @@
     <string name="music_pause">Pristabdyti muziką</string>
     <string name="module_download_failed">Atsisiuntimas nepavyko</string>
     <string name="susfs_reset_confirm_message">Tai atkurs visus SuSFS nustatymus į numatytuosius. Ar tikrai norite tęsti?</string>
+    <string name="external_link_open_failed">Nuorodos atidaryti nepavyko</string>
 </resources>

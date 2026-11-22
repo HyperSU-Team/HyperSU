@@ -48,6 +48,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -239,6 +241,7 @@ class MainActivity : ComponentActivity() {
                 LocalSimpleListBottomBar provides uiState.simpleListBottomBar,
                 LocalBottomBarVisible provides remember { mutableStateOf(true) },
                 LocalIsFloatingNavMode provides uiState.enableFloatingBottomBar,
+                LocalUriHandler provides openUriSafely(LocalUriHandler.current),
             ) {
                 HyperSUTheme(appSettings = appSettings) {
                     // Fires once per activity instance, when the first frame is composed: the
@@ -424,6 +427,35 @@ class MainActivity : ComponentActivity() {
 }
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+
+/**
+ * Opens external links without taking the app down.
+ *
+ * LocalUriHandler.openUri throws IllegalArgumentException for a scheme the device has no
+ * handler for, and several pages (the support links, markdown bodies, module descriptions) call it
+ * straight from a click. Racing the exception here shows the message the upstream manager shows
+ * instead of crashing the activity.
+ */
+@Composable
+private fun openUriSafely(delegate: androidx.compose.ui.platform.UriHandler): androidx.compose.ui.platform.UriHandler {
+    val context = LocalContext.current
+    return remember(delegate, context) {
+        object : androidx.compose.ui.platform.UriHandler {
+            override fun openUri(uri: String) {
+                try {
+                    delegate.openUri(uri)
+                } catch (_: IllegalArgumentException) {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.external_link_open_failed),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun MainScreen(
     initialPage: Int = 0,

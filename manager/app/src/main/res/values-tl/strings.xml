@@ -947,4 +947,5 @@
     <string name="music_pause">I-pause ang musika</string>
     <string name="module_download_failed">Nabigo ang pag-download</string>
     <string name="susfs_reset_confirm_message">Ito ay magbabalik sa lahat ng setting ng SuSFS sa default. Sigurado ka bang gusto mong magpatuloy?</string>
+    <string name="external_link_open_failed">Hindi mabuksan ang link</string>
 </resources>

@@ -98,14 +98,20 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.77 - the manager is back on the v4.2.53 code.
+            HyperSU v4.2.78 - BakaSU's 22 November batch, ported onto the v4.2.53 manager.
 
-            - Everything that landed in the manager after v4.2.53 is reverted: the review pass and the follow-up fixes. v4.2.53 is the last build where the home facts and the prompts behaved correctly on the reporting device, so this release is that code again with only the version bumped.
-            - The kernel, userspace and workflow files are unchanged from v4.2.76.
+            Kernel (cherry-picked from Baka-SU/BakaSU, 11 commits):
+            - SELinux hide: aligned policy parsing, generation tracking for policy updates, the original type datum marked to skip the symbol search, the setprocattr context parsed once, and an LSM hook for `inode_setxattr` so a netlink socket relabel attempt cannot reveal the ksu context.
+            - logd is allowed to read root process attributes (fixes log forwarding on some Vivo devices).
+            - arm64: fixed the syscall first-parameter register on 7.3+; x86_64: the `do_syscall_64` fallback when `x64_sys_call` is missing, no re-run of syscalls skipped by seccomp, wrapped `is_compat_task`, and the preinit runner linked page-aligned for non-4K page sizes.
+            - userspace: the `waitsys` helper updated to the fixed build.
 
-            If any of the fixes from v4.2.54-v4.2.76 are still wanted, they can be re-applied one at a time against this base, each verified on the device before the next.
+            Manager (ported by hand, since the package name differs):
+            - External links no longer crash the activity when the device has no handler for a scheme; a message is shown instead.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.53...v4.2.77
+            Not ported: the WebUI `File` and `pm` interfaces, the spotless pass over them, and the susfs config sync - they depend on manager code that landed after v4.2.53, which this build does not carry.
+
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.53...v4.2.78
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

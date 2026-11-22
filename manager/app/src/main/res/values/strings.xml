@@ -1008,4 +1008,5 @@
 
 
     <string name="module_download_failed">Download failed</string>
+    <string name="external_link_open_failed">Unable to open link</string>
 </resources>

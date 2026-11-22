@@ -947,4 +947,5 @@
     <string name="music_pause">တေးဂီတ ခေတ္တရပ်</string>
     <string name="module_download_failed">ဒေါင်းလုဒ် မအောင်မြင်ပါ</string>
     <string name="susfs_reset_confirm_message">ဤအရာက SuSFS ဆက်တင်အားလုံးကို မူလအတိုင်း ပြန်လည်သတ်မှတ်ပါမည်။ ဆက်လုပ်ရန် သေချာပါသလား?</string>
+    <string name="external_link_open_failed">လင့်ကို ဖွင့်၍ မရပါ</string>
 </resources>

@@ -949,4 +949,5 @@
     <string name="music_pause">Пауза на музиката</string>
     <string name="module_download_failed">Изтеглянето е неуспешно</string>
     <string name="susfs_reset_confirm_message">Това ще възстанови всички настройки на SuSFS по подразбиране. Сигурни ли сте, че искате да продължите?</string>
+    <string name="external_link_open_failed">Връзката не може да бъде отворена</string>
 </resources>

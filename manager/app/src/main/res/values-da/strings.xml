@@ -947,4 +947,5 @@
     <string name="music_pause">Pause musik</string>
     <string name="module_download_failed">Download mislykkedes</string>
     <string name="susfs_reset_confirm_message">Dette vil gendanne alle SuSFS-indstillinger til standard. Er du sikker på, at du vil fortsætte?</string>
+    <string name="external_link_open_failed">Linket kunne ikke åbnes</string>
 </resources>

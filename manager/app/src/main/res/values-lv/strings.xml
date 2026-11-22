@@ -951,4 +951,5 @@
     <string name="music_pause">Pauzēt mūziku</string>
     <string name="module_download_failed">Lejupielāde neizdevās</string>
     <string name="susfs_reset_confirm_message">Tas atjaunos visus SuSFS iestatījumus uz noklusējuma vērtībām. Vai tiešām vēlaties turpināt?</string>
+    <string name="external_link_open_failed">Neizdevās atvērt saiti</string>
 </resources>
