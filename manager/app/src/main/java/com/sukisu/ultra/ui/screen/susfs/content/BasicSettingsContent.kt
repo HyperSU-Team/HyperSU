@@ -127,6 +127,12 @@ fun BasicSettingsContent(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
+                    val unameError = when {
+                        unameValue.isBlank() -> null
+                        unameValue.any { it.isWhitespace() } ->
+                            stringResource(R.string.susfs_uname_invalid)
+                        else -> null
+                    }
                     OutlinedTextField(
                         value = unameValue,
                         onValueChange = onUnameValueChange,
@@ -134,6 +140,14 @@ fun BasicSettingsContent(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isLoading,
                         singleLine = true,
+                        isError = unameError != null,
+                        supportingText = if (unameError != null) {
+                            {
+                                Text(unameError)
+                            }
+                        } else {
+                            null
+                        },
                     )
                     OutlinedTextField(
                         value = buildTimeValue,
@@ -147,6 +161,7 @@ fun BasicSettingsContent(
                         Button(
                             onClick = { onApply() },
                             enabled = !isLoading &&
+                                unameError == null &&
                                 (unameValue.isNotBlank() || buildTimeValue.isNotBlank()),
                             modifier = Modifier
                                 .fillMaxWidth()

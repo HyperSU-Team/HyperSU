@@ -38,7 +38,8 @@ fun AddPathDialog(
     isLoading: Boolean,
     titleRes: Int,
     labelRes: Int,
-    initialValue: String = ""
+    initialValue: String = "",
+    existingPaths: Collection<String> = emptyList(),
 ) {
     var newPath by remember { mutableStateOf(initialValue) }
 
@@ -49,6 +50,18 @@ fun AddPathDialog(
     }
 
     if (!showDialog) return
+
+    val trimmed = newPath.trim()
+    // Foolproofing: a bare name, an embedded space or an entry that is already in the list all used
+    // to reach ksud and come back as a generic failure toast.
+    val pathError = when {
+        trimmed.isEmpty() -> null
+        !trimmed.startsWith("/") -> stringResource(R.string.susfs_path_must_be_absolute)
+        trimmed.any { it.isWhitespace() } -> stringResource(R.string.susfs_path_no_whitespace)
+        trimmed != initialValue.trim() && existingPaths.any { it.trim() == trimmed } ->
+            stringResource(R.string.susfs_path_duplicate)
+        else -> null
+    }
 
     FolkAlertDialog(onDismissRequest = {
         onDismiss()
@@ -68,6 +81,14 @@ fun AddPathDialog(
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !isLoading,
                 singleLine = true,
+                isError = pathError != null,
+                supportingText = if (pathError != null) {
+                    {
+                        Text(pathError)
+                    }
+                } else {
+                    null
+                },
             )
             Row(
                 modifier = Modifier
@@ -88,12 +109,12 @@ fun AddPathDialog(
                 Spacer(Modifier.width(8.dp))
                 TextButton(
                     onClick = {
-                        if (newPath.isNotBlank()) {
-                            onConfirm(newPath.trim())
+                        if (pathError == null && trimmed.isNotEmpty()) {
+                            onConfirm(trimmed)
                             newPath = ""
                         }
                     },
-                    enabled = newPath.isNotBlank() && !isLoading,
+                    enabled = pathError == null && trimmed.isNotEmpty() && !isLoading,
                     colors = FolkButtonDefaults.textColors(),
                 ) {
                     Text(

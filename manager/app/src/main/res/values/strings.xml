@@ -554,10 +554,10 @@
 
 
     <string name="susfs_config_description">Configuration description</string>
-    <string name="susfs_config_description_text">This feature allows you to customize the SuSFS uname value and build time spoofing. Enter the values you want to set and tap Apply to take effect</string>
-    <string name="susfs_uname_label">Kernel release</string>
-    <string name="susfs_build_time_label">Kernel version</string>
-    <string name="susfs_current_value">Current release: %s</string>
+    <string name="susfs_config_description_text">This feature allows you to customize the SuSFS uname value and the build time spoofing. Enter the values you want and tap Apply to take effect.</string>
+    <string name="susfs_uname_label">Uname release value</string>
+    <string name="susfs_build_time_label">Build time spoof</string>
+    <string name="susfs_current_value">Current value: %s</string>
     <string name="susfs_current_build_time">Current version: %s</string>
     <string name="susfs_apply">Apply</string>
     <string name="susfs_section_current_values">Current values</string>
@@ -574,16 +574,16 @@
     <string name="susfs_autostart_requirement">Configuration needs to be added to enable</string>
     <!-- SuSFS Tab Titles -->
     <string name="susfs_tab_basic_settings">Basic settings</string>
-    <string name="susfs_tab_sus_paths">SUS paths</string>
+    <string name="susfs_tab_sus_paths">SuSFS paths</string>
     <string name="susfs_tab_path_settings">Path settings</string>
     <string name="susfs_tab_enabled_features">Enabled features status</string>
     <!-- SuSFS Path Management -->
-    <string name="susfs_add_sus_path">Add SUS path</string>
+    <string name="susfs_add_sus_path">Add SuSFS path</string>
     <string name="susfs_path_label">Path</string>
-    <string name="susfs_no_paths_configured">No SUS paths configured</string>
+    <string name="susfs_no_paths_configured">No SuSFS paths configured</string>
     <!-- SuSFS Reset Categories -->
-    <string name="susfs_reset_paths_title">Reset SUS paths</string>
-    <string name="susfs_reset_paths_message">This will clear all SUS path configurations. Are you sure you want to continue?</string>
+    <string name="susfs_reset_paths_title">Reset SuSFS paths</string>
+    <string name="susfs_reset_paths_message">This will clear all SuSFS path configurations. Are you sure you want to continue?</string>
     <string name="susfs_reset_path_title">Reset path settings</string>
     <!-- SuSFS Path Settings -->
     <string name="susfs_android_data_path_label">Android data path</string>
@@ -594,15 +594,15 @@
     <string name="susfs_feature_enabled">Enabled</string>
     <string name="susfs_feature_disabled">Disabled</string>
     <!-- Feature Labels -->
-    <string name="sus_path_feature_label">SUS path support</string>
-    <string name="sus_mount_feature_label">SUS mount support</string>
+    <string name="sus_path_feature_label">SuSFS path support</string>
+    <string name="sus_mount_feature_label">SuSFS mount support</string>
     <string name="spoof_uname_feature_label">Spoof uname support</string>
     <string name="spoof_cmdline_feature_label">Spoof cmdline/bootconfig</string>
     <string name="open_redirect_feature_label">Open redirect support</string>
     <string name="enable_log_feature_label">Logging support</string>
     <string name="hide_symbols_feature_label">Hide KSU SuSFS symbols</string>
-    <string name="sus_kstat_feature_label">SUS kstat support</string>
-    <string name="sus_map_feature_label">SUS map support</string>
+    <string name="sus_kstat_feature_label">SuSFS kstat support</string>
+    <string name="sus_map_feature_label">SuSFS map support</string>
     <!-- SuSFS Feature Configuration -->
     <string name="susfs_feature_configurable">Configurable SuSFS features</string>
     <string name="susfs_enable_log_label">Enable SuSFS logging</string>
@@ -639,9 +639,9 @@
     <string name="kstat_path_management">Kstat path management</string>
     <string name="no_kstat_config_message">No Kstat configuration yet. Tap the button below to add one</string>
     <!-- SuSFS Mount Hiding Control Related Strings -->
-    <string name="susfs_hide_mounts_for_all_procs_label">Hide SUS mounts for all processes</string>
-    <string name="susfs_hide_mounts_for_all_procs_enabled_description">When enabled, SUS mounts will be hidden from all processes, including KSU processes</string>
-    <string name="susfs_hide_mounts_for_all_procs_disabled_description">When disabled, SUS mounts will only be hidden from non-KSU processes, KSU processes can see the mounts</string>
+    <string name="susfs_hide_mounts_for_all_procs_label">Hide SuSFS mounts for all processes</string>
+    <string name="susfs_hide_mounts_for_all_procs_enabled_description">When enabled, SuSFS mounts will be hidden from all processes, including KSU processes</string>
+    <string name="susfs_hide_mounts_for_all_procs_disabled_description">When disabled, SuSFS mounts will only be hidden from non-KSU processes, KSU processes can see the mounts</string>
     <!-- SuSFS Backup and Restore Related Strings -->
     <string name="susfs_backup_title">Backup</string>
     <string name="susfs_backup_description">Create a backup of all SuSFS configurations. The backup file will include all settings, paths, and configurations</string>
@@ -671,7 +671,7 @@
     <string name="hide_bl_script_description">Overwrite bootloader locking status attribute in late_start service mode</string>
     <string name="cleanup_residue">Clean up residue</string>
     <string name="cleanup_residue_description">Clean up residual files and directories from various modules and tools. Use with caution: required files may be deleted by mistake, causing data loss or startup failures!</string>
-    <string name="susfs_edit_sus_path">Edit SUS path</string>
+    <string name="susfs_edit_sus_path">Edit SuSFS path</string>
     <string name="edit_kstat_statically_title">Edit Kstat static configuration</string>
     <string name="edit_kstat_path_title">Edit Kstat path</string>
     <string name="susfs_save">Save</string>
@@ -689,12 +689,12 @@
     <string name="all_apps_already_added">All apps have been added</string>
     <string name="no_apps_found">No apps found</string>
     <!-- SuSFS Loop Path Related Strings -->
-    <string name="susfs_tab_sus_loop_paths">SUS loop paths</string>
-    <string name="susfs_add_sus_loop_path">Add SUS loop path</string>
-    <string name="susfs_edit_sus_loop_path">Edit SUS loop path</string>
-    <string name="susfs_no_loop_paths_configured">No SUS loop paths configured</string>
+    <string name="susfs_tab_sus_loop_paths">SuSFS loop paths</string>
+    <string name="susfs_add_sus_loop_path">Add SuSFS loop path</string>
+    <string name="susfs_edit_sus_loop_path">Edit SuSFS loop path</string>
+    <string name="susfs_no_loop_paths_configured">No SuSFS loop paths configured</string>
     <string name="susfs_reset_loop_paths_title">Reset loop paths</string>
-    <string name="susfs_reset_loop_paths_message">Are you sure you want to clear all SUS loop paths? This action cannot be undone</string>
+    <string name="susfs_reset_loop_paths_message">Are you sure you want to clear all SuSFS loop paths? This action cannot be undone</string>
     <string name="susfs_loop_path_label">Loop path</string>
     <string name="susfs_loop_path_restriction_warning">Note: Only paths NOT inside /storage/ and /sdcard/ can be added via loop paths</string>
     <string name="susfs_invalid_loop_path">Invalid loop path</string>
@@ -707,16 +707,16 @@
     <string name="sus_loop_paths_description_text">Loop paths are re-flagged as SUS_PATH on each non-root user app or isolated service startup. This helps address issues where added paths may have their inode status reset or inode re-created in the kernel</string>
     <string name="avc_log_spoofing">AVC log spoofing</string>
     <string name="avc_log_spoofing_description">Disabled: do not spoof the suspicious tcontext of \'su\' shown in kernel AVC logs\nEnabled: spoof the tcontext of \'su\' as \'kernel\' in kernel AVC logs</string>
-    <!-- SUS Map Related Strings -->
-    <string name="susfs_tab_sus_maps">SUS maps</string>
+    <!-- SuSFS Map Related Strings -->
+    <string name="susfs_tab_sus_maps">SuSFS maps</string>
     <string name="susfs_sus_map_label">Library path</string>
-    <string name="susfs_add_sus_map">Add SUS map</string>
-    <string name="susfs_edit_sus_map">Edit SUS map</string>
-    <string name="susfs_no_sus_maps_configured">No SUS maps configured</string>
-    <string name="susfs_add_map_failed">Failed to add SUS map</string>
-    <string name="susfs_edit_map_failed">Failed to edit SUS map</string>
-    <string name="susfs_reset_sus_maps_title">Reset SUS maps</string>
-    <string name="susfs_reset_sus_maps_message">This will remove all configured SUS maps. This action cannot be undone!</string>
+    <string name="susfs_add_sus_map">Add SuSFS map</string>
+    <string name="susfs_edit_sus_map">Edit SuSFS map</string>
+    <string name="susfs_no_sus_maps_configured">No SuSFS maps configured</string>
+    <string name="susfs_add_map_failed">Failed to add SuSFS map</string>
+    <string name="susfs_edit_map_failed">Failed to edit SuSFS map</string>
+    <string name="susfs_reset_sus_maps_title">Reset SuSFS maps</string>
+    <string name="susfs_reset_sus_maps_message">This will remove all configured SuSFS maps. This action cannot be undone!</string>
     <string name="sus_maps_section">Memory map hiding</string>
     <string name="sus_maps_description_title">Hide the mapped real file from various maps in /proc/self/</string>
     <string name="sus_maps_description_text">Hide the real file paths of memory mappings from /proc/self/[maps|smaps|smaps_rollup|map_files|mem|pagemap]. Please note: This feature does not support hiding anonymous memory mappings, nor can it hide inline hooks or PLT hooks caused by the injected library itself.</string>
@@ -1016,4 +1016,20 @@
     <string name="sulog_restart_tag">Restart #%1$s</string>
     <string name="sulog_daemon_restarted">Daemon restarted</string>
     <string name="sulog_dropped_tag">%1$s lost</string>
+    <string name="susfs_path_must_be_absolute">Use an absolute path, starting with /</string>
+    <string name="susfs_path_no_whitespace">A path cannot contain spaces</string>
+    <string name="susfs_path_duplicate">This path is already in the list</string>
+    <string name="susfs_uname_invalid">The release value cannot contain spaces</string>
+    <string name="banner_per_module_title">Banners for individual modules</string>
+    <string name="banner_per_module_summary">Give a module its own banner when it ships none</string>
+    <string name="banner_per_module_help">Pick an image for any module that has no banner of its own. It stays in this app's storage and is not written into the module.</string>
+    <string name="banner_pick_for_module">Choose a banner image</string>
+    <string name="banner_clear_custom">Remove the custom banner</string>
+    <string name="banner_custom_set">The banner is saved</string>
+    <string name="banner_custom_cleared">The custom banner was removed</string>
+    <string name="banner_custom_failed">Could not read that image</string>
+    <string name="banner_custom_present">Custom banner</string>
+    <string name="banner_custom_none">No custom banner</string>
+    <string name="banner_no_modules">No modules installed</string>
+    <string name="loading">Loading…</string>
 </resources>

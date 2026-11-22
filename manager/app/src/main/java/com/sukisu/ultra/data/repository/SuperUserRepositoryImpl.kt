@@ -77,16 +77,22 @@ class SuperUserRepositoryImpl : SuperUserRepository {
                 }
 
                 val packages = slice.list
-                val newApps = packages.filter {
-                    val ai = it.applicationInfo ?: return@filter false
-                    ai.uid != WEBVIEW_ZYGOTE_UID &&
-                            (ai.flags and ApplicationInfo.FLAG_HAS_CODE) != 0
-                }.map {
-                    val appInfo = it.applicationInfo!!
-                    val profile = Natives.getAppProfile(it.packageName, appInfo.uid)
+                // One pass, one non-null binding: reading applicationInfo twice raced with package
+                // updates and turned a list refresh into a NullPointerException.
+                val newApps = packages.mapNotNull { info ->
+                    val appInfo = info.applicationInfo ?: return@mapNotNull null
+                    if (appInfo.uid == WEBVIEW_ZYGOTE_UID ||
+                        (appInfo.flags and ApplicationInfo.FLAG_HAS_CODE) == 0
+                    ) {
+                        return@mapNotNull null
+                    }
+                    val profile = Natives.getAppProfile(info.packageName, appInfo.uid)
                     AppInfo(
-                        label = appInfo.loadLabel(pm).toString(),
-                        packageInfo = it,
+                        // A package can disappear while the list is built; the label lookup then
+                        // throws. The package name is a usable label and is always there.
+                        label = runCatching { appInfo.loadLabel(pm).toString() }
+                            .getOrDefault(info.packageName),
+                        packageInfo = info,
                         profile = profile,
                     )
                 }.toMutableList()

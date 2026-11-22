@@ -2,6 +2,9 @@ package com.sukisu.ultra.ui.util
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.sukisu.ultra.ksuApp
 import com.sukisu.ultra.ui.theme.BackgroundConfig
 import com.topjohnwu.superuser.io.SuFile
@@ -83,6 +86,33 @@ object ModuleBanner {
 
     fun invalidateAll() {
         synchronized(memory) { memory.clear() }
+        generation++
+    }
+
+    /**
+     * Changes whenever a per-module banner is written or removed. Cards put it in their
+     * `produceState` key, so a banner picked in the settings shows up without leaving the page.
+     */
+    var generation: Int by mutableStateOf(0)
+        private set
+
+    fun hasCustomBanner(moduleId: String): Boolean =
+        runCatching { folkStorage.exists(moduleId) }.getOrDefault(false)
+
+    /** Stores the picked image as this module's banner. */
+    fun setCustomBanner(context: Context, moduleId: String, uri: android.net.Uri): Boolean {
+        val data = runCatching { folkStorage.write(context, moduleId, uri) }.getOrNull() ?: return false
+        synchronized(memory) { memory[moduleId] = data }
+        generation++
+        return true
+    }
+
+    /** Falls back to the module's own banner next time it is resolved. */
+    fun clearCustomBanner(moduleId: String): Boolean {
+        val removed = runCatching { folkStorage.clear(moduleId) }.getOrDefault(false)
+        synchronized(memory) { memory.remove(moduleId) }
+        generation++
+        return removed
     }
 
     /**

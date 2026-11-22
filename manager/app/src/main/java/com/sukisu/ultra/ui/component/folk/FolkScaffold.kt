@@ -191,7 +191,7 @@ fun FolkScaffold(
                 // raises from its manager-update row.
                 SnackbarHost(
                     hostState = snackbarHostState,
-                    modifier = Modifier.padding(bottom = folkBottomClearance()),
+                    modifier = Modifier.padding(bottom = folkSnackbarClearance()),
                 )
             }
         },
@@ -265,3 +265,19 @@ private fun folkBottomClearance(): Dp {
 
 private val FloatingBarClearance = 80.dp
 private val StaticBarClearance = 16.dp
+
+/**
+ * How far a snackbar sits above the bottom of this scaffold.
+ *
+ * The floating bar is drawn by the shell around this scaffold, and the pages are laid out above it
+ * and above the navigation insets, so the full bar clearance lifted the snackbar another 80.dp into
+ * the middle of the module list - the reboot prompt looked attached to whichever card it covered.
+ * The docked rail case still needs the whole clearance; there the bar is part of this scaffold.
+ */
+@Composable
+private fun folkSnackbarClearance(): Dp {
+    val floating = LocalIsFloatingNavMode.current
+    if (floating && LocalBottomBarVisible.current.value) return 8.dp
+    return folkBottomClearance()
+}
+

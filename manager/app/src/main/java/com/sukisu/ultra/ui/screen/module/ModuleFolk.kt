@@ -923,7 +923,9 @@ private fun BoxScope.ModuleBannerLayer(module: Module) {
         append(BackgroundConfig.isBannerEnabled).append('|')
         append(BackgroundConfig.isFolkBannerEnabled).append('|')
         append(BackgroundConfig.isBannerApiModeEnabled).append('|')
-        append(BackgroundConfig.bannerApiSource)
+        append(BackgroundConfig.bannerApiSource).append('|')
+        // A banner picked in the settings must reach the card without re-entering the screen.
+        append(ModuleBanner.generation)
     }
 
     // The banner is resolved once per module, not once per composition.

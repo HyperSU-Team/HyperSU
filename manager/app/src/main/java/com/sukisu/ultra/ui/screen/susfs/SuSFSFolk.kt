@@ -128,7 +128,8 @@ fun SuSFSFolk() {
         isLoading = uiState.isLoading,
         titleRes = if (uiState.editingPath != null) R.string.susfs_edit_sus_path else R.string.susfs_add_sus_path,
         labelRes = R.string.susfs_path_label,
-        initialValue = uiState.editingPath ?: ""
+        initialValue = uiState.editingPath ?: "",
+        existingPaths = uiState.susPaths,
     )
 
     AddPathDialog(
@@ -149,7 +150,8 @@ fun SuSFSFolk() {
         isLoading = uiState.isLoading,
         titleRes = if (uiState.editingLoopPath != null) R.string.susfs_edit_sus_loop_path else R.string.susfs_add_sus_loop_path,
         labelRes = R.string.susfs_loop_path_label,
-        initialValue = uiState.editingLoopPath ?: ""
+        initialValue = uiState.editingLoopPath ?: "",
+        existingPaths = uiState.susLoopPaths,
     )
 
     AddPathDialog(
@@ -170,7 +172,8 @@ fun SuSFSFolk() {
         isLoading = uiState.isLoading,
         titleRes = if (uiState.editingSusMap != null) R.string.susfs_edit_sus_map else R.string.susfs_add_sus_map,
         labelRes = R.string.susfs_sus_map_label,
-        initialValue = uiState.editingSusMap ?: ""
+        initialValue = uiState.editingSusMap ?: "",
+        existingPaths = uiState.susMaps,
     )
 
     AddAppPathDialog(
