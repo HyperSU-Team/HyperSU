@@ -98,12 +98,13 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.75 - any KernelSU-family manager is listed, matched by package name.
+            HyperSU v4.2.76 - the multi-manager list uses the same test as the reference manager, and SELinux no longer needs a language switch.
 
-            - A manager is recognised by its package name: the known ones by name, and the rest by the `kernelsu` / `sukisu` / `hypersu` / `ksunext` / `ksu` fragment they are published under. No root shell and no read of another app's data directory, which is why the library test could only see this app.
-            - Includes v4.2.73's SELinux fix: the status state is read where the row is drawn, so it appears without a language switch.
+            - A manager is the app that ships libksud.so in its own library directory, which is how the reference manager identifies it; this manager itself is always offered. No package-name list, no APK inspection.
+            - SELinux status is read where the row is drawn instead of inside a helper composable: Compose restarts only the scope that read the state, so the row had kept its first label until a language switch recreated the activity.
+            - The module page's restart prompt sits on the bottom bar like the update prompt: the install button is translated rather than padded, so Material3 no longer lifts the snackbar above it.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.73...v4.2.75
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.71...v4.2.76
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
