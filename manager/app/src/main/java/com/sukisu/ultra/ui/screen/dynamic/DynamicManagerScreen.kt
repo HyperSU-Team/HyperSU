@@ -119,16 +119,25 @@ fun DynamicManagerScreen() {
  */
 private fun shipsKsudLibrary(app: android.content.pm.ApplicationInfo, apkPath: String): Boolean {
     val libDir = app.nativeLibraryDir
-    if (libDir != null && File(libDir, "libksud.so").isFile) return true
+    if (libDir != null && MANAGER_LIBRARIES.any { File(libDir, it).isFile }) return true
     return runCatching {
         java.util.zip.ZipFile(apkPath).use { zip ->
             zip.entries().asSequence().any { entry ->
                 val name = entry.name
-                name.startsWith("lib/") && name.substringAfterLast('/') == "libksud.so"
+                name.startsWith("lib/") && name.substringAfterLast('/') in MANAGER_LIBRARIES
             }
         }
     }.getOrDefault(false)
 }
+
+/**
+ * Native libraries that only a root manager ships.
+ *
+ * `libksud.so` covers the KernelSU family. `libkptools.so` / `libapd.so` are APatch's tooling - its
+ * manager carries neither a `ksud` nor an APatch `ksud`, so those two names are what identify it.
+ * Only the file name is compared: the ABI directory varies and a manager may ship a single ABI.
+ */
+private val MANAGER_LIBRARIES = setOf("libksud.so", "libkptools.so", "libapd.so")
 
 /**
  * Manager apps are the ones that ship `libksud.so`; the kernel's manager table says which uid is
