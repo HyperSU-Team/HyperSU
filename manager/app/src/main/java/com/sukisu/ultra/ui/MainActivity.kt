@@ -69,6 +69,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import android.widget.Toast
+import com.sukisu.ultra.R
 import com.sukisu.ultra.Natives
 import com.sukisu.ultra.ui.navigation.FolkBottomBar
 import com.sukisu.ultra.ui.navigation.FolkNavigationRail
@@ -428,33 +430,6 @@ class MainActivity : ComponentActivity() {
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 
-/**
- * Opens external links without taking the app down.
- *
- * LocalUriHandler.openUri throws IllegalArgumentException for a scheme the device has no
- * handler for, and several pages (the support links, markdown bodies, module descriptions) call it
- * straight from a click. Racing the exception here shows the message the upstream manager shows
- * instead of crashing the activity.
- */
-@Composable
-private fun openUriSafely(delegate: androidx.compose.ui.platform.UriHandler): androidx.compose.ui.platform.UriHandler {
-    val context = LocalContext.current
-    return remember(delegate, context) {
-        object : androidx.compose.ui.platform.UriHandler {
-            override fun openUri(uri: String) {
-                try {
-                    delegate.openUri(uri)
-                } catch (_: IllegalArgumentException) {
-                    Toast.makeText(
-                        context,
-                        context.getString(R.string.external_link_open_failed),
-                        Toast.LENGTH_SHORT,
-                    ).show()
-                }
-            }
-        }
-    }
-}
 
 @Composable
 fun MainScreen(
@@ -669,4 +644,32 @@ private fun MainScreenBackHandler(
             mainState.animateToPage(0)
         }
     )
+}
+
+/**
+ * Opens external links without taking the app down.
+ *
+ * LocalUriHandler.openUri throws IllegalArgumentException for a scheme the device has no
+ * handler for, and several pages (the support links, markdown bodies, module descriptions) call it
+ * straight from a click. Racing the exception here shows the message the upstream manager shows
+ * instead of crashing the activity.
+ */
+@Composable
+private fun openUriSafely(delegate: androidx.compose.ui.platform.UriHandler): androidx.compose.ui.platform.UriHandler {
+    val context = LocalContext.current
+    return remember(delegate, context) {
+        object : androidx.compose.ui.platform.UriHandler {
+            override fun openUri(uri: String) {
+                try {
+                    delegate.openUri(uri)
+                } catch (_: IllegalArgumentException) {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.external_link_open_failed),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            }
+        }
+    }
 }

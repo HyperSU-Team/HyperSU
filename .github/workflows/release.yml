@@ -98,20 +98,15 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.78 - BakaSU's 22 November batch, ported onto the v4.2.53 manager.
+            HyperSU v4.2.79 - the BakaSU sync compiles now (missing imports in the external-link guard).
 
-            Kernel (cherry-picked from Baka-SU/BakaSU, 11 commits):
-            - SELinux hide: aligned policy parsing, generation tracking for policy updates, the original type datum marked to skip the symbol search, the setprocattr context parsed once, and an LSM hook for `inode_setxattr` so a netlink socket relabel attempt cannot reveal the ksu context.
-            - logd is allowed to read root process attributes (fixes log forwarding on some Vivo devices).
-            - arm64: fixed the syscall first-parameter register on 7.3+; x86_64: the `do_syscall_64` fallback when `x64_sys_call` is missing, no re-run of syscalls skipped by seccomp, wrapped `is_compat_task`, and the preinit runner linked page-aligned for non-4K page sizes.
-            - userspace: the `waitsys` helper updated to the fixed build.
-
-            Manager (ported by hand, since the package name differs):
-            - External links no longer crash the activity when the device has no handler for a scheme; a message is shown instead.
+            - Kernel: 11 commits cherry-picked from Baka-SU/BakaSU - SELinux hide parsing and generation tracking, the `inode_setxattr` LSM hook, `logd` attribute access, the arm64 7.3+ syscall register fix, the x86_64 `do_syscall_64` fallback and seccomp handling, the `is_compat_task` wrapper and the page-aligned x64 preinit runner.
+            - Userspace: the fixed `waitsys` helper for all four architectures.
+            - Manager: an external link with no handler shows a message instead of taking the activity down.
 
             Not ported: the WebUI `File` and `pm` interfaces, the spotless pass over them, and the susfs config sync - they depend on manager code that landed after v4.2.53, which this build does not carry.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.53...v4.2.78
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.53...v4.2.79
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
