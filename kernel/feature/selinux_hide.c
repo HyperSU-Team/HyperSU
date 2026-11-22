@@ -959,11 +959,17 @@ static int ksu_selinux_hide_enable()
 #endif
     // clang-format on
 
+    // The definition lives in the block that is compiled out when SuSFS provides this feature
+    // itself, so the call has to be compiled out with it. Without this guard the build defines
+    // KSU_COMPAT_HAS_SUSFS_FEATURE_SELINUX_HIDE, drops the definition and keeps the call, which
+    // fails as an undefined reference.
+#ifndef KSU_COMPAT_HAS_SUSFS_FEATURE_SELINUX_HIDE
     ret = selinux_hide_init_setxattr();
     if (ret) {
         pr_err("selinux_hide: init: setxattr helpers err: %d\n", ret);
         return ret;
     }
+#endif
 
 #ifndef KSU_COMPAT_HAS_SUSFS_FEATURE_SELINUX_HIDE
 #ifdef CONFIG_KALLSYMS_ALL

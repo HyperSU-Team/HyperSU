@@ -98,15 +98,11 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.79 - the BakaSU sync compiles now (missing imports in the external-link guard).
+            HyperSU v4.2.80 - fix the link error in selinux_hide when SuSFS provides the feature.
 
-            - Kernel: 11 commits cherry-picked from Baka-SU/BakaSU - SELinux hide parsing and generation tracking, the `inode_setxattr` LSM hook, `logd` attribute access, the arm64 7.3+ syscall register fix, the x86_64 `do_syscall_64` fallback and seccomp handling, the `is_compat_task` wrapper and the page-aligned x64 preinit runner.
-            - Userspace: the fixed `waitsys` helper for all four architectures.
-            - Manager: an external link with no handler shows a message instead of taking the activity down.
+            - `selinux_hide_init_setxattr()` is defined inside `#ifndef KSU_COMPAT_HAS_SUSFS_FEATURE_SELINUX_HIDE`, but its call was outside that guard. A kernel that defines the macro - which ours does - compiled the definition out and kept the call, so the build failed on an undefined reference. The call is now under the same guard as the definition.
 
-            Not ported: the WebUI `File` and `pm` interfaces, the spotless pass over them, and the susfs config sync - they depend on manager code that landed after v4.2.53, which this build does not carry.
-
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.53...v4.2.79
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.79...v4.2.80
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
