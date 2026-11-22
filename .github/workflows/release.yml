@@ -98,30 +98,23 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.54 - a manager review pass: crashes, main-thread work, stale state and every string.
+            HyperSU v4.2.55 - themed artwork animates again, SuSFS naming is consistent, and the settings dialogs refuse bad input.
 
-            Crashes:
-            - SuperUser and SuLog no longer crash on an empty app label or a missing field, and the Markdown page swallows a bad request instead of taking the process down.
-            - The video wallpaper survives its player being released, and theme export, log save/send and module links report a failure instead of crashing.
-            - Dynamic manager and SuSFS no longer crash without root.
+            Fixed:
+            - The character artwork on the home tiles is a GIF or animated WebP; `coil-gif` was declared in the version catalog but never added, so Coil drew only the first frame. The decoder is registered now and the tile animates.
+            - Every standalone `SUS` / `SuS` in the strings is `SuSFS` (1209 places, all 47 locales). Kernel command names and resource keys are untouched.
+            - The uname and build-time labels no longer name a different field than they edit, and the description sentence is complete.
+            - Snackbars no longer sit 80.dp above a bar the shell already keeps them clear of; the reboot prompt appeared in the middle of the module list.
+            - `SuperUserRepositoryImpl` read `applicationInfo` twice and asserted it non-null; one pass now, and a vanished package falls back to its package name instead of throwing.
+            - `AppInfo.uid` tolerates a missing `ApplicationInfo`, and `DataSourceChannel` raises a readable `IOException` instead of a `NullPointerException` on a file-backed channel.
 
-            Main thread:
-            - Root shell calls and file IO moved off the main thread on home, install, template editor, app profile, the reboot sheet, module snackbars, SuSFS backup/restore, the manager APK digest check and the unmount-path save.
-            - The template ID is validated after typing stops instead of on every keystroke, and system monitoring stops sampling when the home page is left.
+            Added:
+            - Per-module banners: a module that ships no banner of its own can be given one from the appearance settings (stored in this app, never written into the module).
+            - SuSFS path dialog rejects a relative path, an embedded space and a duplicate entry; the uname field rejects spaces. Apply stays disabled until the input is valid.
 
-            State:
-            - Module cards no longer act on stale data (uninstall followed by undo asked for confirmation again), and the bottom bar cannot drag to a hidden page or badge the wrong tab.
-            - DPI 'follow system' survives a reboot, a finished download stays finished, SuSFS autostart can be turned off and a new profile is usable without leaving the page.
-            - A just-downloaded theme is no longer deleted and the same theme stops appearing twice; the flash page does not show the previous result first.
-            - Rotating after a kernel flash no longer flashes the same package again, and rotating during a module action no longer runs the script twice.
-            - Exporting the 2025 palette specs writes the right values, and resetting the theme clears everything.
-            - The SELinux hide switch no longer flips when the write fails, and 'compact list bottom bar' applies immediately.
+            Strings: 16 new resources, translated into all 47 locales.
 
-            Removed: the duplicated profile mode row, the SuSFS current-values block and the no-op Grid dual-dim switch.
-
-            Text: every new message is a string resource, translated into all 47 locales - log-save failures, the flash error line, boot-slot and cleanup log lines, and SuLog restart/dropped tags. English copy and accessibility labels are polished.
-
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.53...v4.2.54
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.54...v4.2.55
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
