@@ -933,8 +933,18 @@ private fun rememberHomeBasicFacts(): HomeBasicFacts {
             .ifBlank { runCatching { android.os.Build.DISPLAY }.getOrNull().orEmpty() }
     }
     val selinux by produceState(initialValue = "") {
-        value = withContext(Dispatchers.IO) {
-            runCatching { getSELinuxStatusRaw() }.getOrDefault("")
+        // The daemon may not be up yet when the page first draws, and a single read then stayed
+        // "unknown" for good - which is what the row showed. Keep asking for a while.
+        repeat(10) { attempt ->
+            val reading = withContext(Dispatchers.IO) {
+                runCatching { getSELinuxStatusRaw() }.getOrDefault("")
+            }
+            if (reading.isNotBlank() && reading != "Unknown") {
+                value = reading
+                return@produceState
+            }
+            value = reading
+            if (attempt < 9) kotlinx.coroutines.delay(1_000)
         }
     }
     val seccomp = remember {
@@ -961,7 +971,8 @@ private fun HomeFacts(state: HomeUiState) {
     val kernelText = systemInfo.kernelVersion.ifBlank { basics.kernelRelease }
     val deviceText = systemInfo.deviceModel.ifBlank { basics.deviceModel }
     val fingerprintText = systemInfo.fingerprint.ifBlank { basics.fingerprint }
-    val selinuxRaw = systemInfo.selinuxStatus.ifBlank { basics.selinuxStatus }
+    val selinuxRaw = systemInfo.selinuxStatus.takeIf { it.isNotBlank() && it != "Unknown" }
+        ?: basics.selinuxStatus
     val seccompRaw = if (systemInfo.seccompStatus == -1) basics.seccompStatus else systemInfo.seccompStatus
 
     val selinuxDisplay = selinuxStatusLabel(selinuxRaw)
@@ -1134,7 +1145,8 @@ private fun HomeGridStatusCards(
     // The tiles read the same two values as the fact rows; a state that lost them must not turn a
     // readable SELinux mode into "unknown".
     val basics = rememberHomeBasicFacts()
-    val selinuxRaw = state.systemInfo.selinuxStatus.ifBlank { basics.selinuxStatus }
+    val selinuxRaw = state.systemInfo.selinuxStatus.takeIf { it.isNotBlank() && it != "Unknown" }
+        ?: basics.selinuxStatus
     val seccompRaw = if (state.systemInfo.seccompStatus == -1) {
         basics.seccompStatus
     } else {

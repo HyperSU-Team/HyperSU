@@ -264,6 +264,13 @@ private fun folkBottomClearance(): Dp {
 }
 
 private val FloatingBarClearance = 80.dp
+
+/**
+ * The snackbar's lift in floating-bar mode: the pill's own height. The host already clears the
+ * navigation inset, so the full content clearance put the message too high, and a hair of lift
+ * left it behind the pill.
+ */
+private val SnackbarFloatingClearance = 48.dp
 private val StaticBarClearance = 16.dp
 
 /**
@@ -277,7 +284,7 @@ private val StaticBarClearance = 16.dp
 @Composable
 private fun folkSnackbarClearance(): Dp {
     val floating = LocalIsFloatingNavMode.current
-    if (floating && LocalBottomBarVisible.current.value) return 8.dp
+    if (floating && LocalBottomBarVisible.current.value) return SnackbarFloatingClearance
     return folkBottomClearance()
 }
 

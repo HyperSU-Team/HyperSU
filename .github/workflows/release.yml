@@ -98,12 +98,12 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.60 - SELinux status reads through the root shell, and the home display switches are gone.
+            HyperSU v4.2.61 - the snackbar sits between the two wrong positions, and SELinux keeps asking until it answers.
 
-            - SELinux status showed "unknown" on a device that hides `/sys/fs/selinux/enforce` from apps: the only fallback was a plain `sh`, which fails exactly there. The order is now the node through `SuFile`, `getenforce` through the manager's root shell, a plain `sh`, and only then an inference.
-            - The "home display" switches are removed from both the settings page and the colour-palette page, together with their state: the home facts are always shown now.
+            - The snackbar lift in floating-bar mode is 48.dp: the pill's own height. The 80.dp content clearance left it too high, and the 8.dp value from v4.2.55 put it *behind* the pill, which hid the manager-update prompt again. This restores the intent of the earlier snackbar fix at the right offset.
+            - SELinux status is re-read every second for ten attempts until it is something other than "unknown", and "unknown" is now treated as missing when merged with the view model state, so a failed first read no longer sticks.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.58...v4.2.60
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.60...v4.2.61
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
