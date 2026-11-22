@@ -98,12 +98,12 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.65 - fixes the import that failed v4.2.64, so the prompts and the SELinux row ship.
+            HyperSU v4.2.66 - the cached root shell is verified before it is used.
 
-            - Both the manager-update message and the module page's reboot prompt are positioned from the height the shell reserves for its bar (`LocalBottomBarHeight`) plus an 8.dp gap, instead of a guessed constant that was either too high or behind the pill.
-            - SELinux status falls back to `ro.boot.selinux`, a reading that needs no shell and no root, so the row has a value on the first frame.
+            - `Shell.isRoot` is what the builder asked for, not what it got. A `su` request that loses the race with the daemon still reports the flag, and caching that shell made every later `cat`, `getenforce` and `ksud` run unprivileged for the rest of the process - which is why SELinux stayed "unknown" until the app process was recreated by a language change.
+            - `getRootShell()` now asks the shell for `id -u` and only caches it when the answer is 0; a shell that cannot answer is retried at most once a second. The home row keeps re-reading every two seconds, so it fills in as soon as the daemon is ready.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.63...v4.2.65
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.65...v4.2.66
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

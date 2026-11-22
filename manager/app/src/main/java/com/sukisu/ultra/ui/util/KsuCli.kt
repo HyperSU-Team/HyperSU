@@ -78,14 +78,14 @@ object KsuCli {
 
     fun shell(globalMnt: Boolean): Shell {
         val cached = if (globalMnt) globalMntShell else shell
-        if (cached != null && cached.isRoot) return cached
+        if (cached != null && worksAsRoot(cached)) return cached
 
         val now = SystemClock.elapsedRealtime()
         val failed = lastFailed
         if (failed != null && now - lastFailedAt < FailureRetryMillis) return failed
 
         val fresh = createRootShell(globalMnt)
-        if (fresh.isRoot) {
+        if (worksAsRoot(fresh)) {
             if (globalMnt) globalMntShell = fresh else shell = fresh
             lastFailed = null
         } else {
@@ -96,12 +96,25 @@ object KsuCli {
         }
         return fresh
     }
+
+    /**
+     * A shell that *can* execute a command as uid 0.
+     *
+     * `Shell.isRoot` is what the builder was asked for, not what it got: a `su` request that loses
+     * the race with the daemon still reports the flag, and caching such a shell made every later
+     * `cat`, `getenforce` and `ksud` run unprivileged for the rest of the process - the SELinux
+     * row then stayed "unknown" until the activity was recreated and something else happened to
+     * build a working one. Asking the shell itself settles it.
+     */
+    private fun worksAsRoot(candidate: Shell): Boolean = runCatching {
+        candidate.isRoot && ShellUtils.fastCmd(candidate, "id -u").trim() == "0"
+    }.getOrDefault(false)
 }
 
 fun getRootShell(globalMnt: Boolean = false): Shell = KsuCli.shell(globalMnt)
 
 /** How long an un-rooted shell is reused before the daemon is asked again. */
-private const val FailureRetryMillis = 2_000L
+private const val FailureRetryMillis = 1_000L
 
 inline fun <T> withNewRootShell(
     globalMnt: Boolean = false,
