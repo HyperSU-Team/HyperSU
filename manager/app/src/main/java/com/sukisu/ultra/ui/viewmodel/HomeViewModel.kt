@@ -144,6 +144,30 @@ class HomeViewModel(
             Log.w(TAG, "could not read the home state", failure)
             // Even a failed read reports the facts that need nothing, rather than blanking them.
             fallback
+        }.let { state ->
+            // The driver side can answer while a basic read came back empty (a cold start, a
+            // spoofed uname). Filling just those fields keeps the working card and the module
+            // counts, instead of trading a full screen for a blank one.
+            if (state.hasAlwaysAvailableFacts()) {
+                state
+            } else {
+                val basics = fallback.systemInfo
+                state.copy(
+                    systemInfo = state.systemInfo.copy(
+                        kernelVersion = state.systemInfo.kernelVersion.ifBlank { basics.kernelVersion },
+                        managerVersion = state.systemInfo.managerVersion.ifBlank { basics.managerVersion },
+                        fingerprint = state.systemInfo.fingerprint.ifBlank { basics.fingerprint },
+                        deviceModel = state.systemInfo.deviceModel.ifBlank { basics.deviceModel },
+                        selinuxStatus = state.systemInfo.selinuxStatus.ifBlank { basics.selinuxStatus },
+                        seccompStatus = if (state.systemInfo.seccompStatus == -1) {
+                            basics.seccompStatus
+                        } else {
+                            state.systemInfo.seccompStatus
+                        },
+                    ),
+                    loaded = true,
+                )
+            }
         }
     }
 
@@ -161,11 +185,32 @@ class HomeViewModel(
                 systemInfo.fingerprint.isNotBlank()
 
     private fun readBasics(): HomeBasics = HomeBasics(
-        kernelRelease = runCatching { Os.uname().release }.getOrNull().orEmpty(),
-        fingerprint = runCatching { Build.FINGERPRINT }.getOrNull().orEmpty(),
-        deviceModel = runCatching { resolveDeviceName() }.getOrNull().orEmpty(),
+        // `Os.uname()` can fail or come back empty - a kernel that spoofs uname, a process that
+        // started before the driver was up. `os.version` is the same string from the VM and is
+        // what the earlier builds ended up showing, so it is the fallback rather than a dash.
+        kernelRelease = runCatching { Os.uname().release }.getOrNull()
+            .orEmpty()
+            .ifBlank { System.getProperty("os.version").orEmpty() },
+        fingerprint = runCatching { Build.FINGERPRINT }.getOrNull()
+            .orEmpty()
+            .ifBlank { Build.DISPLAY.orEmpty() },
+        deviceModel = runCatching { resolveDeviceName() }.getOrNull()
+            .orEmpty()
+            .ifBlank { runCatching { Build.MODEL }.getOrNull().orEmpty() },
         managerVersion = runCatching { getManagerVersion(ksuApp) }
-            .getOrElse { ManagerVersion(versionName = BuildConfig.VERSION_NAME, versionCode = 0L) },
+            .getOrElse { ManagerVersion(versionName = BuildConfig.VERSION_NAME, versionCode = 0L) }
+            .let { version ->
+                // A build whose versionName is the empty string passes the null check above and
+                // then renders as a blank row; prefer the compiled-in name and the real code.
+                if (version.versionName.isBlank() || version.versionCode == 0L) {
+                    ManagerVersion(
+                        versionName = version.versionName.ifBlank { BuildConfig.VERSION_NAME },
+                        versionCode = version.versionCode.takeIf { it != 0L } ?: BuildConfig.VERSION_CODE.toLong(),
+                    )
+                } else {
+                    version
+                }
+            },
         selinuxStatus = runCatching { getSELinuxStatusRaw() }.getOrNull().orEmpty(),
         // PR_GET_SECCOMP. Reports -1 rather than throwing when seccomp is not compiled in.
         seccompStatus = runCatching { Os.prctl(21 /* PR_GET_SECCOMP */, 0, 0, 0, 0) }.getOrDefault(-1),
@@ -270,9 +315,9 @@ class HomeViewModel(
         const val TAG = "HomeViewModel"
 
         /** How many times a cold start's incomplete read is retried before it is shown as it is. */
-        const val MaxLoadAttempts = 3
+        const val MaxLoadAttempts = 5
 
         /** Between attempts, multiplied by the attempt number so the wait grows. */
-        const val RetryDelayMillis = 400L
+        const val RetryDelayMillis = 300L
     }
 }

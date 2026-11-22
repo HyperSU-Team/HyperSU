@@ -98,23 +98,13 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.55 - themed artwork animates again, SuSFS naming is consistent, and the settings dialogs refuse bad input.
+            HyperSU v4.2.56 - the home facts no longer come back as dashes.
 
-            Fixed:
-            - The character artwork on the home tiles is a GIF or animated WebP; `coil-gif` was declared in the version catalog but never added, so Coil drew only the first frame. The decoder is registered now and the tile animates.
-            - Every standalone `SUS` / `SuS` in the strings is `SuSFS` (1209 places, all 47 locales). Kernel command names and resource keys are untouched.
-            - The uname and build-time labels no longer name a different field than they edit, and the description sentence is complete.
-            - Snackbars no longer sit 80.dp above a bar the shell already keeps them clear of; the reboot prompt appeared in the middle of the module list.
-            - `SuperUserRepositoryImpl` read `applicationInfo` twice and asserted it non-null; one pass now, and a vanished package falls back to its package name instead of throwing.
-            - `AppInfo.uid` tolerates a missing `ApplicationInfo`, and `DataSourceChannel` raises a readable `IOException` instead of a `NullPointerException` on a file-backed channel.
+            - Manager version, kernel version, device model, fingerprint, SELinux and Seccomp were blank together on a device where the driver answered: a basic read that comes back empty now falls back to `os.version`, `Build.DISPLAY`, `Build.MODEL` and the compiled-in version name instead of a dash.
+            - A full read that loses only the basic facts keeps the driver fields (the working card, the module counts) and takes those facts from the guarded fallback, instead of publishing a half-blank page.
+            - A cold start is retried five times instead of three, with a shorter first delay, so a slow driver has time to come up.
 
-            Added:
-            - Per-module banners: a module that ships no banner of its own can be given one from the appearance settings (stored in this app, never written into the module).
-            - SuSFS path dialog rejects a relative path, an embedded space and a duplicate entry; the uname field rejects spaces. Apply stays disabled until the input is valid.
-
-            Strings: 16 new resources, translated into all 47 locales.
-
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.54...v4.2.55
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.55...v4.2.56
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
