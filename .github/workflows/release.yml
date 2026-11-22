@@ -98,12 +98,12 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.62 - SELinux status can be read on a device that hides the node, and the snackbar keeps the offset the earlier fix established.
+            HyperSU v4.2.63 - SELinux status fills in by itself, without a language switch.
 
-            - `getSELinuxStatusRaw()` is the reader from 3a8dff100 - the `/sys/fs/selinux/enforce` node first, then a plain `sh` - with one step inserted between them: `cat` of the same node through the manager's root shell, for the device where the app uid may not open it. Without that step such a device reported "unknown" no matter what.
-            - The snackbar keeps a 48.dp lift in floating-bar mode: the pill's own height. The 80.dp content clearance read as too high, and the 8.dp value from v4.2.55 put the manager-update prompt behind the pill.
+            - The status row now keeps re-reading every two seconds until a real answer arrives, instead of reading once (and, in v4.2.61, stopping after ten attempts). On a cold start the root shell is not usable for the first moments, so the early reads fail; the row waited for the next read that only a recreated activity used to trigger.
+            - v4.2.62's reader is unchanged: the `/sys/fs/selinux/enforce` node, the same node through the root shell, then a plain `sh`.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.60...v4.2.62
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.62...v4.2.63
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

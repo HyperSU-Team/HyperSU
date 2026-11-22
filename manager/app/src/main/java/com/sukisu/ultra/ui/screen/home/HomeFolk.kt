@@ -933,18 +933,20 @@ private fun rememberHomeBasicFacts(): HomeBasicFacts {
             .ifBlank { runCatching { android.os.Build.DISPLAY }.getOrNull().orEmpty() }
     }
     val selinux by produceState(initialValue = "") {
-        // The daemon may not be up yet when the page first draws, and a single read then stayed
-        // "unknown" for good - which is what the row showed. Keep asking for a while.
-        repeat(10) { attempt ->
+        // Keep asking until a real answer arrives. On a cold start the root shell is not usable
+        // yet, so the first reads fail and the row stayed "unknown" - and only a language switch
+        // (a recreated activity) started a fresh read that happened to land after the shell was
+        // ready. There is no reason to stop asking: the row simply stays as it is until it answers.
+        while (true) {
             val reading = withContext(Dispatchers.IO) {
                 runCatching { getSELinuxStatusRaw() }.getOrDefault("")
             }
             if (reading.isNotBlank() && reading != "Unknown") {
                 value = reading
-                return@produceState
+                break
             }
             value = reading
-            if (attempt < 9) kotlinx.coroutines.delay(1_000)
+            kotlinx.coroutines.delay(2_000)
         }
     }
     val seccomp = remember {
