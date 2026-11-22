@@ -305,15 +305,6 @@ fun ColorPaletteScreenFolk(
                 }
                 item {
                     FolkSwitchPreference(
-                        title = stringResource(R.string.settings_show_fullstatus),
-                        summary = stringResource(R.string.settings_show_fullstatus_summary),
-                        icon = Icons.Outlined.Info,
-                        checked = state.showFullStatus,
-                        onCheckedChange = actions.onSetShowFullStatus,
-                    )
-                }
-                item {
-                    FolkSwitchPreference(
                         title = stringResource(R.string.settings_enable_swipe_dismiss),
                         summary = stringResource(R.string.settings_enable_swipe_dismiss_summary),
                         icon = Icons.Rounded.Swipe,

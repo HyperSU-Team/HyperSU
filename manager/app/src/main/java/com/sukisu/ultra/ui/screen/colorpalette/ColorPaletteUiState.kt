@@ -12,7 +12,6 @@ data class ColorPaletteUiState(
     val currentColorMode: ColorMode,
     val currentPaletteStyle: PaletteStyle,
     val currentColorSpec: ColorSpec.SpecVersion,
-    val showFullStatus: Boolean,
 )
 
 @Immutable
@@ -34,5 +33,4 @@ data class ColorPaletteScreenActions(
     val onSetSimpleListBottomBar: (Boolean) -> Unit,
     val onSetShowSwitchIcon: (Boolean) -> Unit,
     val onSetDiscreteSlider: (Boolean) -> Unit,
-    val onSetShowFullStatus: (Boolean) -> Unit,
 )

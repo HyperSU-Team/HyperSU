@@ -98,12 +98,12 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.59 - SELinux status reads through the root shell, and the home display switches are gone.
+            HyperSU v4.2.60 - SELinux status reads through the root shell, and the home display switches are gone.
 
             - SELinux status showed "unknown" on a device that hides `/sys/fs/selinux/enforce` from apps: the only fallback was a plain `sh`, which fails exactly there. The order is now the node through `SuFile`, `getenforce` through the manager's root shell, a plain `sh`, and only then an inference.
-            - The settings page no longer has the "home display" section: the five switches are gone, and the home facts are always shown. Their preferences are no longer read.
+            - The "home display" switches are removed from both the settings page and the colour-palette page, together with their state: the home facts are always shown now.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.58...v4.2.59
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.58...v4.2.60
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk
