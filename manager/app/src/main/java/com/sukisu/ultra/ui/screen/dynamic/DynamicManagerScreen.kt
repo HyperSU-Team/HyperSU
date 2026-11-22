@@ -15,9 +15,6 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.sukisu.ultra.Natives
 import com.sukisu.ultra.R
-import com.sukisu.ultra.ui.util.shellArg
-import com.sukisu.ultra.ui.util.getRootShell
-import com.topjohnwu.superuser.ShellUtils
 import com.sukisu.ultra.ui.component.dialog.ConfirmResult
 import com.sukisu.ultra.ui.component.dialog.rememberConfirmDialog
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
@@ -46,7 +43,7 @@ fun DynamicManagerScreen() {
     suspend fun reload() {
         val (config, apps) = withContext(Dispatchers.IO) {
             // A failing root shell must not crash the screen or leave it stuck in `submitting`.
-            runCatching { getDynamicManagerConfig() }.getOrNull() to loadManagerApps(context.packageManager)
+            runCatching { getDynamicManagerConfig() }.getOrNull() to loadManagerApps(context, context.packageManager)
         }
         state = DynamicManagerState(
             size = config?.size ?: 0,
@@ -113,60 +110,42 @@ fun DynamicManagerScreen() {
 }
 
 /**
- * Manager apps are the ones that ship `libksud.so`, and the answer has to come from the root shell.
+ * The package names of the KernelSU-family managers.
  *
- * A plain `File(libDir, "libksud.so").isFile` is only reliable for this app's own directory: for
- * another package it depends on whether this process may stat that app's data directory, and on
- * this device it may not - which is why the list showed only this manager even though the other
- * managers do have the library extracted. One `sh` loop over the candidate directories answers for
- * all of them at once.
+ * A package name is the identifier the kernel itself uses for a manager, and it needs neither a
+ * root shell nor a read of another app's data directory - which is what the previous library test
+ * did, and why it could only ever see this app.
  */
-private fun managerPackagesWithKsud(packages: List<Pair<String, String>>): Set<String> {
-    if (packages.isEmpty()) return emptySet()
-    // ${'$'} keeps the shell variable literal inside the Kotlin string.
-    val script = buildString {
-        append("for d in")
-        packages.forEach { (_, dir) -> append(' ').append(dir.shellArg()) }
-        append("; do [ -f \"${'$'}d/libksud.so\" ] && echo \"${'$'}d\"; done")
-    }
-    val hitDirs = runCatching {
-        ShellUtils.fastCmd(getRootShell(), script)
-            .lineSequence()
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .toSet()
-    }.getOrDefault(emptySet())
-    return packages.filter { (_, dir) -> dir in hitDirs }.map { it.first }.toSet()
-}
+private val KSU_MANAGER_PACKAGES = setOf(
+    "me.weishu.kernelsu",       // KernelSU
+    "com.sukisu.ultra",         // SukiSU Ultra
+    "com.sukisu.nova",          // SukiSU Nova
+    "com.resukisu.resukisu",    // ReSukiSU
+    "com.rifsxd.ksunext",       // KernelSU Next
+    "org.bakasu.bakasu",        // BakaSU
+    "com.hypersu.manager",      // this manager
+)
 
 /**
- * Manager apps are the ones that ship `libksud.so`; the kernel's manager table says which uid is
- * currently authorized and, if so, through which signature slot.
+ * Manager apps by package name; the kernel's manager table says which uid is currently authorized
+ * and, if so, through which signature slot.
  */
-private fun loadManagerApps(pm: PackageManager): List<DynamicManagerApp> {
+private fun loadManagerApps(context: android.content.Context, pm: PackageManager): List<DynamicManagerApp> {
     val indexes = runCatching { readManagerIndexes() }.getOrDefault(emptyMap())
+    val self = context.packageName
     return runCatching {
-        val installed = pm.getInstalledPackages(0)
-            .mapNotNull { info -> info.applicationInfo?.let { app -> Triple(info, app, app.packageName) } }
-
-        // Candidates are the apps whose own library directory holds libksud.so - checked through
-        // the root shell, because another package's directory is not readable from this process.
-        val candidates = installed.mapNotNull { (_, app, pkg) ->
-            val dir = app.nativeLibraryDir ?: return@mapNotNull null
-            pkg to dir
-        }
-        val ksudPackages = managerPackagesWithKsud(candidates)
-
-        installed
-            .mapNotNull { (info, app, pkg) ->
-                if (pkg !in ksudPackages) return@mapNotNull null
+        pm.getInstalledPackages(0)
+            .mapNotNull { info ->
+                val app = info.applicationInfo ?: return@mapNotNull null
+                val pkg = app.packageName
+                if (pkg != self && pkg !in KSU_MANAGER_PACKAGES) return@mapNotNull null
                 val apkPath = app.publicSourceDir ?: return@mapNotNull null
                 val icon = runCatching {
-                    pm.getApplicationIcon(app.packageName).toBitmap(96, 96).asImageBitmap()
+                    pm.getApplicationIcon(pkg).toBitmap(96, 96).asImageBitmap()
                 }.getOrNull()
                 DynamicManagerApp(
-                    label = app.loadLabel(pm).toString().ifBlank { app.packageName },
-                    packageName = app.packageName,
+                    label = app.loadLabel(pm).toString().ifBlank { pkg },
+                    packageName = pkg,
                     uid = app.uid,
                     apkPath = apkPath,
                     icon = icon,
