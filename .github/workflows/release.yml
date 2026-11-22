@@ -98,12 +98,12 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.72 - SELinux status appears without a language switch. This is the actual cause.
+            HyperSU v4.2.73 - the multi-manager list finds the other KernelSU managers, and SELinux fills in without a language switch.
 
-            - The reading was held in a helper composable. Compose restarts only the scope that read a state: the value arrived inside that helper, the helper recomposed, and the page that draws the row was skipped, so the row kept its first label. Reading the value where the row is built makes the row the observer, and the text updates as soon as the answer arrives.
-            - Device log from v4.2.71 for reference: `SELinuxChecker: SELinux from the root shell: Enforcing`, then `HomeFacts: selinux raw='Enforcing'`, while the row still rendered "unknown" - the reader was right and the rendering never re-ran.
+            - Manager detection now runs through the root shell: a plain `File(libDir, "libksud.so").isFile` only works for this app's own directory, because another package's data directory is not stat-able from this process. One `sh` loop over the candidates answers for all of them, which is what lists the other installed managers.
+            - SELinux status is read where the row is drawn instead of inside a helper composable: Compose restarts only the scope that read the state, so the row had kept its first label until a language switch recreated the activity.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.71...v4.2.72
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.71...v4.2.73
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

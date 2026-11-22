@@ -15,6 +15,9 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.sukisu.ultra.Natives
 import com.sukisu.ultra.R
+import com.sukisu.ultra.ui.util.shellArg
+import com.sukisu.ultra.ui.util.getRootShell
+import com.topjohnwu.superuser.ShellUtils
 import com.sukisu.ultra.ui.component.dialog.ConfirmResult
 import com.sukisu.ultra.ui.component.dialog.rememberConfirmDialog
 import com.sukisu.ultra.ui.navigation3.LocalNavigator
@@ -110,35 +113,31 @@ fun DynamicManagerScreen() {
 }
 
 /**
- * Whether the app ships `libksud.so`.
+ * Manager apps are the ones that ship `libksud.so`, and the answer has to come from the root shell.
  *
- * The extracted library directory is the quick answer, but a modern APK keeps its native libraries
- * inside the archive (`extractNativeLibs=false`), so that directory holds no `libksud.so` even
- * though the app ships one - which is why this list showed only this manager, whose own manifest
- * still extracts them. The archive is checked as well.
+ * A plain `File(libDir, "libksud.so").isFile` is only reliable for this app's own directory: for
+ * another package it depends on whether this process may stat that app's data directory, and on
+ * this device it may not - which is why the list showed only this manager even though the other
+ * managers do have the library extracted. One `sh` loop over the candidate directories answers for
+ * all of them at once.
  */
-private fun shipsKsudLibrary(app: android.content.pm.ApplicationInfo, apkPath: String): Boolean {
-    val libDir = app.nativeLibraryDir
-    if (libDir != null && MANAGER_LIBRARIES.any { File(libDir, it).isFile }) return true
-    return runCatching {
-        java.util.zip.ZipFile(apkPath).use { zip ->
-            zip.entries().asSequence().any { entry ->
-                val name = entry.name
-                name.startsWith("lib/") && name.substringAfterLast('/') in MANAGER_LIBRARIES
-            }
-        }
-    }.getOrDefault(false)
+private fun managerPackagesWithKsud(packages: List<Pair<String, String>>): Set<String> {
+    if (packages.isEmpty()) return emptySet()
+    // ${'$'} keeps the shell variable literal inside the Kotlin string.
+    val script = buildString {
+        append("for d in")
+        packages.forEach { (_, dir) -> append(' ').append(dir.shellArg()) }
+        append("; do [ -f \"${'$'}d/libksud.so\" ] && echo \"${'$'}d\"; done")
+    }
+    val hitDirs = runCatching {
+        ShellUtils.fastCmd(getRootShell(), script)
+            .lineSequence()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .toSet()
+    }.getOrDefault(emptySet())
+    return packages.filter { (_, dir) -> dir in hitDirs }.map { it.first }.toSet()
 }
-
-/**
- * The library that identifies a KernelSU-family manager.
- *
- * Only `libksud.so`: an APatch manager ships `libkptools.so` instead and is deliberately not
- * offered here - this list is for the managers whose signatures this kernel's manager table can
- * accept. Only the file name is compared; the ABI directory varies and a manager may ship a single
- * ABI.
- */
-private val MANAGER_LIBRARIES = setOf("libksud.so")
 
 /**
  * Manager apps are the ones that ship `libksud.so`; the kernel's manager table says which uid is
@@ -147,11 +146,21 @@ private val MANAGER_LIBRARIES = setOf("libksud.so")
 private fun loadManagerApps(pm: PackageManager): List<DynamicManagerApp> {
     val indexes = runCatching { readManagerIndexes() }.getOrDefault(emptyMap())
     return runCatching {
-        pm.getInstalledPackages(0)
-            .mapNotNull { info ->
-                val app = info.applicationInfo ?: return@mapNotNull null
+        val installed = pm.getInstalledPackages(0)
+            .mapNotNull { info -> info.applicationInfo?.let { app -> Triple(info, app, app.packageName) } }
+
+        // Candidates are the apps whose own library directory holds libksud.so - checked through
+        // the root shell, because another package's directory is not readable from this process.
+        val candidates = installed.mapNotNull { (_, app, pkg) ->
+            val dir = app.nativeLibraryDir ?: return@mapNotNull null
+            pkg to dir
+        }
+        val ksudPackages = managerPackagesWithKsud(candidates)
+
+        installed
+            .mapNotNull { (info, app, pkg) ->
+                if (pkg !in ksudPackages) return@mapNotNull null
                 val apkPath = app.publicSourceDir ?: return@mapNotNull null
-                if (!shipsKsudLibrary(app, apkPath)) return@mapNotNull null
                 val icon = runCatching {
                     pm.getApplicationIcon(app.packageName).toBitmap(96, 96).asImageBitmap()
                 }.getOrNull()
