@@ -1303,7 +1303,6 @@ private fun HomeLayoutDashboard(
                 value = state.ksuVersion?.toString() ?: "-",
                 severity = if (state.ksuVersion != null) FolkSeverity.Positive else FolkSeverity.Critical,
                 cardId = BackgroundConfig.DASHBOARD_TILE_WORKING,
-                onClick = if (state.isLateLoadMode) null else actions.onInstallClick,
             )
             HomeTile(
                 modifier = Modifier.weight(1f),
@@ -1352,8 +1351,6 @@ private fun HomeTile(
     value: String,
     severity: FolkSeverity,
     cardId: String? = null,
-    /** Tapping the tile; null keeps it a plain readout. */
-    onClick: (() -> Unit)? = null,
     /**
      * Draw the tile as plain text rather than as a card.
      *
@@ -1417,9 +1414,7 @@ private fun HomeTile(
     }
 
     androidx.compose.material3.Surface(
-        modifier = modifier.then(
-            if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
-        ),
+        modifier = modifier,
         shape = FolkShape.Corner20,
         color = palette.container,
     ) {
