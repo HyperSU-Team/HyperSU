@@ -3,7 +3,7 @@ package com.sukisu.ultra.ui.util
 import android.util.Log
 import com.topjohnwu.superuser.Shell
 import com.topjohnwu.superuser.ShellUtils
-import com.topjohnwu.superuser.io.SuFile
+import java.io.File
 
 private const val TAG = "SELinuxChecker"
 
@@ -14,61 +14,64 @@ private const val ENFORCE_NODE = "/sys/fs/selinux/enforce"
  *
  * Safe to call from any thread; IO is recommended because it may run a shell.
  *
- * Four readers, in this order, because each one is the only one that works somewhere:
- *
- *  1. `/sys/fs/selinux/enforce` through [SuFile], which falls back to a shell when the app uid may
- *     not open the node itself. Only a successful read decides here - an unreadable node is not a
- *     status.
- *  2. `getenforce` through the manager's root shell. On a device that hides the node from apps,
- *     this is the reader that answers, and the manager holds root already.
- *  3. `getenforce` through a plain `sh`, for the case where root is not usable at all.
- *  4. Inference only as a last resort: a node that does not exist means SELinux is off; one that
- *     exists but cannot be read is what an enforcing kernel looks like from an unprivileged app.
- *
- * The home row used to take the plain-`sh` path only, and stayed "unknown" on a device where the
- * node was hidden and the root shell was the one that could answer.
+ * This is 3a8dff100's reader - the node first, because it needs no shell and no root, then a plain
+ * `sh` - with one step inserted between them: on a device that hides the node from an app, the
+ * manager's own root shell can still `cat` it, and that is the only reader left.
  */
 fun getSELinuxStatusRaw(): String {
-    readEnforceNodeValue()?.let { return it }
-    readSelinuxViaRootShell()?.let { return it }
-    readSelinuxViaShell()?.let { return it }
-    return when {
-        !SuFile(ENFORCE_NODE).exists() -> "Disabled"
-        !SuFile(ENFORCE_NODE).canRead() -> "Enforcing"
-        else -> "Unknown"
-    }
+    readSelinuxEnforceNode()?.let { return it }
+    readSelinuxEnforceNodeAsRoot()?.let { return it }
+    return readSelinuxViaShell()
 }
 
-/** Reads the node itself. Null means "this reader could not decide", never "not enforcing". */
-private fun readEnforceNodeValue(): String? = runCatching {
-    val node = SuFile(ENFORCE_NODE)
+/**
+ * Reads `/sys/fs/selinux/enforce`, which holds "1" for enforcing and "0" for permissive.
+ *
+ * Returns null when the node is missing or unreadable, so the caller can fall back rather than
+ * reporting "Disabled" for a file it could not open - those are different answers.
+ */
+private fun readSelinuxEnforceNode(): String? = runCatching {
+    val node = File(ENFORCE_NODE)
     if (!node.exists() || !node.canRead()) return@runCatching null
-    val text = node.newInputStream().bufferedReader().use { it.readText() }.trim()
-    when (text) {
-        "1" -> "Enforcing"
-        "0" -> "Permissive"
-        else -> null
-    }
+    toStatus(node.readText())
 }.onFailure { Log.w(TAG, "could not read the SELinux enforce node", it) }.getOrNull()
 
-/** `getenforce` through the manager's own root shell. */
-private fun readSelinuxViaRootShell(): String? = runCatching {
-    toStatus(ShellUtils.fastCmd(getRootShell(), "getenforce"))
-}.onFailure { Log.w(TAG, "could not read SELinux through the root shell", it) }.getOrNull()
+/**
+ * The same node through the manager's root shell, for the case where the app uid is not allowed to
+ * open it (SELinux hiding, an enforcing kernel). `cat` answers the same question as the file read.
+ */
+private fun readSelinuxEnforceNodeAsRoot(): String? = runCatching {
+    val out = ShellUtils.fastCmd(getRootShell(), "cat $ENFORCE_NODE")
+    toStatus(out)
+}.onFailure { Log.w(TAG, "could not read the SELinux enforce node as root", it) }.getOrNull()
 
-/** `getenforce` through a plain shell, for a device where no root is available to this app. */
-private fun readSelinuxViaShell(): String? {
+/** The shell fallback, for devices that do not expose the sysfs node to an app. */
+private fun readSelinuxViaShell(): String {
     val stdout = ArrayList<String>()
+    val stderr = ArrayList<String>()
     val result = runCatching {
-        Shell.Builder.create().build("sh").use { it.newJob().add("getenforce").to(stdout).exec() }
-    }.getOrNull() ?: return null
-    if (!result.isSuccess) return null
-    return toStatus(stdout.joinToString("\n"))
+        Shell.Builder.create().build("sh").use {
+            it.newJob().add("getenforce").to(stdout, stderr).exec()
+        }
+    }.getOrNull() ?: return "Unknown"
+
+    if (result.isSuccess) {
+        return toStatus(stdout.joinToString("\n")) ?: "Unknown"
+    }
+
+    // A permission error means SELinux is on and refusing the read, which is what an enforcing
+    // kernel does. It is an inference rather than a reading, so it is the last resort.
+    return if (stderr.joinToString("\n").trim().endsWith("Permission denied")) {
+        "Enforcing"
+    } else {
+        "Unknown"
+    }
 }
 
+/** "1"/"0"/`getenforce` output to the raw status string. */
 private fun toStatus(output: String): String? = when (output.trim()) {
-    "Enforcing" -> "Enforcing"
-    "Permissive" -> "Permissive"
+    "1", "Enforcing" -> "Enforcing"
+    "0", "Permissive" -> "Permissive"
     "Disabled" -> "Disabled"
     else -> null
 }
