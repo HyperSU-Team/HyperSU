@@ -271,6 +271,9 @@ private val FloatingBarClearance = 80.dp
  * left it behind the pill.
  */
 private val SnackbarFloatingClearance = 48.dp
+
+/** The gap between a snackbar and the bar it sits on. */
+private val SnackbarBarGap = 8.dp
 private val StaticBarClearance = 16.dp
 
 /**
@@ -283,6 +286,10 @@ private val StaticBarClearance = 16.dp
  */
 @Composable
 private fun folkSnackbarClearance(): Dp {
+    // The shell publishes exactly what it reserved for its bar; the snackbar then sits on top of
+    // the bar rather than at a guessed distance from it.
+    val barHeight = LocalBottomBarHeight.current
+    if (barHeight != Dp.Unspecified) return barHeight + SnackbarBarGap
     val floating = LocalIsFloatingNavMode.current
     if (floating && LocalBottomBarVisible.current.value) return SnackbarFloatingClearance
     return folkBottomClearance()

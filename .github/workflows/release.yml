@@ -98,12 +98,12 @@ jobs:
           name: ${{ github.ref_name }}
           # Refresh these notes before tagging; an empty body leaves the manager's update dialog with nothing to show.
           body: |
-            HyperSU v4.2.63 - SELinux status fills in by itself, without a language switch.
+            HyperSU v4.2.64 - the prompts sit on the bottom bar, and SELinux has an answer on the first frame.
 
-            - The status row now keeps re-reading every two seconds until a real answer arrives, instead of reading once (and, in v4.2.61, stopping after ten attempts). On a cold start the root shell is not usable for the first moments, so the early reads fail; the row waited for the next read that only a recreated activity used to trigger.
-            - v4.2.62's reader is unchanged: the `/sys/fs/selinux/enforce` node, the same node through the root shell, then a plain `sh`.
+            - Both the manager-update message and the module page's reboot prompt are positioned from the height the shell actually reserves for its bar, published as `LocalBottomBarHeight`, plus an 8.dp gap. A constant could not work: it was too high at 80.dp and hidden behind the pill at 8.dp.
+            - SELinux status falls back to `ro.boot.selinux`, which needs no shell and no root, so the row has a value on the first frame instead of waiting for a root shell that is not ready yet. The node read and the root `cat` still take precedence when they answer.
 
-            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.62...v4.2.63
+            **Full changelog**: https://github.com/HyperSU-Team/HyperSU/compare/v4.2.63...v4.2.64
           files: |
             Manager/*.apk
             Manager-spoofed/*.apk

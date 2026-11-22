@@ -21,8 +21,29 @@ private const val ENFORCE_NODE = "/sys/fs/selinux/enforce"
 fun getSELinuxStatusRaw(): String {
     readSelinuxEnforceNode()?.let { return it }
     readSelinuxEnforceNodeAsRoot()?.let { return it }
+    // `ro.boot.selinux` is what the kernel was booted with. It needs no shell and no root, so it
+    // is the answer that is available on the very first frame - which is the case that used to
+    // stay "unknown" until the activity was recreated.
+    readBootSelinuxProperty()?.let { return it }
     return readSelinuxViaShell()
 }
+
+/**
+ * `ro.boot.selinux` - "enforcing" or "permissive" as recorded at boot.
+ *
+ * This is the boot mode, not the live one, so it is used before any inference but after the node
+ * reads: a device that switched to permissive at runtime still reports the live value from them.
+ */
+private fun readBootSelinuxProperty(): String? = runCatching {
+    val clazz = Class.forName("android.os.SystemProperties")
+    val get = clazz.getMethod("get", String::class.java, String::class.java)
+    when ((get.invoke(null, "ro.boot.selinux", "") as? String)?.trim()?.lowercase()) {
+        "enforcing" -> "Enforcing"
+        "permissive" -> "Permissive"
+        "disabled" -> "Disabled"
+        else -> null
+    }
+}.onFailure { Log.w(TAG, "could not read ro.boot.selinux", it) }.getOrNull()
 
 /**
  * Reads `/sys/fs/selinux/enforce`, which holds "1" for enforcing and "0" for permissive.

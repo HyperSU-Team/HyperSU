@@ -107,6 +107,7 @@ import com.sukisu.ultra.ui.screen.templateeditor.TemplateEditorScreen
 import com.sukisu.ultra.ui.screen.umountmanager.UmountManagerScreen
 import com.sukisu.ultra.ui.theme.LocalColorMode
 import com.sukisu.ultra.ui.theme.BackgroundLayer
+import com.sukisu.ultra.ui.theme.LocalBottomBarHeight
 import com.sukisu.ultra.ui.theme.LocalEnableFloatingBottomBar
 import com.sukisu.ultra.ui.theme.LocalEnableNavigationBadge
 import com.sukisu.ultra.ui.theme.LocalModuleDescriptionMaxLines
@@ -586,7 +587,11 @@ fun MainScreen(
                             .weight(1f)
                             .consumeWindowInsets(startInsets)
                     ) {
-                        pagerContent(navBarBottomPadding)
+                        CompositionLocalProvider(
+                            LocalBottomBarHeight provides navBarBottomPadding,
+                        ) {
+                            pagerContent(navBarBottomPadding)
+                        }
                     }
                 }
             }
@@ -613,7 +618,11 @@ fun MainScreen(
                 },
                 containerColor = MaterialTheme.colorScheme.background,
             ) { innerPadding ->
-                pagerContent(innerPadding.calculateBottomPadding())
+                CompositionLocalProvider(
+                    LocalBottomBarHeight provides innerPadding.calculateBottomPadding(),
+                ) {
+                    pagerContent(innerPadding.calculateBottomPadding())
+                }
             }
         }
     }
